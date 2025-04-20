@@ -1,12 +1,36 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import WhyChooseSection from "@/components/WhyChooseSection";
+import AllInOneAppSection from "@/components/AllInOneAppSection";
+import TopTeachersSection from "@/components/TopTeachersSection";
+import PopularCoursesSection from "@/components/PopularCoursesSection";
+import ImpactSection from "@/components/ImpactSection";
+import StudentsInActionSection from "@/components/StudentsInActionSection";
+import FeaturesSection from "@/components/FeaturesSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
+import TestimonialsSection from "@/components/TestimonialsSection";
+import CTASection from "@/components/CTASection";
+import Footer from "@/components/Footer";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen">
+      <Navbar />
+      <HeroSection />
+      <WhyChooseSection />
+      <AllInOneAppSection />
+      <TopTeachersSection />
+      <PopularCoursesSection />
+      <ImpactSection />
+      <StudentsInActionSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <TestimonialsSection />
+      <CTASection />
+      <Footer />
+      <ScrollToTop />
     </div>
   );
 };
