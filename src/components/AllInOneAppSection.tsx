@@ -1,13 +1,13 @@
-
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { Shape } from "./Shape";
 
 const AllInOneAppSection = () => {
   const features = [
     "Find perfect matches with our AI algorithm",
     "Schedule and manage all your classes",
     "Track your progress with detailed insights",
-    "Access learning materials anytime, anywhere"
+    "Access learning materials anytime, anywhere",
   ];
 
   return (
@@ -42,16 +42,19 @@ const AllInOneAppSection = () => {
                     </div>
                     <div className="flex-1 p-4 flex flex-col items-center justify-center">
                       <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                        <img 
-                          src="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9" 
-                          alt="Art" 
+                        <img
+                          src={Shape}
+                          alt="Art"
                           className="w-10 h-10 rounded-full object-cover"
                         />
                       </div>
                       <p className="text-sm text-center text-gray-600 mb-4">
                         We found 8 teachers matching your criteria
                       </p>
-                      <Button size="sm" className="bg-purple-500 text-white w-full">
+                      <Button
+                        size="sm"
+                        className="bg-purple-500 text-white w-full"
+                      >
                         View Matches
                       </Button>
                     </div>
