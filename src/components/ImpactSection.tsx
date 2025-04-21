@@ -15,6 +15,13 @@ const ImpactStat = ({
 }: ImpactStatProps) => (
   <div className="flex flex-col items-center">
     <div className="size-28 relative">
+      <div
+        className="absolute bg-[#2E3192] rounded-full left-[2.5rem] -top-[1rem]
+      w-6 h-6 z-20 flex items-center justify-center"
+      >
+        <p className="text-xs text-white">{id}</p>
+      </div>
+
       <div className="absolute inset-0 rounded-[95.933px] border-4 border-[#53AC8F] flex items-center justify-center" />
       <img src={imageUrl} alt={label} className={imageClassName} />
     </div>
@@ -30,6 +37,7 @@ const DashedConnector = () => (
     height="36"
     viewBox="0 0 241 36"
     fill="none"
+    className="hidden md:block "
   >
     <path
       d="M1.164 14.2479C38.578 -0.621807 61.1547 -5.6243 96.138 14.2479C177.202 60.2959 200.226 14.2479 239.079 10.4105"
