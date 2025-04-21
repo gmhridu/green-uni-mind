@@ -39,10 +39,10 @@ const TeacherCard = ({
               }
             />
           ))}
-          <span className="ml-1 text-sm text-gray-600 text-nowrap">
+          <span className="ml-1 text-sm text-gray-600 text-nowrap inline-flex gap-x-0.5 items-center">
             {rating.toFixed(1)}
+            <span className="text-xs">(357,914)</span>
           </span>
-          <span className="text-xs">(357,914)</span>
         </div>
         <Button
           variant="ghost"
