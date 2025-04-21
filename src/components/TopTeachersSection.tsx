@@ -10,7 +10,7 @@ interface TeacherCardProps {
 
 const TeacherCard = ({ name, expertise, rating, imageSrc }: TeacherCardProps) => (
   <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-md hover-scale">
-    <img src={imageSrc} alt={name} className="w-16 h-16 rounded-full object-cover" />
+    <img src={imageSrc} alt={name} className="w-16 h-16 rounded-lg object-cover" />
     <div>
       <h3 className="font-semibold">{name}</h3>
       <p className="text-sm text-gray-600">{expertise}</p>
@@ -32,7 +32,7 @@ const TopTeachersSection = () => {
   const teachers = [
     {
       name: "Sarah Johnson",
-      expertise: "Watercolor Painting",
+      expertise: "Expert mathematics tutor helping students simplify tough concepts, improve problem-solving, and excel in exams with clear, personalized coaching.",
       rating: 4.9,
       imageSrc: "https://images.unsplash.com/photo-1494891848038-7bd202a2afeb"
     },
