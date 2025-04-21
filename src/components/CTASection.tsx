@@ -1,23 +1,26 @@
-
 import { Button } from "@/components/ui/button";
 
 const CTASection = () => {
   return (
-    <section className="py-20 bg-cover bg-center relative" style={{
-      backgroundImage: `url('https://images.unsplash.com/photo-1504893524553-b855bce32c67')`,
-    }}>
+    <section
+      className="py-20 my-16 bg-cover bg-center relative"
+      style={{
+        backgroundImage: `url('/images/image10.png')`,
+      }}
+    >
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center text-white">
           <h2 className="text-3xl md:text-4xl font-display font-semibold mb-6">
-            Join a world of learning
+            Join a World of Learning
           </h2>
-          <p className="text-lg mb-8">
-            Start your artistic journey today with personalized guidance from expert teachers.
-            Our AI-powered platform helps you find the perfect match for your learning style.
+          <p className="text-lg mb-3">Join GreenUniMind today</p>
+
+          <p className="text-base font-normal text-muted mb-8">
+            Be part of a global movement for a greener, smarter future
           </p>
           <Button className="bg-green-500 hover:bg-green-600 text-white px-8 py-6 text-lg">
-            Get Started Now
+            Start Your Journey
           </Button>
         </div>
       </div>
