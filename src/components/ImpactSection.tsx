@@ -85,7 +85,7 @@ const ImpactSection = () => {
           changemakers.
         </p>
 
-        <div className="flex flex-col items-center md:flex-row md:justify-center">
+        <div className="flex flex-col gap-8 items-center md:flex-row md:justify-center md:gap-0">
           {stats.map((stat, index) => (
             <div className="flex items-center justify-around">
               <ImpactStat
