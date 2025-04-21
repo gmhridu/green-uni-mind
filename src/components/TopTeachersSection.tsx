@@ -15,7 +15,7 @@ const TeacherCard = ({
   rating,
   imageSrc,
 }: TeacherCardProps) => (
-  <Card className="flex items-center gap-4 bg-white p-2 border border-[#D0D0D0] rounded-xl shadow-sm max-w-3xl">
+  <Card className="flex items-center gap-4 bg-white p-3 border border-[#D0D0D0] rounded-xl shadow-sm max-w-3xl">
     <div className="w-24 h-24 flex-shrink-0">
       <img
         src={imageSrc}
@@ -25,7 +25,7 @@ const TeacherCard = ({
     </div>
     <div className="flex flex-col justify-between h-full flex-1">
       <h3 className="font-semibold text-lg text-gray-900">{name}</h3>
-      <p className="text-sm text-gray-600 mb-2 line-clamp-2">{expertise}</p>
+      <p className="text-sm text-gray-600 mb-2 line-clamp-3">{expertise}</p>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           {[...Array(5)].map((_, i) => (

@@ -1,51 +1,95 @@
-
 interface ImpactStatProps {
+  id: number;
+  imageUrl: string;
+  imageClassName: string;
   value: string;
   label: string;
-  icon: string;
 }
 
-const ImpactStat = ({ value, label, icon }: ImpactStatProps) => (
+const ImpactStat = ({
+  value,
+  label,
+  id,
+  imageUrl,
+  imageClassName,
+}: ImpactStatProps) => (
   <div className="flex flex-col items-center">
-    <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-      <img src={icon} alt={label} className="w-10 h-10 object-contain" />
+    <div className="size-28 relative">
+      <div className="absolute inset-0 rounded-[95.933px] border-4 border-[#53AC8F] flex items-center justify-center" />
+      <img src={imageUrl} alt={label} className={imageClassName} />
     </div>
-    <div className="text-2xl font-bold">{value}</div>
-    <div className="text-gray-600 text-center">{label}</div>
+    <h2 className="text-sm font-semibold mt-2">{label}</h2>
+    <p className="text-xl text-[#333]font-semibold capitalize">{value}</p>
   </div>
+);
+
+const DashedConnector = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="241"
+    height="36"
+    viewBox="0 0 241 36"
+    fill="none"
+  >
+    <path
+      d="M1.164 14.2479C38.578 -0.621807 61.1547 -5.6243 96.138 14.2479C177.202 60.2959 200.226 14.2479 239.079 10.4105"
+      stroke="#3EB3E3"
+      stroke-width="1.91867"
+      stroke-linecap="round"
+      stroke-dasharray="5.76 5.76"
+    />
+  </svg>
 );
 
 const ImpactSection = () => {
   const stats = [
     {
-      value: "50k+",
-      label: "Active Students",
-      icon: "https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b"
+      id: 1,
+      imageUrl: "/images/impact1.png",
+      imageClassName: "absolute bottom-[4px] -left-[1px]",
+      label: "Wait two hours",
+      value: "10k",
     },
     {
-      value: "500+",
-      label: "Expert Teachers",
-      icon: "https://images.unsplash.com/photo-1498936178812-4b2e558d2937"
+      id: 2,
+      imageUrl: "/images/impact2.png",
+      imageClassName: "absolute top-[4px]",
+      label: "Teachers",
+      value: "500k",
     },
     {
-      value: "100k+",
-      label: "Completed Courses",
-      icon: "https://images.unsplash.com/photo-1452960962994-acf4fd70b632"
-    }
+      id: 3,
+      imageUrl: "/images/impact3.png",
+      imageClassName: "absolute bottom-[4px] -right-[1px]",
+      label: "Projects",
+      value: "300k",
+    },
   ];
 
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-display font-semibold text-center mb-12">OUR MONTHLY IMPACT</h2>
-        <div className="flex flex-wrap justify-center gap-16">
+        <h2 className="text-3xl font-semibold text-center mb-2">
+          Our Monthly Impact
+        </h2>
+        <p className="text-center text-gray-500 mb-12">
+          Real-time results from a global community of learners and
+          changemakers.
+        </p>
+
+        <div className="flex flex-col items-center md:flex-row md:justify-center">
           {stats.map((stat, index) => (
-            <ImpactStat 
-              key={index}
-              value={stat.value}
-              label={stat.label}
-              icon={stat.icon}
-            />
+            <div className="flex items-center justify-around">
+              <ImpactStat
+                key={index}
+                imageUrl={stat.imageUrl}
+                imageClassName={stat.imageClassName}
+                id={stat.id}
+                value={stat.value}
+                label={stat.label}
+              />
+              {index < stats.length - 1 && <DashedConnector />}
+            </div>
           ))}
         </div>
       </div>
