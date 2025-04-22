@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { logout, setUser } from "../features/auth/authSlice";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://green-uni-mind-backend-production.up.railway.app/api/v1",
+  baseUrl: "https://green-uni-mind-backend.vercel.app/api/v1",
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth?.token;
@@ -43,7 +43,7 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   if (result?.error?.status === 401) {
     //* Send Refresh
 
-    const res = await fetch("https://green-uni-mind-backend-production.up.railway.app/api/v1/auth/refresh-token", {
+    const res = await fetch("https://green-uni-mind-backend.vercel.app/api/v1/auth/refresh-token", {
       method: "POST",
       credentials: "include",
     });
