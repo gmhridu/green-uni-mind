@@ -39,7 +39,7 @@ export const store = configureStore({
     }).concat(baseApi.middleware),
 
   // 🔒 Disable Redux DevTools in production
-  devTools: config.node_env !== "production",
+  devTools: config.node_env === "production" ? false : true,
 });
 
 export type RootState = ReturnType<typeof store.getState>;
@@ -48,4 +48,4 @@ export type AppDispatch = typeof store.dispatch;
 
 // 👇 Don't even create persistor in production
 export const persistor =
-  config.node_env !== "production" ? persistStore(store) : null;
+  config.node_env === "production" ? persistStore(store) : null;
