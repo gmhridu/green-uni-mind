@@ -31,116 +31,115 @@ const UserProfile = ({
   setOpen,
 }: UserProfileProps) => {
   return (
-    <>
-      <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-        <DropdownMenuTrigger
-          asChild
-          onMouseEnter={() => {
-            if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-            setOpen(true);
-          }}
-          onMouseLeave={() => {
-            hoverTimeout.current = setTimeout(() => setOpen(false), 200);
-          }}
-        >
-          <div>
-            <Avatar className="cursor-pointer">
-              {isAuthLoading ? (
-                <AvatarFallback>
-                  <Loader2 className="animate-spin" />
-                </AvatarFallback>
-              ) : (
-                <AvatarImage
-                  src={user?.photoUrl}
-                  alt={user?.name}
-                  className="object-cover"
-                />
-              )}
+    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
+      <DropdownMenuTrigger
+        asChild
+        onMouseEnter={() => {
+          if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+          setOpen(true);
+        }}
+        onMouseLeave={() => {
+          hoverTimeout.current = setTimeout(() => setOpen(false), 200);
+        }}
+      >
+        <div>
+          <Avatar className="cursor-pointer">
+            {isAuthLoading ? (
+              <AvatarFallback>
+                <Loader2 className="animate-spin" />
+              </AvatarFallback>
+            ) : (
+              <AvatarImage
+                src={user?.photoUrl}
+                alt={user?.name}
+                className="object-cover"
+              />
+            )}
+            <AvatarFallback>
+              {(user?.name?.slice(0, 2) || "US").toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        onMouseEnter={() => {
+          if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+        }}
+        onMouseLeave={() => {
+          hoverTimeout.current = setTimeout(() => setOpen(false), 200);
+        }}
+        className="w-64"
+      >
+        <DropdownMenuLabel>
+          <div className="flex items-center space-x-2">
+            <Avatar className="w-8 h-8">
+              <AvatarImage
+                src={user?.photoUrl}
+                alt={user?.name}
+                className="object-cover"
+              />
               <AvatarFallback>
                 {(user?.name?.slice(0, 2) || "US").toUpperCase()}
               </AvatarFallback>
             </Avatar>
-          </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          onMouseEnter={() => {
-            if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-          }}
-          onMouseLeave={() => {
-            hoverTimeout.current = setTimeout(() => setOpen(false), 200);
-          }}
-        >
-          <DropdownMenuLabel>
-            <div className="flex items-center space-x-2">
-              <Avatar className="w-8 h-8">
-                <AvatarImage
-                  src={user?.photoUrl}
-                  alt={user?.name}
-                  className="object-cover"
-                />
-                <AvatarFallback>
-                  {(user?.name?.slice(0, 2) || "US").toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
 
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-800">
-                  {user?.name}
-                </span>
-                <span className="text-xs text-gray-500">{user?.email}</span>
-              </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-800">
+                {user?.name}
+              </span>
+              <span className="text-xs text-gray-500">{user?.email}</span>
             </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-gray-200" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-              <Link to={"/profile"}>My Learning</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to={"/settings"}>My Cart</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to={"/settings"}>Wishlist</Link>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator className="bg-gray-200" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-              <Link to={"/profile"}>Notification</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to={"/settings"}>Messages</Link>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator className="bg-gray-200" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-              <Link to={"/profile"}>Account Settings</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to={"/settings"}>Payment Methods</Link>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator className="bg-gray-200" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-              <Link to={"/profile"}>Public Profile</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to={"/settings"}>Edit Profile</Link>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator className="bg-gray-200" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-              <Link to={"/profile"}>Help and Support</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-gray-200" />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link to={"/profile"}>My Learning</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={"/settings"}>My Cart</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={"/settings"}>Wishlist</Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator className="bg-gray-200" />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link to={"/profile"}>Notification</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={"/settings"}>Messages</Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator className="bg-gray-200" />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link to={"/profile"}>Account Settings</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={"/settings"}>Payment Methods</Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator className="bg-gray-200" />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link to={"/profile"}>Public Profile</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={"/settings"}>Edit Profile</Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator className="bg-gray-200" />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link to={"/profile"}>Help and Support</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

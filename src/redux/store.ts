@@ -21,11 +21,10 @@ const persistConfig = {
 
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 
-
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
-    auth: config.node_env === "development" && persistedAuthReducer,
+    auth: persistedAuthReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -34,7 +33,7 @@ export const store = configureStore({
       },
     }).concat(baseApi.middleware),
   // 👇 This is all you need to hide DevTools in production
-  devTools: true,
+  devTools: config.node_env === "development",
 });
 
 export type RootState = ReturnType<typeof store.getState>;
