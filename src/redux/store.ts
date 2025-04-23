@@ -21,13 +21,11 @@ const persistConfig = {
 
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 
-const authPersistReducer =
-  config.node_env === "development" ? persistedAuthReducer : null;
 
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
-    auth: authPersistReducer,
+    auth: config.node_env === "development" && persistedAuthReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
