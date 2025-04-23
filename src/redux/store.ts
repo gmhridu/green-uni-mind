@@ -19,16 +19,16 @@ const persistConfig = {
   storage,
 };
 
-const dummyAuthReducer = () => (undefined);
-
 const safeAuthReducer =
   config.node_env === "production"
-    ? dummyAuthReducer
+    ? (state = null) => state
     : persistReducer(persistConfig, authReducer);
 
 export const store = configureStore({
   reducer: {
-    [baseApi.reducerPath]: baseApi.reducer,
+    ...(config.node_env !== "production" && {
+      [baseApi.reducerPath]: baseApi.reducer,
+    }),
     auth: safeAuthReducer,
   },
   middleware: (getDefaultMiddleware) =>
