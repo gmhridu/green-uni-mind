@@ -19,16 +19,12 @@ const persistConfig = {
   storage,
 };
 
-const safeAuthReducer =
-  config.node_env === "production"
-    ? (state = null) => state
-    : persistReducer(persistConfig, authReducer);
-
+const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
-    auth: safeAuthReducer,
+    auth: persistedAuthReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -36,6 +32,7 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }).concat(baseApi.middleware),
+  // 👇 This is all you need to hide DevTools in production
   devTools: config.node_env !== "production",
 });
 
