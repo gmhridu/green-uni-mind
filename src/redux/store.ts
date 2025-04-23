@@ -44,5 +44,4 @@ export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
 // Only enable persistStore in development
-export const persistor =
-  config.node_env !== "production" ? persistStore(store) : null;
+export const persistor = persistStore(store);
