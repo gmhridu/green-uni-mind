@@ -19,7 +19,7 @@ const persistConfig = {
   storage,
 };
 
-const dummyAuthReducer = () => ({});
+const dummyAuthReducer = () => (undefined);
 
 const safeAuthReducer =
   config.node_env === "production"
