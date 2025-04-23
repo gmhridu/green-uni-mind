@@ -83,12 +83,9 @@ const SignUpPage = () => {
         isVerified: userData.isVerified,
         createdAt: userData.createdAt,
         updatedAt: userData.updatedAt,
-        _id: userData._id,
       };
 
-      const tokenVerify = verifyToken(res.data.accessToken) as TUserToken;
-
-      dispatch(setUser({ user, tokenVerify, token: res.data.accessToken }));
+      dispatch(setUser({ user, token: res.data.accessToken }));
 
       toast.success("Register Successfully!", { id: toastId, duration: 2000 });
       navigate("/");

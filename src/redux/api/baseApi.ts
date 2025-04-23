@@ -10,9 +10,14 @@ import {
 import { RootState } from "../store";
 import { toast } from "sonner";
 import { logout, setUser } from "../features/auth/authSlice";
+import { config } from "@/config";
+
+type ErrorResponse = {
+  message: string;
+};
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://green-uni-mind-backend.onrender.com/api/v1",
+  baseUrl: config.apiBaseUrl,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth?.token;
@@ -33,17 +38,20 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   let result = await baseQuery(args, api, extraOptions);
 
   if (result?.error?.status === 404) {
-    toast.error(result?.error?.data?.message);
+    const errorData = result.error.data as ErrorResponse;
+
+    toast.error(errorData.message);
   }
 
   if (result?.error?.status === 403) {
-    toast.error(result?.error?.data?.message);
+    const errorData = result.error.data as ErrorResponse;
+    toast.error(errorData.message);
   }
 
   if (result?.error?.status === 401) {
     //* Send Refresh
 
-    const res = await fetch("https://green-uni-mind-backend.onrender.com/api/v1/auth/refresh-token", {
+    const res = await fetch(`${config.apiBaseUrl}/auth/refresh-token`, {
       method: "POST",
       credentials: "include",
     });

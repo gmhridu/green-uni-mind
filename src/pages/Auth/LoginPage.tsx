@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { useLoginMutation } from "@/redux/features/auth/authApi";
+import { useGetMeMutation, useLoginMutation } from "@/redux/features/auth/authApi";
 import {
   setIsLoading,
   setUser,
@@ -43,6 +43,7 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [login] = useLoginMutation();
+  const [getMe] = useGetMeMutation(undefined);
   const form = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -76,12 +77,11 @@ const LoginPage = () => {
         isVerified: data.isVerified,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
-        _id: data._id,
       };
 
-      const tokenVerify = verifyToken(res.data.accessToken) as TUserToken;
+      const token: TUserToken = res.data.accessToken;
 
-      dispatch(setUser({ user, tokenVerify, token: res.data.accessToken }));
+      dispatch(setUser({ user, token }));
       toast.success("Login Successfully!", { id: toastId, duration: 2000 });
       navigate("/");
     } catch (err) {

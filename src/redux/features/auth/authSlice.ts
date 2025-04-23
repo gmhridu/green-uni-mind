@@ -17,19 +17,16 @@ export type TUser = {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  _id: string;
 };
 
 type TAuthState = {
   user: null | TUser;
-  verifyToken: null | TUserToken;
   token: null | string;
   isLoading: boolean;
 };
 
 const initialState: TAuthState = {
   user: null,
-  verifyToken: null,
   token: null,
   isLoading: false,
 };
@@ -41,7 +38,6 @@ const authSlice = createSlice({
     setUser: (state, action) => {
       const { user, verifyToken, token } = action.payload;
       state.user = user;
-      state.verifyToken = verifyToken;
       state.token = token;
       state.isLoading = false;
     },
@@ -50,7 +46,6 @@ const authSlice = createSlice({
     },
     logout: (state) => {
       state.user = null;
-      state.verifyToken = null;
       state.token = null;
       state.isLoading = false;
     },

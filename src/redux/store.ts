@@ -12,6 +12,7 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import authReducer from "../redux/features/auth/authSlice";
+import { config } from "@/config";
 
 const persistConfig = {
   key: "auth",
@@ -31,6 +32,9 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }).concat(baseApi.middleware),
+
+  // 🔒 Disable Redux DevTools in production
+  devTools: config.node_env !== "production",
 });
 
 export type RootState = ReturnType<typeof store.getState>;
