@@ -1,34 +1,14 @@
-import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
-import WhyChooseSection from "@/components/WhyChooseSection";
-import AllInOneAppSection from "@/components/AllInOneAppSection";
-import TopTeachersSection from "@/components/TopTeachersSection";
-import PopularCoursesSection from "@/components/PopularCoursesSection";
-import ImpactSection from "@/components/ImpactSection";
-import StudentsInActionSection from "@/components/StudentsInActionSection";
-import FeaturesSection from "@/components/FeaturesSection";
-import HowItWorksSection from "@/components/HowItWorksSection";
-import TestimonialsSection from "@/components/TestimonialsSection";
-import CTASection from "@/components/CTASection";
+import Home from "./Home";
 import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
 import ScrollToTop from "@/components/ScrollToTop";
+import { Outlet } from "react-router-dom";
 
 const Index = () => {
-
   return (
     <div className="min-h-screen">
       <Navbar />
-      <HeroSection />
-      <WhyChooseSection />
-      <AllInOneAppSection />
-      <TopTeachersSection />
-      <PopularCoursesSection />
-      <ImpactSection />
-      <StudentsInActionSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <TestimonialsSection />
-      <CTASection />
+      <Outlet />
       <Footer />
       <ScrollToTop />
     </div>

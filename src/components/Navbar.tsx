@@ -38,17 +38,19 @@ const Navbar = () => {
   return (
     <nav
       className="w-full bg-[#FFFFFFA3]
- backdrop-blur-md py-2 fixed top-0 left-0 right-0 z-50"
+ backdrop-blur-md py-2 fixed top-0 left-0 right-0 z-50 shadow-md"
     >
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <div className="max-w-64">
-            <img
-              src="/images/logo.png"
-              alt="Logo"
-              className="size-16 rounded-full cursor-pointer"
-            />
-          </div>
+          <Link to={"/"}>
+            <div className="max-w-64">
+              <img
+                src="/images/logo.png"
+                alt="Logo"
+                className="size-16 rounded-full cursor-pointer"
+              />
+            </div>
+          </Link>
           <div>
             <Input placeholder="Search..." />
           </div>

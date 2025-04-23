@@ -1,4 +1,5 @@
 import { baseApi } from "@/redux/api/baseApi";
+import { TResponseRedux } from "@/types/global";
 
 const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -23,14 +24,17 @@ const authApi = baseApi.injectEndpoints({
       }),
     }),
 
-    getMe: builder.mutation({
-      query: (token) => ({
+    getMe: builder.query({
+      query: () => ({
         url: "/users/me",
         method: "GET",
-        headers: {
-          Authorization: `${token}`,
-        },
       }),
+      providesTags: ["getMe"],
+      transformResponse: (response: TResponseRedux<any>) => {
+        return {
+          data: response.data,
+        };
+      },
     }),
   }),
 });
@@ -38,6 +42,6 @@ const authApi = baseApi.injectEndpoints({
 export const {
   useLoginMutation,
   useRegisterMutation,
-  useGetMeMutation,
+  useGetMeQuery,
   useLogoutMutation,
 } = authApi;

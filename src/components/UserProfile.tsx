@@ -128,7 +128,7 @@ const UserProfile = ({
             <Link to={"/profile"}>Public Profile</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to={"/settings"}>Edit Profile</Link>
+            <Link to={"/user/edit-profile"}>Edit Profile</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="bg-gray-200" />

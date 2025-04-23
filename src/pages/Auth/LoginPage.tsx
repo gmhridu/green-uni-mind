@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { useGetMeMutation, useLoginMutation } from "@/redux/features/auth/authApi";
+import { useLoginMutation } from "@/redux/features/auth/authApi";
 import {
   setIsLoading,
   setUser,
@@ -32,7 +32,6 @@ import { Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { verifyToken } from "@/utils/verifyToken";
 
 export type TLoginForm = {
   email: string;
@@ -43,7 +42,6 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [login] = useLoginMutation();
-  const [getMe] = useGetMeMutation(undefined);
   const form = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
