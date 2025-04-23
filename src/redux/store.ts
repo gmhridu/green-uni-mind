@@ -19,11 +19,11 @@ const persistConfig = {
   storage,
 };
 
-// const persistedAuthReducer = persistReducer(persistConfig, authReducer);
+const dummyAuthReducer = () => ({});
 
 const safeAuthReducer =
   config.node_env === "production"
-    ? () => undefined
+    ? dummyAuthReducer
     : persistReducer(persistConfig, authReducer);
 
 export const store = configureStore({
@@ -37,15 +37,12 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }).concat(baseApi.middleware),
-
-  // 🔒 Disable Redux DevTools in production
-  devTools: config.node_env === "production" ? false : true,
+  devTools: config.node_env !== "production",
 });
 
 export type RootState = ReturnType<typeof store.getState>;
-
 export type AppDispatch = typeof store.dispatch;
 
-// 👇 Don't even create persistor in production
+// Only enable persistStore in development
 export const persistor =
-  config.node_env === "production" ? persistStore(store) : null;
+  config.node_env !== "production" ? persistStore(store) : null;
