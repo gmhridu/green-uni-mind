@@ -19,10 +19,12 @@ const persistConfig = {
   storage,
 };
 
-const persistedAuthReducer = persistReducer(persistConfig, authReducer);
+// const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 
 const safeAuthReducer =
-  config.node_env === "production" ? () => undefined : persistedAuthReducer;
+  config.node_env === "production"
+    ? () => undefined
+    : persistReducer(persistConfig, authReducer);
 
 export const store = configureStore({
   reducer: {
@@ -44,4 +46,6 @@ export type RootState = ReturnType<typeof store.getState>;
 
 export type AppDispatch = typeof store.dispatch;
 
-export const persistor = persistStore(store);
+// 👇 Don't even create persistor in production
+export const persistor =
+  config.node_env !== "production" ? persistStore(store) : null;
