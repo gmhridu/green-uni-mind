@@ -32,7 +32,9 @@ const UserProfile = ({
 }: UserProfileProps) => {
   const userName = `${user?.name?.firstName} ${user?.name?.middleName} ${user?.name?.lastName}`;
 
-  const photoUrl = user && user.profileImg;
+  console.log(user);
+
+  const photoUrl = user.photoUrl;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
