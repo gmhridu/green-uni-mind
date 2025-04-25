@@ -34,7 +34,13 @@ const UserProfile = ({
 
   console.log(user);
 
-  const photoUrl = user.photoUrl;
+  let photoUrl: string | undefined;
+
+  if (user.photoUrl) {
+    photoUrl = user.photoUrl;
+  } else {
+    photoUrl = user.profileImg;
+  }
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
