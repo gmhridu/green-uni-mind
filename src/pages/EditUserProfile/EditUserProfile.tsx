@@ -1,91 +1,217 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useGetMeQuery } from "@/redux/features/auth/authApi";
-import { selectCurrentUser } from "@/redux/features/auth/authSlice";
-import { useAppSelector } from "@/redux/hooks";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import {
+  useGetMeQuery,
+  useUpdateUserProfileMutation,
+} from "@/redux/features/auth/authApi";
+import { setUser, useCurrentToken } from "@/redux/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const formSchema = z.object({
+  name: z.object({
+    firstName: z
+      .string({ required_error: "First name is required" })
+      .min(2, "At least 2 characters")
+      .optional(),
+    middleName: z.string().optional(),
+    lastName: z
+      .string({ required_error: "Last name is required" })
+      .min(2, "At least 2 characters")
+      .optional(),
+  }),
+  email: z.string({ required_error: "Email is required" }).email().optional(),
+});
 
 const EditUserProfile = () => {
-  const user = useAppSelector(selectCurrentUser);
+  const dispatch = useAppDispatch();
+  const token = useAppSelector(useCurrentToken);
+  const { data, isLoading, isFetching } = useGetMeQuery(undefined, {
+    skip: !token,
+  });
+  const [updateUserProfile, { isLoading: isUpdating }] =
+    useUpdateUserProfileMutation();
+
+  // Accessing the user data with name as user.name.firstName, user.name.middleName, etc.
+  const user = data?.data;
+
+  console.log(user);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: {
+        firstName: user?.name?.firstName || "",
+        middleName: user?.name?.middleName || "",
+        lastName: user?.name?.lastName || "",
+      },
+      email: user?.email || "",
+    },
+  });
+
+  // Reset form values if user data changes
+  useEffect(() => {
+    if (user && user.name) {
+      form.reset({
+        name: {
+          firstName: user?.name?.firstName || "",
+          middleName: user?.name?.middleName || "",
+          lastName: user?.name?.lastName || "",
+        },
+        email: user?.email || "",
+      });
+    }
+  }, [user, form]); // This will run when `user` changes or when the form is initialized
+
+  const handleUpdateUser = async (values: z.infer<typeof formSchema>) => {
+    const toastId = toast.loading("Updating...");
+
+    try {
+      if (!user?._id) {
+        throw new Error("User ID not found");
+      }
+
+      const res = await updateUserProfile({
+        id: user._id,
+        data: values,
+      });
+
+      const userData = res.data.data;
+
+      if (userData) {
+        dispatch(setUser({ user: userData, token }));
+      }
+
+      toast.success("Profile updated successfully!", {
+        id: toastId,
+      });
+    } catch (error) {
+      toast.error("Failed to update profile", {
+        id: toastId,
+      });
+    }
+  };
+
+  if (isLoading || isFetching || isUpdating) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex justify-center items-center">
+        <Loader className="animate-spin text-lg" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center pt-[75px]">
-      <div className="flex flex-col md:flex-row w-full max-w-[84rem] border rounded-lg bg-white shadow-sm md:my-5 md:mx-5">
-        {/* Sidebar */}
-        <aside className="w-full md:w-64 border-r bg-gray-50 p-6">
-          <div className="flex flex-col items-center space-y-4 mb-8">
-            <div>
-              <Avatar className="w-[6.4rem] h-[6.4rem] object-cover">
-                <AvatarImage src={user?.photoUrl} />
-                <AvatarFallback className="bg-black text-white font-semibold text-lg">
-                  {(user?.name?.slice(0, 2) || "US").toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <h1 className="font-bold text-center">Mahabub Hasan Hridoy</h1>
+    <>
+      <div className="flex flex-col items-center justify-center space-y-3 pt-5">
+        <h2 className="text-2xl font-semibold">Public profile</h2>
+        <p className="text-gray-600 pb-8">Add information about yourself</p>
+      </div>
+      <Separator className="bg-gray-200 w-full mb-4" />
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(handleUpdateUser)}
+          className="space-y-6 w-full p-6 container mx-auto"
+        >
+          <div className="grid grid-cols-1 gap-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="email" disabled />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="name.firstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="First name"
+                      disabled={isUpdating}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="name.middleName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Middle Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Middle name (optional)"
+                      disabled={isUpdating}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="name.lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Last name"
+                      disabled={isUpdating}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
-          <ul className="space-y-2 text-sm text-gray-700">
-            <li className="font-medium text-black">Profile</li>
-            <li>Photo</li>
-            <li>Account Security</li>
-            <li>Subscriptions</li>
-            <li>Payment Methods</li>
-            <li>Privacy</li>
-            <li>Notification Preferences</li>
-            <li>API Clients</li>
-            <li>Close Account</li>
-          </ul>
-        </aside>
-
-        {/* Main Form Section */}
-        <main className="flex-1 p-6">
-          <h2 className="text-2xl font-semibold mb-6">Public profile</h2>
-          <p className="text-gray-600 mb-6">Add information about yourself</p>
-
-          <form className="space-y-6 max-w-xl">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                First Name
-              </label>
-              <input
-                type="text"
-                placeholder="First name"
-                className="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Last Name
-              </label>
-              <input
-                type="text"
-                placeholder="Last name"
-                className="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Headline
-              </label>
-              <input
-                type="text"
-                placeholder="Add a professional headline..."
-                className="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Bio
-              </label>
-              <textarea
-                rows={4}
-                placeholder="Write something about yourself..."
-                className="mt-1 block w-full p-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300"
-              />
-            </div>
-          </form>
-        </main>
-      </div>
-    </div>
+          <Button type="submit" disabled={isUpdating}>
+            {isUpdating ? (
+              <span className="flex items-center justify-center">
+                <Loader className="animate-spin text-lg" />
+                <span className="ml-2">Updating...</span>
+              </span>
+            ) : (
+              "Update Profile"
+            )}
+          </Button>
+        </form>
+      </Form>
+    </>
   );
 };
 

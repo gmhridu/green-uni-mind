@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   logout,
   selectAuthLoading,
@@ -12,8 +12,17 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useLogoutMutation } from "@/redux/features/auth/authApi";
 import { toast } from "sonner";
 import UserProfile from "./UserProfile";
+import { cn } from "@/lib/utils";
+
+const navbarMenu = [
+  { label: "Home", path: "/" },
+  { label: "About", path: "/about" },
+  { label: "Courses", path: "/courses" },
+  { label: "Become a Teacher", path: "/become-teacher" },
+];
 
 const Navbar = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
@@ -34,6 +43,8 @@ const Navbar = () => {
       toast.error("Logout failed");
     }
   };
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <nav
@@ -57,34 +68,27 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-8">
-          <a
-            href="#"
-            className="text-gray-800 hover:text-[#006400] font-medium"
-          >
-            Home
-          </a>
-          <a
-            href="#"
-            className="text-gray-800 hover:text-[#006400] font-medium"
-          >
-            About
-          </a>
-          <a
-            href="#"
-            className="text-gray-800 hover:text-[#006400] font-medium"
-          >
-            Courses
-          </a>
-          <a
-            href="#"
-            className="text-gray-800 hover:text-[#006400] font-medium"
-          >
-            Teachers
-          </a>
+        <div className="hidden md:flex items-center">
+          <ul className="flex space-x-4">
+            {navbarMenu.map((item) => (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "font-medium",
+                    isActive(item.path)
+                      ? "text-[#006400]"
+                      : "text-gray-800 hover:text-[#006400]"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
           {user ? (
             <UserProfile
-              user={user}
+              user={user || null}
               isAuthLoading={isAuthLoading}
               open={open}
               setOpen={setOpen}

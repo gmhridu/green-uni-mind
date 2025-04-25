@@ -64,20 +64,19 @@ const LoginPage = () => {
 
       const res = await login(userInfo).unwrap();
 
-      const data: TUser = res.data.user;
+      const data: TUser = res.user;
+      const token: TUserToken = res.token;
 
       const user = {
         email: data.email,
         name: data.name,
-        photoUrl: data.photoUrl,
+        photoUrl: data.profileImg || null,
         role: data.role,
         isDeleted: data.isDeleted,
         isVerified: data.isVerified,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
       };
-
-      const token: TUserToken = res.data.accessToken;
 
       dispatch(setUser({ user, token }));
       toast.success("Login Successfully!", { id: toastId, duration: 2000 });

@@ -1,4 +1,3 @@
-import Home from "./Home";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import ScrollToTop from "@/components/ScrollToTop";

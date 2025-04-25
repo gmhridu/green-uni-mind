@@ -30,6 +30,10 @@ const UserProfile = ({
   open,
   setOpen,
 }: UserProfileProps) => {
+  const userName = `${user?.name?.firstName} ${user?.name?.middleName} ${user?.name?.lastName}`;
+
+  const photoUrl = user && user.profileImg;
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenuTrigger
@@ -43,20 +47,20 @@ const UserProfile = ({
         }}
       >
         <div>
-          <Avatar className="cursor-pointer">
+          <Avatar className="cursor-pointer ml-5">
             {isAuthLoading ? (
               <AvatarFallback>
                 <Loader2 className="animate-spin" />
               </AvatarFallback>
             ) : (
               <AvatarImage
-                src={user?.photoUrl}
-                alt={user?.name}
+                src={photoUrl}
+                alt={userName}
                 className="object-cover"
               />
             )}
             <AvatarFallback>
-              {(user?.name?.slice(0, 2) || "US").toUpperCase()}
+              {(userName?.slice(0, 2) || "US").toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </div>
@@ -75,18 +79,18 @@ const UserProfile = ({
           <div className="flex items-center space-x-2">
             <Avatar className="w-8 h-8">
               <AvatarImage
-                src={user?.photoUrl}
-                alt={user?.name}
+                src={photoUrl}
+                alt={userName}
                 className="object-cover"
               />
               <AvatarFallback>
-                {(user?.name?.slice(0, 2) || "US").toUpperCase()}
+                {(userName?.slice(0, 2) || "US").toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-800">
-                {user?.name}
+                {userName}
               </span>
               <span className="text-xs text-gray-500">{user?.email}</span>
             </div>

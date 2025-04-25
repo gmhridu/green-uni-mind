@@ -8,15 +8,22 @@ export type TUserToken = {
   exp: number;
 };
 
+type TUserName = {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+};
+
 export type TUser = {
-  email: string;
-  name: string;
-  photoUrl: string;
-  role: string;
-  isDeleted: boolean;
-  isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
+  email?: string;
+  name?: TUserName;
+  photoUrl?: string;
+  profileImg?: string;
+  role?: string;
+  isDeleted?: boolean;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type TAuthState = {
@@ -36,9 +43,8 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setUser: (state, action) => {
-      const { user, token } = action.payload;
-      state.user = user;
-      state.token = token;
+      state.user = action.payload.user;
+      state.token = action.payload.token;
       state.isLoading = false;
     },
     setIsLoading: (state, action) => {

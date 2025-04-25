@@ -9,6 +9,13 @@ const authApi = baseApi.injectEndpoints({
         method: "POST",
         body: userInfo,
       }),
+      transformResponse: (response) => ({
+        user: {
+          ...response.data.user,
+          photoUrl: response.data.user.profileImg ?? null,
+        },
+        token: response.data.accessToken,
+      }),
     }),
     logout: builder.mutation({
       query: () => ({
@@ -18,7 +25,7 @@ const authApi = baseApi.injectEndpoints({
     }),
     register: builder.mutation({
       query: (userInfo) => ({
-        url: "/users/register",
+        url: "/users/create-student",
         method: "POST",
         body: userInfo,
       }),
@@ -36,6 +43,19 @@ const authApi = baseApi.injectEndpoints({
         };
       },
     }),
+    updateUserProfile: builder.mutation({
+      query: (args) => ({
+        url: `/users/edit-profile/${args.id}`,
+        method: "PATCH",
+        body: args.data,
+      }),
+      invalidatesTags: ["getMe"],
+      transformResponse: (response: TResponseRedux<any>) => {
+        return {
+          data: response.data,
+        };
+      },
+    }),
   }),
 });
 
@@ -43,5 +63,6 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useGetMeQuery,
+  useUpdateUserProfileMutation,
   useLogoutMutation,
 } = authApi;
