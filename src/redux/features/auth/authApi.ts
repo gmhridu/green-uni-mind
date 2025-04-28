@@ -17,20 +17,20 @@ export const authApi = baseApi.injectEndpoints({
         },
         token: response.data.accessToken,
       }),
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-          if (data?.user) {
-            dispatch(
-              authApi.endpoints.getMe.initiate(undefined, {
-                forceRefetch: true,
-              })
-            );
-          }
-        } catch (error) {
-          // ignore
-        }
-      },
+      // async onQueryStarted(_, { dispatch, queryFulfilled }) {
+      //   try {
+      //     const { data } = await queryFulfilled;
+      //     if (data?.user) {
+      //       dispatch(
+      //         authApi.endpoints.getMe.initiate(undefined, {
+      //           forceRefetch: true,
+      //         })
+      //       );
+      //     }
+      //   } catch (error) {
+      //     // ignore
+      //   }
+      // },
     }),
     logout: builder.mutation({
       query: () => ({

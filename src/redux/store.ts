@@ -55,7 +55,7 @@ export const store = configureStore({
       },
     }).concat(baseApi.middleware),
   // 👇 This is all you need to hide DevTools in production
-  devTools: true,
+  devTools: config.node_env === "development",
 });
 
 export type RootState = ReturnType<typeof store.getState>;
