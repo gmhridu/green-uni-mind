@@ -17,30 +17,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { toast } from "sonner";
-import { CloudUpload, Loader2, X } from "lucide-react";
-import { registerSchema } from "@/types/authSchema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useAppDispatch } from "@/redux/hooks";
-import { setIsLoading, setUser, TUser } from "@/redux/features/auth/authSlice";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  useRegisterMutation,
-  useRegisterTeacherMutation,
-} from "@/redux/features/auth/authApi";
-import { InputPassWord } from "@/components/ui/input-password";
-import {
-  FileUpload,
-  FileUploadDropzone,
-  FileUploadItem,
-  FileUploadItemDelete,
-  FileUploadItemMetadata,
-  FileUploadItemPreview,
-  FileUploadList,
-  FileUploadTrigger,
-} from "@/components/ui/file-upload";
-import { useQueryState } from "nuqs";
 import {
   Select,
   SelectContent,
@@ -48,96 +26,88 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { toast } from "sonner";
+import { useCreateCourseMutation } from "@/redux/features/course/courseApi"; // Your API hook for creating course
+import { Link, useNavigate } from "react-router-dom";
+import { CloudUpload, Loader2, X } from "lucide-react";
+import {
+  FileUpload,
+  FileUploadDropzone,
+  FileUploadTrigger,
+  FileUploadItem,
+  FileUploadItemPreview,
+  FileUploadItemMetadata,
+  FileUploadItemDelete,
+  FileUploadList,
+} from "@/components/ui/file-upload";
+import {
+  selectCurrentUser,
+  setIsLoading,
+} from "@/redux/features/auth/authSlice";
+import { createCourseSchema } from "@/types/courseSchema";
+import { setCourse } from "@/redux/features/course/courseSlice";
+import { useGetMeQuery } from "@/redux/features/auth/authApi";
 
-export type TRegisterForm = {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  email: string;
-  gender: string;
-  password: string;
-  photoUrl: File | undefined;
+export type TCreateCourseForm = {
+  title: string;
+  subTitle?: string;
+  description?: string;
+  category: string;
+  courseLevel: string;
+  coursePrice: number;
+  courseThumbnail: File | undefined;
 };
 
-const SignUpPage = () => {
+const CreateCourse = () => {
   const dispatch = useAppDispatch();
-  const [register] = useRegisterMutation();
-  const [registerTeacher] = useRegisterTeacherMutation();
-  const [becomeTeacher] = useQueryState("becomeTeacher", {
-    parse: (value) => value === "true",
-    serialize: (value) => String(value),
-  });
-
   const navigate = useNavigate();
+  const { data } = useGetMeQuery(undefined);
+  const [createCourse] = useCreateCourseMutation();
+
+  const teacherId = data?.data?._id;
 
   const form = useForm({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(createCourseSchema),
     defaultValues: {
-      name: {
-        firstName: "",
-        middleName: "",
-        lastName: "",
-      },
-      email: "",
-      password: "",
-      gender: "",
-      photoUrl: undefined,
+      title: "",
+      subTitle: "",
+      description: "",
+      category: "",
+      courseLevel: "",
+      coursePrice: 0,
+      courseThumbnail: undefined,
     },
   });
 
   const { formState } = form;
   const { isLoading, isSubmitting } = formState;
 
-  const onSubmit = async (data: FieldValues) => {
-    const toastId = toast.loading("Registering...");
+  const onSubmit = async (values: FieldValues) => {
+    const toastId = toast.loading("Creating Course...");
     dispatch(setIsLoading(true));
 
     try {
-      const userInfo = {
-        password: data.password,
-        [becomeTeacher ? "teacher" : "student"]: {
-          name: {
-            firstName: data.name.firstName,
-            middleName: data.name.middleName,
-            lastName: data.name.lastName,
-          },
-          email: data.email,
-          gender: data.gender,
-        },
-      };
-
       const formData = new FormData();
-      formData.append("data", JSON.stringify(userInfo));
-      if (data.photoUrl) {
-        formData.append("file", data.photoUrl);
+      formData.append("data", JSON.stringify(values));
+      if (values.courseThumbnail) {
+        formData.append("file", values.courseThumbnail);
       }
 
-      const res = await (becomeTeacher
-        ? registerTeacher(formData).unwrap()
-        : register(formData).unwrap());
+      const res = await createCourse({
+        id: teacherId,
+        data: formData,
+      }).unwrap();
 
-      const newUser = becomeTeacher
-        ? res.data.newTeacher[0]
-        : res.data.newStudent[0];
+      console.log(res);
 
-      const user: TUser = {
-        email: newUser.email,
-        name: newUser.name,
-        photoUrl: newUser.profileImg,
-        role: newUser.role ?? (becomeTeacher ? "teacher" : "student"),
-        isDeleted: newUser.isDeleted,
-        isVerified: newUser.isVerified || false,
-        createdAt: newUser.createdAt,
-        updatedAt: newUser.updatedAt,
-      };
+      dispatch(setCourse(res));
 
-      dispatch(setUser({ user, token: res.data.accessToken }));
-
-      toast.success("Registered successfully!", {
+      toast.success("Course created successfully!", {
         id: toastId,
         duration: 2000,
       });
-      navigate("/");
+      navigate("/courses");
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong", { id: toastId, duration: 2000 });
@@ -147,12 +117,12 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <Card>
+    <div className="min-h-screen bg-gray-100 flex justify-center pt-[75px]">
+      <Card className="my-6">
         <CardHeader>
-          <CardTitle>Sign Up</CardTitle>
+          <CardTitle>Create Course</CardTitle>
           <CardDescription>
-            Create an account to start your learning journey with us.
+            Fill out the details below to create a new course.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -161,16 +131,16 @@ const SignUpPage = () => {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="name.firstName"
+                  name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>Course Title</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           className="w-full"
                           type="text"
-                          placeholder="First Name"
+                          placeholder="Course Title"
                         />
                       </FormControl>
                       <FormMessage />
@@ -180,16 +150,16 @@ const SignUpPage = () => {
 
                 <FormField
                   control={form.control}
-                  name="name.middleName"
+                  name="subTitle"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Middle Name</FormLabel>
+                      <FormLabel>Subtitle</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           className="w-full"
                           type="text"
-                          placeholder="Middle Name (Optional)"
+                          placeholder="Subtitle (Optional)"
                         />
                       </FormControl>
                       <FormMessage />
@@ -199,16 +169,16 @@ const SignUpPage = () => {
 
                 <FormField
                   control={form.control}
-                  name="name.lastName"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           className="w-full"
                           type="text"
-                          placeholder="Last Name"
+                          placeholder="Course Description"
                         />
                       </FormControl>
                       <FormMessage />
@@ -218,24 +188,44 @@ const SignUpPage = () => {
 
                 <FormField
                   control={form.control}
-                  name="gender"
+                  name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Gender</FormLabel>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="w-full"
+                          type="text"
+                          placeholder="Category"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="courseLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Course Level</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
-                        defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select Gender" />
+                            <SelectValue placeholder="Select Course Level" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="Beginner">Beginner</SelectItem>
+                          <SelectItem value="Intermediate">
+                            Intermediate
+                          </SelectItem>
+                          <SelectItem value="Advanced">Advanced</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -245,16 +235,23 @@ const SignUpPage = () => {
 
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="coursePrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Price</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           className="w-full"
-                          type="email"
-                          placeholder="Your Email"
+                          type="number"
+                          placeholder="Course Price"
+                          value={field.value || ""}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value) || 0)
+                          }
+                          onBlur={() =>
+                            field.onChange(parseFloat(String(field.value)) || 0)
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -264,10 +261,10 @@ const SignUpPage = () => {
 
                 <FormField
                   control={form.control}
-                  name="photoUrl"
+                  name="courseThumbnail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Profile Photo</FormLabel>
+                      <FormLabel>Course Thumbnail</FormLabel>
                       <FormControl>
                         <FileUpload
                           value={field.value ? [field.value] : []}
@@ -276,7 +273,7 @@ const SignUpPage = () => {
                           maxFiles={1}
                           maxSize={5 * 1024 * 1024}
                           onFileReject={(_, message) => {
-                            form.setError("photoUrl", { message });
+                            form.setError("courseThumbnail", { message });
                           }}
                           multiple={false}
                         >
@@ -312,24 +309,8 @@ const SignUpPage = () => {
                         </FileUpload>
                       </FormControl>
                       <FormDescription>
-                        Upload a profile image up to 5MB.
+                        Upload a thumbnail image up to 5MB.
                       </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <InputPassWord
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                        />
-                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -343,10 +324,10 @@ const SignUpPage = () => {
                   {isLoading || isSubmitting ? (
                     <div className="flex items-center">
                       <Loader2 className="mr-2 animate-spin" />
-                      <span>Registering...</span>
+                      <span>Creating...</span>
                     </div>
                   ) : (
-                    "Register"
+                    "Create Course"
                   )}
                 </Button>
               </div>
@@ -355,9 +336,9 @@ const SignUpPage = () => {
         </CardContent>
         <CardFooter className="flex items-center justify-center">
           <p className="text-sm text-gray-500">
-            Already have an account?{" "}
-            <Link to="/login" className="text-blue-500 hover:underline">
-              Login
+            Want to go back to courses?{" "}
+            <Link to="/courses" className="text-blue-500 hover:underline">
+              View Courses
             </Link>
           </p>
         </CardFooter>
@@ -366,4 +347,4 @@ const SignUpPage = () => {
   );
 };
 
-export default SignUpPage;
+export default CreateCourse;

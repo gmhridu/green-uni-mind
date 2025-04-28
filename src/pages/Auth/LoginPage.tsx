@@ -25,7 +25,6 @@ import {
   setIsLoading,
   setUser,
   TUser,
-  TUserToken,
 } from "@/redux/features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import { Loader2 } from "lucide-react";
@@ -65,7 +64,7 @@ const LoginPage = () => {
       const res = await login(userInfo).unwrap();
 
       const data: TUser = res.user;
-      const token: TUserToken = res.token;
+      const token = res.token;
 
       const user = {
         email: data.email,

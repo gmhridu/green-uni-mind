@@ -32,8 +32,6 @@ const UserProfile = ({
 }: UserProfileProps) => {
   const userName = `${user?.name?.firstName} ${user?.name?.middleName} ${user?.name?.lastName}`;
 
-  console.log(user);
-
   let photoUrl: string | undefined;
 
   if (user.photoUrl) {
@@ -108,6 +106,9 @@ const UserProfile = ({
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link to={"/profile"}>My Learning</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={"/my-courses"}>My Courses</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to={"/settings"}>My Cart</Link>

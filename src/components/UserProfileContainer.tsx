@@ -26,7 +26,6 @@ const UserProfileContainer = () => {
 
   const user = data?.data;
 
-
   const userName = `${user?.name?.firstName} ${user?.name?.middleName} ${user?.name?.lastName}`;
 
   const photoUrl = user?.profileImg;

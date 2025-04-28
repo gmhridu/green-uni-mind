@@ -37,40 +37,54 @@ const baseQueryWithRefreshToken: BaseQueryFn<
 > = async (args, api, extraOptions): Promise<any> => {
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result?.error?.status === 404) {
-    const errorData = result.error.data as ErrorResponse;
-
-    toast.error(errorData.message);
-  }
-
-  if (result?.error?.status === 403) {
-    const errorData = result.error.data as ErrorResponse;
-    toast.error(errorData.message);
-  }
-
-  if (result?.error?.status === 401) {
-    //* Send Refresh
-
-    const res = await fetch(`${config.apiBaseUrl}/auth/refresh-token`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    const data = await res.json();
-
-    if (data?.data?.accessToken) {
-      const user = (api.getState() as RootState).auth.user;
-
-      api.dispatch(
-        setUser({
-          user,
-          token: data.data.accessToken,
-        })
+  // If token expired (401 Unauthorized)
+  if (result.error?.status === 401) {
+    try {
+      // Try refreshing token
+      const refreshResult = await fetch(
+        `${config.apiBaseUrl}/auth/refresh-token`,
+        {
+          method: "POST",
+          credentials: "include", // Important!
+        }
       );
-      result = await baseQuery(args, api, extraOptions);
-    } else {
+
+      const refreshData = await refreshResult.json();
+
+      if (refreshData?.data?.accessToken) {
+        const user = (api.getState() as RootState).auth.user;
+
+        // Update token in Redux
+        api.dispatch(
+          setUser({
+            user,
+            token: refreshData.data.accessToken,
+          })
+        );
+
+        // Retry the original failed request
+        result = await baseQuery(args, api, extraOptions);
+      } else {
+        // Refresh token failed => Force logout
+        api.dispatch(logout());
+        toast.error("Session expired. Please login again.");
+      }
+    } catch (error) {
+      // If refresh API crashed
       api.dispatch(logout());
+      toast.error("Session expired. Please login again.");
     }
+  }
+
+  // Handle other server errors
+  if (result.error?.status === 403) {
+    const errorMessage =
+      (result.error.data as ErrorResponse)?.message || "Forbidden";
+    toast.error(errorMessage);
+  }
+
+  if (result.error?.status === 404) {
+    toast.error((result.error.data as ErrorResponse)?.message || "Not found");
   }
 
   return result;
@@ -78,7 +92,7 @@ const baseQueryWithRefreshToken: BaseQueryFn<
 
 export const baseApi = createApi({
   reducerPath: "baseApi",
-  tagTypes: ["getMe"],
+  tagTypes: ["getMe", "courses", "course", "lectures"],
   baseQuery: baseQueryWithRefreshToken,
   endpoints: () => ({}),
 });

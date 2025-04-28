@@ -7,6 +7,7 @@ import router from "./routes/router";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "./redux/store";
+import { NuqsAdapter } from "nuqs/adapters/react";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +18,9 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <RouterProvider router={router} />
+        <NuqsAdapter>
+          <RouterProvider router={router} />
+        </NuqsAdapter>
       </TooltipProvider>
     </QueryClientProvider>
   </Provider>

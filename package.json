@@ -11,6 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -42,6 +44,7 @@
     "@reduxjs/toolkit": "^2.7.0",
     "@tanstack/react-query": "^5.56.2",
     "class-variance-authority": "^0.7.1",
+    "cloudinary-react": "^1.8.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
@@ -53,6 +56,7 @@
     "match-sorter": "^8.0.0",
     "moment": "^2.30.1",
     "next-themes": "^0.3.0",
+    "nuqs": "^2.4.3",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",

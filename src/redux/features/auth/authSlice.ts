@@ -1,38 +1,24 @@
+import { baseApi } from "@/redux/api/baseApi";
 import { RootState } from "@/redux/store";
 import { createSlice } from "@reduxjs/toolkit";
 
-export type TUserToken = {
-  email: string;
-  role: string;
-  iat: number;
-  exp: number;
-};
-
-type TUserName = {
-  firstName: string;
-  middleName?: string;
-  lastName: string;
-};
-
 export type TUser = {
-  email?: string;
-  name?: TUserName;
+  email: string;
+  name: {
+    firstName: string;
+    middleName: string;
+    lastName: string;
+  };
   photoUrl?: string;
   profileImg?: string;
-  role?: string;
+  role?: "student" | "teacher";
   isDeleted?: boolean;
   isVerified?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
-type TAuthState = {
-  user: null | TUser;
-  token: null | string;
-  isLoading: boolean;
-};
-
-const initialState: TAuthState = {
+const initialState = {
   user: null,
   token: null,
   isLoading: false,
@@ -56,10 +42,16 @@ const authSlice = createSlice({
       state.isLoading = false;
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(
+      // Reset API on logout if needed
+      baseApi.util.resetApiState,
+      (state) => {}
+    );
+  },
 });
 
 export const { setUser, setIsLoading, logout } = authSlice.actions;
-
 export default authSlice.reducer;
 
 export const useCurrentToken = (state: RootState) => state.auth.token;

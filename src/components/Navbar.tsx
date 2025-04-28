@@ -13,12 +13,17 @@ import { useLogoutMutation } from "@/redux/features/auth/authApi";
 import { toast } from "sonner";
 import UserProfile from "./UserProfile";
 import { cn } from "@/lib/utils";
+import { baseApi } from "@/redux/api/baseApi";
 
 const navbarMenu = [
   { label: "Home", path: "/" },
   { label: "About", path: "/about" },
   { label: "Courses", path: "/courses" },
-  { label: "Become a Teacher", path: "/become-teacher" },
+  { label: "Create Course", path: "/create-course" },
+  {
+    label: "Become a Teacher",
+    path: { pathname: "/sign-up", search: "?becomeTeacher=true" },
+  },
 ];
 
 const Navbar = () => {
@@ -36,6 +41,7 @@ const Navbar = () => {
     try {
       await signOut(undefined).unwrap();
       dispatch(logout());
+      dispatch(baseApi.util.resetApiState());
       navigate("/login");
       toast.success("Logged out successfully");
     } catch (error) {
@@ -71,12 +77,20 @@ const Navbar = () => {
         <div className="hidden md:flex items-center">
           <ul className="flex space-x-4">
             {navbarMenu.map((item) => (
-              <li key={item.path}>
+              <li
+                key={
+                  typeof item.path === "string" ? item.path : item.path.pathname
+                }
+              >
                 <Link
                   to={item.path}
                   className={cn(
                     "font-medium",
-                    isActive(item.path)
+                    isActive(
+                      typeof item.path === "string"
+                        ? item.path
+                        : item.path.pathname
+                    )
                       ? "text-[#006400]"
                       : "text-gray-800 hover:text-[#006400]"
                   )}
