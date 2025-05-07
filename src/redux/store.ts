@@ -14,6 +14,7 @@ import storage from "redux-persist/lib/storage";
 import authReducer from "../redux/features/auth/authSlice";
 import courseReducer from "../redux/features/course/courseSlice";
 import lectureReducer from "../redux/features/lecture/lectureSlice";
+import cartReducer from "@/redux/features/cart/cartSlice";
 import { config } from "@/config";
 
 const persistConfig = {
@@ -31,6 +32,11 @@ const persistLectureConfig = {
   storage,
 };
 
+const persistCartConfig = {
+  key: "cart",
+  storage,
+};
+
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 const persistedCourseReducer = persistReducer(
   persistCourseConfig,
@@ -41,12 +47,15 @@ const persistedLectureReducer = persistReducer(
   lectureReducer
 );
 
+const persistedCartReducer = persistReducer(persistCartConfig, cartReducer);
+
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
     auth: persistedAuthReducer,
     course: persistedCourseReducer,
     lecture: persistedLectureReducer,
+    cart: persistedCartReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

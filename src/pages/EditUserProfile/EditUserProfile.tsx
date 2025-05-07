@@ -13,7 +13,7 @@ import {
   useGetMeQuery,
   useUpdateUserProfileMutation,
 } from "@/redux/features/auth/authApi";
-import { setUser, useCurrentToken } from "@/redux/features/auth/authSlice";
+import { setUser, selectCurrentToken } from "@/redux/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "lucide-react";
@@ -39,7 +39,7 @@ const formSchema = z.object({
 
 const EditUserProfile = () => {
   const dispatch = useAppDispatch();
-  const token = useAppSelector(useCurrentToken);
+  const token = useAppSelector(selectCurrentToken);
   const { data, isLoading, isFetching } = useGetMeQuery(undefined, {
     skip: !token,
   });
@@ -48,8 +48,6 @@ const EditUserProfile = () => {
 
   // Accessing the user data with name as user.name.firstName, user.name.middleName, etc.
   const user = data?.data;
-
-  console.log(user);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

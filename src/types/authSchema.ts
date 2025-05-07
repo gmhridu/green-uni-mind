@@ -52,3 +52,8 @@ export const updateUserProfileSchema = z.object({
   name: z.string().min(2, "At least 2 character required!").optional(),
   email: z.string().email().optional(),
 });
+
+export const stripeAccountSchema = z.object({
+  stripeAccountId: z.string({ required_error: "Stripe Account ID is required" }),
+  stripeEmail: z.string({ required_error: "Stripe Email is required" }).email("Invalid email format"),
+});

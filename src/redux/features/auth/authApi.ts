@@ -49,7 +49,7 @@ export const authApi = baseApi.injectEndpoints({
           const { data } = await queryFulfilled;
           if (data?.user) {
             dispatch(
-              authApi.endpoints.getMe.initiate(undefined, {
+              authApi.endpoints.getMe.initiate({
                 forceRefetch: true,
               })
             );
@@ -70,7 +70,7 @@ export const authApi = baseApi.injectEndpoints({
           const { data } = await queryFulfilled;
           if (data?.user) {
             dispatch(
-              authApi.endpoints.getMe.initiate(undefined, {
+              authApi.endpoints.getMe.initiate({
                 forceRefetch: true,
               })
             );

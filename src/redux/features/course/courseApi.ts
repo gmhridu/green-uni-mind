@@ -23,19 +23,34 @@ export const courseApi = baseApi.injectEndpoints({
           dispatch(setLoading(false));
         }
       },
-      invalidatesTags: ["courses"],
+      invalidatesTags: ["courses", "course"],
     }),
     getCreatorCourse: builder.query({
       query: (args) => ({
         url: `/courses/creator/${args.id}`,
         method: "GET",
       }),
-      providesTags: ["courses"],
+      providesTags: ["courses", "course"],
       transformResponse: (response: TResponseRedux<any>) => ({
         data: response.data,
       }),
     }),
+    getPublishedCourses: builder.query({
+      query: () => ({
+        url: "/courses/published-courses",
+        method: "GET",
+      }),
+      providesTags: ["courses"],
+      transformResponse: (response: TResponseRedux<any>) => {
+        // The backend returns the courses directly in the data field
+        return response.data;
+      },
+    }),
   }),
 });
 
-export const { useCreateCourseMutation, useGetCreatorCourseQuery } = courseApi;
+export const { 
+  useCreateCourseMutation, 
+  useGetCreatorCourseQuery,
+  useGetPublishedCoursesQuery,
+} = courseApi;

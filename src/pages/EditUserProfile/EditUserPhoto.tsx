@@ -13,7 +13,7 @@ import {
   useGetMeQuery,
   useUpdateUserProfileMutation,
 } from "@/redux/features/auth/authApi";
-import { setUser, useCurrentToken } from "@/redux/features/auth/authSlice";
+import { setUser, selectCurrentToken } from "@/redux/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CloudUpload, Loader, X } from "lucide-react";
@@ -53,7 +53,7 @@ const formSchema = z.object({
 
 const EditUserPhoto = () => {
   const dispatch = useAppDispatch();
-  const token = useAppSelector(useCurrentToken);
+  const token = useAppSelector(selectCurrentToken);
   const { data, isLoading, isFetching } = useGetMeQuery(undefined, {
     skip: !token,
   });
@@ -130,7 +130,7 @@ const EditUserPhoto = () => {
         >
           <div className="space-y-3">
             {isLoading || isFetching || isUpdating ? (
-              <div className="flex justify-center items-center max-w-2xl h-80">
+              <div className="flex justify-center items-center max-w-2xl lg:max-w-6xl h-80">
                 <Loader className="animate-spin text-lg" />
               </div>
             ) : (

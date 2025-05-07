@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, ShoppingBag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -14,12 +14,16 @@ import { toast } from "sonner";
 import UserProfile from "./UserProfile";
 import { cn } from "@/lib/utils";
 import { baseApi } from "@/redux/api/baseApi";
+import { USER_ROLE } from "@/constants/global";
+import CartSheet from "./CartSheet";
+import { clearCart } from "@/redux/features/cart/cartSlice";
+import { setCart } from "@/redux/features/cart/cartSlice";
 
 const navbarMenu = [
   { label: "Home", path: "/" },
   { label: "About", path: "/about" },
   { label: "Courses", path: "/courses" },
-  { label: "Create Course", path: "/create-course" },
+  { label: "Create Course", path: "/teacher/courses/create" },
   {
     label: "Become a Teacher",
     path: { pathname: "/sign-up", search: "?becomeTeacher=true" },
@@ -41,6 +45,7 @@ const Navbar = () => {
     try {
       await signOut(undefined).unwrap();
       dispatch(logout());
+      dispatch(setCart({ items: [], userId: null }));
       dispatch(baseApi.util.resetApiState());
       navigate("/login");
       toast.success("Logged out successfully");
@@ -75,32 +80,57 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center">
-          <ul className="flex space-x-4">
-            {navbarMenu.map((item) => (
-              <li
-                key={
-                  typeof item.path === "string" ? item.path : item.path.pathname
+          <ul className="flex items-center space-x-4">
+            {navbarMenu
+              .filter((item) => {
+                if (
+                  typeof item.path !== "string" &&
+                  (item.path.pathname === "/sign-up" ||
+                    item.path.pathname === "/sign-up?becomeTeacher=true" ||
+                    item.path.pathname === "/sign-in") &&
+                  user
+                ) {
+                  return false;
                 }
-              >
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "font-medium",
-                    isActive(
+                if (
+                  typeof item.path === "string" &&
+                  item.path === "/teacher/courses/create" &&
+                  user?.role !== USER_ROLE.TEACHER
+                ) {
+                  return false;
+                }
+                return true;
+              })
+              .map((item, idx) => (
+                <>
+                  <li
+                    key={
                       typeof item.path === "string"
                         ? item.path
                         : item.path.pathname
-                    )
-                      ? "text-[#006400]"
-                      : "text-gray-800 hover:text-[#006400]"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+                    }
+                  >
+                    <Link
+                      to={item.path}
+                      className={cn(
+                        "font-medium",
+                        isActive(
+                          typeof item.path === "string"
+                            ? item.path
+                            : item.path.pathname
+                        )
+                          ? "text-[#006400]"
+                          : "text-gray-800 hover:text-[#006400]"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                </>
+              ))}
           </ul>
-          {user ? (
+          <div className="flex items-center justify-center gap-2">
+            <CartSheet />
             <UserProfile
               user={user || null}
               isAuthLoading={isAuthLoading}
@@ -109,19 +139,7 @@ const Navbar = () => {
               hoverTimeout={hoverTimeout}
               handleLogout={handleLogout}
             />
-          ) : (
-            <>
-              <Button variant="ghost" className="font-medium" asChild>
-                <Link to={"/login"}>Login</Link>
-              </Button>
-              <Button
-                className="bg-[#1edb1e] hover:bg-[#036e03] text-white"
-                asChild
-              >
-                <Link to={"/sign-up"}>Sign Up</Link>
-              </Button>
-            </>
-          )}
+          </div>
         </div>
 
         {/* Mobile Menu Button */}

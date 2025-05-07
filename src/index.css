@@ -135,3 +135,69 @@
 .hover-scale:hover {
   transform: scale(1.05);
 }
+
+@layer components {
+  .stats-card {
+    @apply bg-white rounded-xl shadow-md p-6 transition-all hover:shadow-lg;
+  }
+  
+  .form-card {
+    @apply bg-white rounded-xl shadow-md p-6;
+  }
+  
+  .step-indicator {
+    @apply flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-semibold;
+  }
+  
+  .step-indicator.active {
+    @apply bg-blue-500 text-white border-blue-500; /* using standard Tailwind blue */
+  }
+  
+  .step-indicator.completed {
+    @apply bg-emerald-500 text-white border-emerald-500; /* using standard Tailwind emerald */
+  }
+  
+  .step-indicator.inactive {
+    @apply bg-white text-gray-400 border-gray-300;
+  }
+}
+
+.stepper-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stepper-item {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+
+.stepper-item::after {
+  content: '';
+  position: absolute;
+  width: 50%;
+  height: 2px;
+  background-color: #ccc;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.stepper-item:first-child::after {
+  left: 100%;
+}
+
+.stepper-item:last-child::after {
+  display: none;
+}
+
+/* For drag and drop */
+[data-rbd-drag-handle-context-id] {
+  cursor: grab;
+}
+
+[data-rbd-drag-handle-context-id]:active {
+  cursor: grabbing;
+}

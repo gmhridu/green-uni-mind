@@ -12,6 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TUser } from "@/redux/features/auth/authSlice";
+import { cn } from "@/lib/utils";
+import { USER_ROLE } from "@/constants/global";
 
 interface UserProfileProps {
   user: TUser | null;
@@ -30,15 +32,14 @@ const UserProfile = ({
   open,
   setOpen,
 }: UserProfileProps) => {
-  const userName = `${user?.name?.firstName} ${user?.name?.middleName} ${user?.name?.lastName}`;
-
-  let photoUrl: string | undefined;
-
-  if (user.photoUrl) {
-    photoUrl = user.photoUrl;
-  } else {
-    photoUrl = user.profileImg;
+  if (!user) {
+    return null; // Don't render anything if user is null
   }
+
+
+  const userName = `${user.name?.firstName || ''} ${user.name?.middleName || ''} ${user.name?.lastName || ''}`.trim() || 'User';
+
+  const photoUrl: string | undefined = user.photoUrl || user.profileImg;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
@@ -51,9 +52,13 @@ const UserProfile = ({
         onMouseLeave={() => {
           hoverTimeout.current = setTimeout(() => setOpen(false), 200);
         }}
+        className={cn(
+          "cursor-pointer",
+          user?.role !== USER_ROLE.STUDENT && "ml-5"
+        )}
       >
         <div>
-          <Avatar className="cursor-pointer ml-5">
+          <Avatar className="cursor-pointer">
             {isAuthLoading ? (
               <AvatarFallback>
                 <Loader2 className="animate-spin" />
@@ -98,7 +103,7 @@ const UserProfile = ({
               <span className="text-sm font-medium text-gray-800">
                 {userName}
               </span>
-              <span className="text-xs text-gray-500">{user?.email}</span>
+              <span className="text-xs text-gray-500">{user.email}</span>
             </div>
           </div>
         </DropdownMenuLabel>

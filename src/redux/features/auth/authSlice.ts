@@ -1,6 +1,7 @@
 import { baseApi } from "@/redux/api/baseApi";
 import { RootState } from "@/redux/store";
 import { createSlice } from "@reduxjs/toolkit";
+import { clearCart } from "../cart/cartSlice";
 
 export type TUser = {
   email: string;
@@ -54,7 +55,7 @@ const authSlice = createSlice({
 export const { setUser, setIsLoading, logout } = authSlice.actions;
 export default authSlice.reducer;
 
-export const useCurrentToken = (state: RootState) => state.auth.token;
+export const selectCurrentToken = (state: RootState) => state.auth.token;
 export const selectCurrentUser = (state: RootState) => state.auth.user;
 
 export const selectAuthLoading = (state: RootState) => state.auth.isLoading;

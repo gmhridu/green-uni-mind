@@ -89,7 +89,15 @@ const CreateCourse = () => {
 
     try {
       const formData = new FormData();
-      formData.append("data", JSON.stringify(values));
+      
+      // Create a data object without the file
+      const dataToSend = { ...values };
+      delete dataToSend.courseThumbnail;
+      
+      // Append the JSON data
+      formData.append("data", JSON.stringify(dataToSend));
+      
+      // Append the file separately
       if (values.courseThumbnail) {
         formData.append("file", values.courseThumbnail);
       }

@@ -3,7 +3,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { useAppSelector } from "@/redux/hooks";
-import { useCurrentToken } from "@/redux/features/auth/authSlice";
+import { selectCurrentToken } from "@/redux/features/auth/authSlice";
+import { Loader2 } from "lucide-react";
 
 const sidebarMenu = [
   { label: "Profile", path: "/user/edit-profile" },
@@ -19,8 +20,8 @@ const sidebarMenu = [
 
 const UserProfileContainer = () => {
   const location = useLocation();
-  const token = useAppSelector(useCurrentToken);
-  const { data } = useGetMeQuery(undefined, {
+  const token = useAppSelector(selectCurrentToken);
+  const { data, isLoading, isFetching } = useGetMeQuery(undefined, {
     skip: !token,
   });
 
@@ -31,6 +32,15 @@ const UserProfileContainer = () => {
   const photoUrl = user?.profileImg;
 
   const isActive = (path: string) => location.pathname === path;
+
+  if(isLoading || isFetching) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="animate-spin"/>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center pt-[75px]">
       <div className="flex flex-col md:flex-row w-full max-w-[84rem] border rounded-lg bg-white shadow-sm md:my-5 md:mx-5">

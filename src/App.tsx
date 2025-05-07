@@ -8,6 +8,7 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "./redux/store";
 import { NuqsAdapter } from "nuqs/adapters/react";
+import CourseDetails from "@/pages/CourseDetails";
 
 const queryClient = new QueryClient();
 
