@@ -1,36 +1,42 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { ILecture } from "@/types/course";
 
 interface LectureContentProps {
-  lecture: any; // Update the type according to your lecture model
-  lectureProgress?: any; // Update the type according to your progress model
-  onMarkComplete: (lectureId: string, completed: boolean) => void;
+  lecture: ILecture; // The lecture data
+  isCompleted?: boolean; // Whether the lecture is completed
+  onMarkComplete?: () => void; // Function to mark the lecture as complete
 }
 
 const LectureContent = ({
   lecture,
-  lectureProgress,
+  isCompleted = false,
   onMarkComplete,
 }: LectureContentProps) => {
-  const [isCompleted, setIsCompleted] = useState(
-    lectureProgress?.completed || false
-  );
   const { toast } = useToast();
 
-  const handleToggleComplete = () => {
-    const newStatus = !isCompleted;
-    setIsCompleted(newStatus);
-    onMarkComplete(lecture.id, newStatus);
+  const handleMarkComplete = () => {
+    if (onMarkComplete) {
+      try {
+        // Show toast before calling the function
+        toast({
+          title: "Marking lecture as complete",
+          description: "Your progress is being updated...",
+        });
 
-    toast({
-      title: newStatus ? "Lecture completed" : "Lecture marked incomplete",
-      description: newStatus
-        ? "Great job! You've completed this lecture."
-        : "The lecture has been marked as incomplete.",
-    });
+        // Call the onMarkComplete function
+        onMarkComplete();
+      } catch (error) {
+        console.error("Error in LectureContent handleMarkComplete:", error);
+        toast({
+          title: "Error",
+          description: "Failed to mark lecture as complete",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   return (
@@ -48,7 +54,8 @@ const LectureContent = ({
         <Button
           variant={isCompleted ? "outline" : "default"}
           size="sm"
-          onClick={handleToggleComplete}
+          onClick={handleMarkComplete}
+          disabled={isCompleted}
           className={isCompleted ? "border-green-500 text-green-600" : ""}
         >
           <CheckCircle
@@ -58,7 +65,7 @@ const LectureContent = ({
         </Button>
       </div>
 
-      <p className="text-gray-600 mb-6">{lecture.instruction}</p>
+      <p className="text-gray-600 mb-6">{lecture.instruction || "No description available for this lecture."}</p>
 
       {lecture.pdfUrl && (
         <div className="mt-6 pt-6 border-t">

@@ -15,6 +15,11 @@ import authReducer from "../redux/features/auth/authSlice";
 import courseReducer from "../redux/features/course/courseSlice";
 import lectureReducer from "../redux/features/lecture/lectureSlice";
 import cartReducer from "@/redux/features/cart/cartSlice";
+import studentReducer from "@/redux/features/student/studentSlice";
+import playerReducer from "@/redux/features/player/playerSlice";
+import noteReducer from "@/redux/features/note/noteSlice";
+import bookmarkReducer from "@/redux/features/bookmark/bookmarkSlice";
+import questionReducer from "@/redux/features/question/questionSlice";
 import { config } from "@/config";
 
 const persistConfig = {
@@ -37,6 +42,31 @@ const persistCartConfig = {
   storage,
 };
 
+const persistStudentConfig = {
+  key: "student",
+  storage,
+};
+
+const persistPlayerConfig = {
+  key: "player",
+  storage,
+};
+
+const persistNoteConfig = {
+  key: "note",
+  storage,
+};
+
+const persistBookmarkConfig = {
+  key: "bookmark",
+  storage,
+};
+
+const persistQuestionConfig = {
+  key: "question",
+  storage,
+};
+
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 const persistedCourseReducer = persistReducer(
   persistCourseConfig,
@@ -48,6 +78,11 @@ const persistedLectureReducer = persistReducer(
 );
 
 const persistedCartReducer = persistReducer(persistCartConfig, cartReducer);
+const persistedStudentReducer = persistReducer(persistStudentConfig, studentReducer);
+const persistedPlayerReducer = persistReducer(persistPlayerConfig, playerReducer);
+const persistedNoteReducer = persistReducer(persistNoteConfig, noteReducer);
+const persistedBookmarkReducer = persistReducer(persistBookmarkConfig, bookmarkReducer);
+const persistedQuestionReducer = persistReducer(persistQuestionConfig, questionReducer);
 
 export const store = configureStore({
   reducer: {
@@ -56,6 +91,11 @@ export const store = configureStore({
     course: persistedCourseReducer,
     lecture: persistedLectureReducer,
     cart: persistedCartReducer,
+    student: persistedStudentReducer,
+    player: persistedPlayerReducer,
+    note: persistedNoteReducer,
+    bookmark: persistedBookmarkReducer,
+    question: persistedQuestionReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

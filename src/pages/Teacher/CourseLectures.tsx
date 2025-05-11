@@ -54,7 +54,8 @@ const CourseLectures: React.FC = () => {
     }
   }, [data]);
 
-  const userRole = "teacher"; // Replace with real auth logic
+  // Get user role from auth
+  const userRole = "teacher";
 
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;

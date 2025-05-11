@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import { baseApi } from "@/redux/api/baseApi";
 import { USER_ROLE } from "@/constants/global";
 import CartSheet from "./CartSheet";
-import { clearCart } from "@/redux/features/cart/cartSlice";
 import { setCart } from "@/redux/features/cart/cartSlice";
 
 const navbarMenu = [

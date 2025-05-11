@@ -2,6 +2,9 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
 
+/* Import video player styles */
+@import './styles/video-player.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -113,6 +116,12 @@
   .animation-delay-400 {
     animation-delay: 0.4s;
   }
+
+  /* Responsive container utility */
+  .responsive-container {
+    @apply w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 mx-auto;
+    max-width: 1400px;
+  }
 }
 
 @keyframes fadeIn {
@@ -140,23 +149,23 @@
   .stats-card {
     @apply bg-white rounded-xl shadow-md p-6 transition-all hover:shadow-lg;
   }
-  
+
   .form-card {
     @apply bg-white rounded-xl shadow-md p-6;
   }
-  
+
   .step-indicator {
     @apply flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-semibold;
   }
-  
+
   .step-indicator.active {
     @apply bg-blue-500 text-white border-blue-500; /* using standard Tailwind blue */
   }
-  
+
   .step-indicator.completed {
     @apply bg-emerald-500 text-white border-emerald-500; /* using standard Tailwind emerald */
   }
-  
+
   .step-indicator.inactive {
     @apply bg-white text-gray-400 border-gray-300;
   }

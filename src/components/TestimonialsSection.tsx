@@ -23,24 +23,24 @@ const Testimonial = ({
   avatarSrc,
   rating,
 }: TestimonialProps) => (
-  <div className="bg-white p-6 rounded-lg shadow-md">
-    <div className="flex items-center mb-4">
+  <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+    <div className="flex items-center mb-3 sm:mb-4">
       {[...Array(5)].map((_, i) => (
         <Star
           key={i}
-          size={16}
+          size={14}
           className={
             i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
           }
         />
       ))}
     </div>
-    <p className="text-gray-700 mb-4">"{quote}"</p>
+    <p className="text-gray-700 mb-3 sm:mb-4 text-sm sm:text-base line-clamp-4">"{quote}"</p>
     <div className="flex items-center">
-      <img src={avatarSrc} alt={name} className="w-10 h-10 rounded-full mr-3" />
+      <img src={avatarSrc} alt={name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full mr-2 sm:mr-3" />
       <div>
-        <p className="font-semibold">{name}</p>
-        <p className="text-gray-600 text-sm">{role}</p>
+        <p className="font-semibold text-sm sm:text-base">{name}</p>
+        <p className="text-gray-600 text-xs sm:text-sm">{role}</p>
       </div>
     </div>
   </div>
@@ -101,32 +101,32 @@ const TestimonialsSection = () => {
 
   return (
     <section
-      className="py-16 my-16"
+      className="py-10 sm:py-12 md:py-16 my-10 sm:my-12 md:my-16"
       style={{ backgroundColor: "rgba(74, 122, 74, 0.40)" }}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-12">
-          <h2 className="text-3xl text-white font-display font-semibold">
+      <div className="responsive-container">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 md:mb-12 gap-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl text-white font-display font-semibold">
             What Students Say
           </h2>
           <div className="flex gap-2">
             <button
               onClick={prevPage}
-              className="p-2 border text-white border-white rounded-full"
+              className="p-1.5 sm:p-2 border text-white border-white rounded-full hover:bg-white/10 transition-colors"
               aria-label="Previous testimonials"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} className="sm:size-20" />
             </button>
             <button
               onClick={nextPage}
-              className="p-2 border text-white border-white rounded-full"
+              className="p-1.5 sm:p-2 border text-white border-white rounded-full hover:bg-white/10 transition-colors"
               aria-label="Next testimonials"
             >
-              <ArrowRight size={20} />
+              <ArrowRight size={16} className="sm:size-20" />
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {visibleTestimonials.map((testimonial, index) => (
             <Testimonial
               key={index}

@@ -3,43 +3,17 @@ import { Button } from "@/components/ui/button";
 import {
   mockCourse,
   mockUserProgress,
-  getCompletionPercentage,
 } from "@/lib/mockData";
-import ProgressBar from "@/components/ProgressBar";
-import { BookOpen, GraduationCap, PlayCircle } from "lucide-react";
+import { BookOpen,PlayCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 const StudentHome = () => {
-  const completionPercentage = getCompletionPercentage(
-    mockUserProgress,
-    mockCourse
-  );
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-edu-light">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-edu-purple" />
-            <span className="text-xl font-bold">EduPathway</span>
-          </div>
-
-          <div className="flex gap-4">
-            <Button variant="ghost" asChild>
-              <Link to="/student/dashboard">Dashboard</Link>
-            </Button>
-            <Button asChild>
-              <Link
-                to={`/course/${mockCourse.id}/lecture/${mockUserProgress.lastAccessedLectureId}`}
-              >
-                <PlayCircle className="mr-2 h-4 w-4" />
-                Continue Learning
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero section */}
       <section className="container mx-auto px-4 py-16">
@@ -69,7 +43,6 @@ const StudentHome = () => {
       <section className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <Navbar />
             {/* <div>
               <h2 className="text-3xl font-bold mb-6">
                 Continue Your Learning

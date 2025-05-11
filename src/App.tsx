@@ -8,7 +8,7 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "./redux/store";
 import { NuqsAdapter } from "nuqs/adapters/react";
-import CourseDetails from "@/pages/CourseDetails";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -20,7 +20,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <NuqsAdapter>
-          <RouterProvider router={router} />
+          <ErrorBoundary>
+            <RouterProvider router={router} />
+          </ErrorBoundary>
         </NuqsAdapter>
       </TooltipProvider>
     </QueryClientProvider>

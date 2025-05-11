@@ -14,19 +14,19 @@ const ImpactStat = ({
   imageClassName,
 }: ImpactStatProps) => (
   <div className="flex flex-col items-center">
-    <div className="size-28 relative">
+    <div className="size-20 sm:size-24 md:size-28 relative">
       <div
-        className="absolute bg-[#2E3192] rounded-full left-[2.5rem] -top-[1rem]
-      w-6 h-6 z-20 flex items-center justify-center"
+        className="absolute bg-[#2E3192] rounded-full left-[1.8rem] sm:left-[2.2rem] md:left-[2.5rem] -top-[0.8rem] sm:-top-[0.9rem] md:-top-[1rem]
+        w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 z-20 flex items-center justify-center"
       >
-        <p className="text-xs text-white">{id}</p>
+        <p className="text-[10px] sm:text-xs text-white">{id}</p>
       </div>
 
-      <div className="absolute inset-0 rounded-[95.933px] border-4 border-[#53AC8F] flex items-center justify-center" />
+      <div className="absolute inset-0 rounded-full border-3 sm:border-4 border-[#53AC8F] flex items-center justify-center" />
       <img src={imageUrl} alt={label} className={imageClassName} />
     </div>
-    <h2 className="text-sm font-semibold mt-2">{label}</h2>
-    <p className="text-xl text-[#333]font-semibold capitalize">{value}</p>
+    <h2 className="text-xs sm:text-sm font-semibold mt-1 sm:mt-2">{label}</h2>
+    <p className="text-lg sm:text-xl text-[#333] font-semibold capitalize">{value}</p>
   </div>
 );
 
@@ -75,21 +75,20 @@ const ImpactSection = () => {
   ];
 
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-semibold text-center mb-2">
+    <section className="py-10 sm:py-12 md:py-16 bg-white">
+      <div className="responsive-container">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-1 sm:mb-2">
           Our Monthly Impact
         </h2>
-        <p className="text-center text-gray-500 mb-12">
+        <p className="text-center text-gray-500 text-sm sm:text-base mb-8 sm:mb-10 md:mb-12">
           Real-time results from a global community of learners and
           changemakers.
         </p>
 
-        <div className="flex flex-col gap-8 items-center md:flex-row md:justify-center md:gap-0">
+        <div className="flex flex-col gap-6 sm:gap-8 items-center md:flex-row md:justify-center md:gap-0">
           {stats.map((stat, index) => (
-            <div className="flex items-center justify-around">
+            <div key={index} className="flex items-center justify-around">
               <ImpactStat
-                key={index}
                 imageUrl={stat.imageUrl}
                 imageClassName={stat.imageClassName}
                 id={stat.id}

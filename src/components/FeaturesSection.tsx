@@ -3,12 +3,12 @@ import { ArrowRight } from "lucide-react";
 
 const FeaturesSection = () => {
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row items-center gap-10 relative">
+    <section className="py-10 sm:py-12 md:py-16 bg-white overflow-hidden">
+      <div className="responsive-container">
+        <div className="flex flex-col md:flex-row items-center gap-6 sm:gap-8 md:gap-10 relative">
           {/* Left Side Text */}
           <div className="md:w-1/2 z-20">
-            <h2 className="text-5xl font-display font-semibold leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-semibold leading-tight">
               All the cool{" "}
               <span className="relative inline-block">
                 <span className="relative z-10">features</span>
@@ -19,7 +19,7 @@ const FeaturesSection = () => {
                 />
               </span>
             </h2>
-            <p className="text-gray-700 mt-4 mb-6 leading-relaxed">
+            <p className="text-gray-700 mt-3 sm:mt-4 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
               Mauris consequat, cursus pharetra et, habitasse rhoncus quis odio
               ac. In et dolor eu donec maecenas nulla. Cum sed orci, sit
               pellentesque quisque feugiat cras ullamcorper. Ultrices in amet,
@@ -27,15 +27,15 @@ const FeaturesSection = () => {
             </p>
             <Button
               variant="link"
-              className="text-base font-medium text-[#2563EB]"
+              className="text-sm sm:text-base font-medium text-[#2563EB]"
             >
               Explore Features
-              <ArrowRight className="ml-1 h-4 w-4" />
+              <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
 
           {/* Right Side Content */}
-          <div className="md:w-1/2 relative flex justify-center items-center min-h-[500px]">
+          <div className="md:w-1/2 relative flex justify-center items-center min-h-[350px] sm:min-h-[400px] md:min-h-[500px] mt-8 md:mt-0">
             {/* Blob Background */}
             <img
               src="/images/blob.png"
@@ -44,31 +44,31 @@ const FeaturesSection = () => {
             />
 
             {/* Floating sparkles */}
-            <span className="absolute top-6 left-[60%] w-2 h-2 bg-yellow-300 rounded-full z-20"></span>
-            <span className="absolute top-12 right-8 w-1.5 h-1.5 bg-yellow-400 rounded-full z-20"></span>
+            <span className="absolute top-6 left-[60%] w-1.5 sm:w-2 h-1.5 sm:h-2 bg-yellow-300 rounded-full z-20"></span>
+            <span className="absolute top-12 right-8 w-1 sm:w-1.5 h-1 sm:h-1.5 bg-yellow-400 rounded-full z-20"></span>
 
             {/* Floating Feature Card */}
-            <div className="absolute top-[45px] md:-left-[27px] xl:left-[73px] bg-white rounded-2xl shadow-xl p-5 w-[240px] z-30">
-              <p className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full inline-block mb-2">
+            <div className="absolute top-[45px] left-0 sm:left-[10px] md:-left-[27px] xl:left-[73px] bg-white rounded-2xl shadow-xl p-3 sm:p-4 md:p-5 w-[180px] sm:w-[210px] md:w-[240px] z-30">
+              <p className="text-[10px] sm:text-xs text-blue-700 bg-blue-100 px-2 py-0.5 sm:py-1 rounded-full inline-block mb-1 sm:mb-2">
                 Popular
               </p>
-              <h3 className="text-lg font-semibold leading-tight">
+              <h3 className="text-base sm:text-lg font-semibold leading-tight">
                 Design for how people think
               </h3>
-              <p className="text-sm text-gray-600 mt-2 mb-4">
+              <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 mb-2 sm:mb-4">
                 Aliquam et euismod condimentum elementum ultrices volutpat sit
                 non.
               </p>
               <Button
                 variant="outline"
-                className="text-blue-600 border-blue-600 w-full"
+                className="text-blue-600 border-blue-600 w-full text-xs sm:text-sm py-1 h-auto sm:h-9"
               >
                 Take Lesson
               </Button>
             </div>
 
             {/* Image Stack */}
-            <div className="relative z-10 flex flex-col gap-4">
+            <div className="relative z-10 flex flex-col gap-3 sm:gap-4 scale-75 sm:scale-90 md:scale-100">
               {/* Main Image with Avatar */}
               <div className="relative w-[320px] h-[250px]">
                 <img
@@ -84,7 +84,7 @@ const FeaturesSection = () => {
               </div>
 
               {/* Bottom Two Images */}
-              <div className="grid grid-cols-2 gap-4 w-[430px] mt-8">
+              <div className="grid grid-cols-2 gap-4 w-[430px] mt-6 sm:mt-8">
                 <img
                   src="/images/image15.png"
                   alt="Feature 3"

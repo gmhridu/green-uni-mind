@@ -75,10 +75,10 @@ const Courses = () => {
   const isLoadingAll = isLoading || isUserLoading;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Courses</h1>
-        <Button asChild className="bg-orange-600">
+    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Courses</h1>
+        <Button asChild className="bg-orange-600 w-full sm:w-auto">
           <Link to="/teacher/courses/create">
             <Plus className="mr-2 h-4 w-4" /> Create New Course
           </Link>
@@ -92,14 +92,14 @@ const Courses = () => {
           <Input
             type="search"
             placeholder="Search courses..."
-            className="pl-8"
+            className="pl-8 w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               Status:{" "}
               {statusFilter === "all"
                 ? "All"
@@ -109,7 +109,7 @@ const Courses = () => {
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-full sm:w-auto">
             <DropdownMenuItem onClick={() => setStatusFilter("all")}>
               All
             </DropdownMenuItem>
@@ -129,127 +129,137 @@ const Courses = () => {
           <CardTitle>All Courses ({filteredCourses.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Students</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                  <TableHead className="text-right">Last Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoadingAll
-                  ? [...Array(4)].map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
-                          <Skeleton className="h-4 w-48 mb-1" />
-                          <Skeleton className="h-3 w-32" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-20" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Skeleton className="h-4 w-10 ml-auto" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Skeleton className="h-4 w-12 ml-auto" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Skeleton className="h-4 w-12 ml-auto" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Skeleton className="h-4 w-24 ml-auto" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Skeleton className="h-8 w-16 rounded-md" />
-                            <Skeleton className="h-8 w-20 rounded-md" />
-                            <Skeleton className="h-8 w-8 rounded-full" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  : filteredCourses.map((course) => (
-                      <TableRow key={course.id}>
-                        <TableCell>
-                          <div className="font-medium">{course.title}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {course.subtitle}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${
-                              course.status === "published"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-amber-100 text-amber-800"
-                            }`}
-                          >
-                            {course.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {course.students}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {course.isFree === "free" ? "Free" : course.coursePrice ? `$${course.coursePrice}` : "Not set"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {course.revenue}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {course.lastUpdated}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end items-center gap-2">
-                            <Button variant="outline" size="sm" asChild>
-                              <Link to={`/teacher/courses/${course.id}`}>
-                                Manage
-                              </Link>
-                            </Button>
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link
-                                to={`/teacher/courses/${course.id}/lecture/create`}
-                              >
-                                Add Lecture
-                              </Link>
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="z-10"
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">Course</TableHead>
+                    <TableHead className="min-w-[100px]">Status</TableHead>
+                    <TableHead className="text-right min-w-[80px]">Students</TableHead>
+                    <TableHead className="text-right min-w-[80px]">Price</TableHead>
+                    <TableHead className="text-right min-w-[80px]">Revenue</TableHead>
+                    <TableHead className="text-right min-w-[100px]">Last Updated</TableHead>
+                    <TableHead className="text-right min-w-[120px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoadingAll
+                    ? [...Array(4)].map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell>
+                            <Skeleton className="h-4 w-48 mb-1" />
+                            <Skeleton className="h-3 w-32" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="h-4 w-10 ml-auto" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="h-4 w-12 ml-auto" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="h-4 w-12 ml-auto" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="h-4 w-24 ml-auto" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Skeleton className="h-8 w-16 rounded-md" />
+                              <Skeleton className="h-8 w-20 rounded-md" />
+                              <Skeleton className="h-8 w-8 rounded-full" />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    : filteredCourses.map((course) => (
+                        <TableRow key={course.id}>
+                          <TableCell>
+                            <div className="font-medium">{course.title}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {course.subtitle}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                                course.status === "published"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {course.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {course.students}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {course.isFree === "free" ? "Free" : course.coursePrice ? `$${course.coursePrice}` : "Not set"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {course.revenue}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {course.lastUpdated}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end items-center gap-2">
+                              <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
+                                <Link to={`/teacher/courses/${course.id}`}>
+                                  Manage
+                                </Link>
+                              </Button>
+                              <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+                                <Link
+                                  to={`/teacher/courses/${course.id}/lecture/create`}
                                 >
-                                  <Ellipsis />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuGroup>
-                                  <DropdownMenuItem>
-                                    <Edit className="mr-2 size-4" />
-                                    Edit Course
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="hover:bg-red-500 hover:text-gray-200">
-                                    <Trash className="mr-2 size-4" />
-                                    Delete Course
-                                  </DropdownMenuItem>
-                                </DropdownMenuGroup>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-              </TableBody>
-            </Table>
+                                  Add Lecture
+                                </Link>
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="z-10"
+                                  >
+                                    <Ellipsis />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[200px]">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuGroup>
+                                    <DropdownMenuItem asChild>
+                                      <Link to={`/teacher/courses/${course.id}`}>
+                                        <Edit className="mr-2 size-4" />
+                                        Manage Course
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                      <Link to={`/teacher/courses/${course.id}/lecture/create`}>
+                                        <Plus className="mr-2 size-4" />
+                                        Add Lecture
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="hover:bg-red-500 hover:text-gray-200">
+                                      <Trash className="mr-2 size-4" />
+                                      Delete Course
+                                    </DropdownMenuItem>
+                                  </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {!isLoadingAll && filteredCourses.length === 0 && (

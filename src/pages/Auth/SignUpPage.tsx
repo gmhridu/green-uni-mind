@@ -80,7 +80,7 @@ const SignUpPage = () => {
       },
       email: "",
       password: "",
-      gender: "",
+      gender: "male",
       photoUrl: undefined,
     },
   });

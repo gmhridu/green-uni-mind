@@ -37,6 +37,13 @@ import {
   FileUploadItemDelete,
 } from "@/components/ui/file-upload";
 
+// Define VideoResolution interface
+interface VideoResolution {
+  url: string;
+  quality: string;
+  format?: string;
+}
+
 // Lecture upload schema
 const lectureSchema = z.object({
   lectureTitle: z
@@ -47,6 +54,14 @@ const lectureSchema = z.object({
   instruction: z.string().optional(),
   isPreviewFree: z.boolean().default(false),
   videoUrl: z.string().optional(),
+  videoResolutions: z.array(
+    z.object({
+      url: z.string(),
+      quality: z.string(),
+      format: z.string().optional(),
+    })
+  ).optional(),
+  hlsUrl: z.string().optional(),
   pdfUrl: z.string().optional().or(z.literal("")),
   duration: z.number().optional(),
 });
@@ -65,6 +80,8 @@ const LectureCreate = () => {
     progress: videoProgress,
     isUploading: isVideoUploading,
     error: videoError,
+    bytesUploaded: videoBytesUploaded,
+    totalBytes: videoTotalBytes,
   } = useMedia();
 
   const {
@@ -85,6 +102,8 @@ const LectureCreate = () => {
       instruction: "",
       isPreviewFree: false,
       videoUrl: "",
+      videoResolutions: [],
+      hlsUrl: "",
       pdfUrl: "",
     },
   });
@@ -158,18 +177,46 @@ const LectureCreate = () => {
       const uploadPromises: Promise<void>[] = [];
       let videoUrl = "";
       let videoDuration = 0;
+      let videoResolutions: VideoResolution[] = [];
+      let hlsUrl = "";
       let pdfUrl = "";
 
-      // Video upload (required)
+      // Video upload (required) with adaptive streaming
       uploadPromises.push(
-        uploadVideo(videoFile).then((response) => {
-          if (!response?.secure_url) throw new Error("Video upload failed");
+        uploadVideo(videoFile, undefined, true).then((response) => {
+          if (!response) {
+            throw new Error("Video upload failed - no response received");
+          }
+
+          if (!response.secure_url) {
+            throw new Error("Video upload failed - no URL received");
+          }
+
+          // Set standard video URL for backward compatibility
           videoUrl = response.secure_url;
           videoDuration = response?.duration || 0;
           form.setValue("videoUrl", videoUrl, { shouldValidate: true });
           form.setValue("duration", videoDuration, {
             shouldValidate: true,
           });
+
+          // Set adaptive streaming URLs if available
+          if (response.videoResolutions && response.videoResolutions.length > 0) {
+            videoResolutions = response.videoResolutions;
+            form.setValue("videoResolutions", videoResolutions, { shouldValidate: true });
+
+            // Set HLS URL if available
+            const hlsVariant = videoResolutions.find(r => r.format === 'hls');
+            if (hlsVariant) {
+              hlsUrl = hlsVariant.url;
+              form.setValue("hlsUrl", hlsUrl, { shouldValidate: true });
+            }
+          }
+
+          console.log("Video upload successful:", response);
+        }).catch(error => {
+          console.error("Video upload error:", error);
+          throw error;
         })
       );
 
@@ -187,11 +234,15 @@ const LectureCreate = () => {
 
       // Wait for all uploads to complete
       await Promise.all(uploadPromises);
+
+      // Prepare lecture data with adaptive streaming support
       const lectureData = {
         lectureTitle: data.lectureTitle,
         instruction: data.instruction || undefined,
         isPreviewFree: data.isPreviewFree,
-        videoUrl,
+        videoUrl, // Keep for backward compatibility
+        videoResolutions, // New field for adaptive streaming
+        hlsUrl, // HLS streaming URL
         duration: videoDuration,
         pdfUrl: pdfUrl || "",
         courseId: courseId!,
@@ -208,11 +259,25 @@ const LectureCreate = () => {
       });
       dispatch(setLectures(response.data));
       navigate(`/teacher/courses/${courseId}`);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create lecture", {
+    } catch (error: unknown) {
+      let errorMessage = "Failed to create lecture";
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      // Check if it's a Cloudinary error
+      if (typeof error === 'object' && error !== null && 'error' in error) {
+        const cloudinaryError = error as { error?: { message?: string } };
+        if (cloudinaryError.error?.message) {
+          errorMessage = `Cloudinary error: ${cloudinaryError.error.message}`;
+        }
+      }
+
+      toast.error(errorMessage, {
         id: toastId,
       });
-      console.error("Upload error:", error);
+      console.error("Upload error details:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -281,7 +346,7 @@ const LectureCreate = () => {
               <FormField
                 control={form.control}
                 name="videoUrl"
-                render={({ field }) => (
+                render={({ field: _ }) => (
                   <FormItem>
                     <FormLabel>Lecture Video*</FormLabel>
                     <FormControl>
@@ -333,11 +398,18 @@ const LectureCreate = () => {
                                       </span>
                                       <span className="text-xs text-gray-600">
                                         {formatBytes(
-                                          (videoProgress / 100) * videoFile.size
+                                          videoBytesUploaded || (videoProgress / 100) * videoFile.size
                                         )}{" "}
-                                        / {formatBytes(videoFile.size)}
+                                        / {formatBytes(videoTotalBytes || videoFile.size)}
                                       </span>
                                     </div>
+                                    {videoProgress > 0 && videoProgress < 100 && (
+                                      <div className="mt-1">
+                                        <span className="text-xs text-blue-600">
+                                          Preparing adaptive streaming formats...
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </FileUploadItemMetadata>
@@ -369,7 +441,7 @@ const LectureCreate = () => {
               <FormField
                 control={form.control}
                 name="pdfUrl"
-                render={({ field }) => (
+                render={({ field: _ }) => (
                   <FormItem>
                     <FormLabel>PDF Materials (Optional)</FormLabel>
                     <FormControl>

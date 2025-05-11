@@ -74,7 +74,7 @@ const CreateCourse = () => {
       subTitle: "",
       description: "",
       category: "",
-      courseLevel: "",
+      courseLevel: "Beginner",
       coursePrice: 0,
       courseThumbnail: undefined,
     },

@@ -33,6 +33,8 @@ import PublicRoute from "@/components/layouts/PublicRoutes";
 import CourseDetails from "@/pages/CourseDetails";
 import PaymentSuccess from "@/pages/payment/success";
 import PaymentCancel from "@/pages/payment/cancel";
+import ErrorBoundary from "@/components/ErrorBoundary";
+// import CloudinaryPlayerDemo from "@/pages/CloudinaryPlayerDemo";
 
 const router = createBrowserRouter([
   {
@@ -76,11 +78,19 @@ const router = createBrowserRouter([
       // },
       {
         path: "/payment/success",
-        element: <PaymentSuccess />,
+        element: (
+          <ProtectedRoute role={USER_ROLE.STUDENT}>
+            <PaymentSuccess />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/payment/cancel",
-        element: <PaymentCancel />,
+        element: (
+          <ProtectedRoute role={USER_ROLE.STUDENT}>
+            <PaymentCancel />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
@@ -148,7 +158,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <StudentHome />,
+        element: <StudentDashboard />,
       },
       {
         path: "dashboard",

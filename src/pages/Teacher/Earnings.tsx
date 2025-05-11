@@ -236,17 +236,17 @@ const Earnings = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Earnings</h1>
-        <div className="flex items-center gap-4">
+    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Earnings</h1>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           {isUserLoading ? (
-            <Button disabled className="flex items-center gap-2">
+            <Button disabled className="flex items-center gap-2 w-full sm:w-auto">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Loading...</span>
             </Button>
           ) : user?.stripeVerified ? (
-            <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 border-green-200 w-full sm:w-auto justify-center">
               <CheckCircle className="h-4 w-4" />
               <span>Stripe Connected</span>
             </Badge>
@@ -254,7 +254,7 @@ const Earnings = () => {
             <Button
               onClick={handleConnectStripe}
               disabled={isConnecting}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               {isConnecting ? (
                 <>
@@ -321,14 +321,14 @@ const Earnings = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {earningStats.map((stat, index) => (
           <Card key={index} className="stats-card">
             <CardContent className="pt-6">
               <h3 className="text-sm font-medium text-gray-500">
                 {stat.label}
               </h3>
-              <p className="text-2xl font-bold mt-2">{stat.value}</p>
+              <p className="text-xl sm:text-2xl font-bold mt-2">{stat.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -336,15 +336,15 @@ const Earnings = () => {
 
       {/* Transaction History */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle>Transaction History</CardTitle>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 This Month <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-full sm:w-auto">
               <DropdownMenuItem>This Month</DropdownMenuItem>
               <DropdownMenuItem>Last Month</DropdownMenuItem>
               <DropdownMenuItem>Last 3 Months</DropdownMenuItem>
@@ -353,52 +353,54 @@ const Earnings = () => {
           </DropdownMenu>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">
-                    Date
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">
-                    Course
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500">
-                    Amount
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactionHistory.map((transaction) => (
-                  <tr
-                    key={transaction.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="py-3 px-4">{transaction.date}</td>
-                    <td className="py-3 px-4">{transaction.course}</td>
-                    <td className="py-3 px-4 text-right">
-                      {transaction.amount}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <span
-                        className={`inline-flex rounded-full px-2 text-xs font-semibold ${
-                          transaction.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {transaction.status === "completed"
-                          ? "Completed"
-                          : "Pending"}
-                      </span>
-                    </td>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      Date
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      Course
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-500">
+                      Amount
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-500">
+                      Status
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {transactionHistory.map((transaction) => (
+                    <tr
+                      key={transaction.id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="py-3 px-4">{transaction.date}</td>
+                      <td className="py-3 px-4">{transaction.course}</td>
+                      <td className="py-3 px-4 text-right">
+                        {transaction.amount}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <span
+                          className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                            transaction.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {transaction.status === "completed"
+                            ? "Completed"
+                            : "Pending"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -410,15 +412,15 @@ const Earnings = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 gap-2">
               <span className="text-sm font-medium">Payout Method</span>
               <span className="text-sm">Stripe</span>
             </div>
-            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 gap-2">
               <span className="text-sm font-medium">Next Payout Date</span>
               <span className="text-sm">June 1, 2023</span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <span className="text-sm font-medium">Payout Schedule</span>
               <span className="text-sm">Monthly</span>
             </div>

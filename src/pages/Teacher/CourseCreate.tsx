@@ -289,18 +289,18 @@ const CourseCreate = () => {
     );
   }
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">
           Create New Course
         </h1>
 
         {/* Step indicators */}
         <div className="relative mb-10">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
             {steps.map((step, index) => (
               <React.Fragment key={step.id}>
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center w-full sm:w-auto">
                   <div
                     className={`flex items-center justify-center w-7 h-7 rounded-full border-2 text-lg font-semibold transition-all duration-300 ${
                       currentStep === index
@@ -317,7 +317,7 @@ const CourseCreate = () => {
                     )}
                   </div>
                   <span
-                    className={`mt-2 text-sm font-medium ${
+                    className={`mt-2 text-sm font-medium text-center ${
                       currentStep === index
                         ? "text-blue-600"
                         : completedSteps.includes(index)
@@ -330,7 +330,7 @@ const CourseCreate = () => {
                 </div>
 
                 {index < steps.length - 1 && (
-                  <div className="flex-1 mx-2">
+                  <div className="hidden sm:block flex-1 mx-2">
                     <div
                       className={`h-1 rounded-full transition-all duration-500 ${
                         completedSteps.includes(index)

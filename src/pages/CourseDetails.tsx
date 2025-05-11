@@ -7,8 +7,6 @@ import { ShoppingBag } from "lucide-react";
 import { useGetCourseByIdQuery } from "@/redux/features/course/course.api";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCreateCheckoutSessionMutation } from "@/redux/features/payment/payment.api";
-import { useNavigate } from "react-router-dom";
 import { IEnrolledCourse } from "@/types";
 
 const CourseDetails = () => {
@@ -16,13 +14,10 @@ const CourseDetails = () => {
   const { data: courseData, isLoading } = useGetCourseByIdQuery(courseId);
   const { data: userData } = useGetMeQuery(undefined);
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-
-  const [createCheckoutSession] = useCreateCheckoutSessionMutation();
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 mt-20">
+      <div className="container mx-auto py-12 my-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <Skeleton className="w-full h-64 rounded-lg" />
@@ -68,27 +63,27 @@ const CourseDetails = () => {
     toast.success("Course added to cart");
   };
 
-  const handleCheckout = async () => {
-    if (!userData?.data?._id) {
-      toast.error("Please login to continue");
-      navigate("/login");
-      return;
-    }
+  // const handleCheckout = async () => {
+  //   if (!userData?.data?._id) {
+  //     toast.error("Please login to continue");
+  //     navigate("/login");
+  //     return;
+  //   }
 
-    try {
-      const response = await createCheckoutSession({
-        courseId: course._id,
-        amount: course.coursePrice || 0,
-      }).unwrap();
+  //   try {
+  //     const response = await createCheckoutSession({
+  //       courseId: course._id,
+  //       amount: course.coursePrice || 0,
+  //     }).unwrap();
 
-      window.location.href = response.url;
-    } catch (error: any) {
-      toast.error(error.message || "Payment failed. Please try again.");
-    }
-  };
+  //     window.location.href = response.url;
+  //   } catch (error: any) {
+  //     toast.error(error.message || "Payment failed. Please try again.");
+  //   }
+  // };
 
   return (
-    <div className="container mx-auto py-8 mt-20">
+    <div className="container mx-auto py-12 mt-20">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <img

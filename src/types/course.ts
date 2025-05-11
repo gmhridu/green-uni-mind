@@ -1,18 +1,28 @@
 import { Types } from 'mongoose';
 
+export interface VideoResolution {
+  url: string;
+  quality: string;
+  format?: string;
+}
+
 export interface ILecture {
   _id: string;
   lectureTitle: string;
   instruction?: string;
   videoUrl?: string;
+  videoResolutions?: VideoResolution[];
+  hlsUrl?: string;
   pdfUrl?: string;
   duration?: number;
   isPreviewFree?: boolean;
   courseId: string;
   order: number;
+  thumbnailUrl?: string;
 }
 
 export interface ICourse {
+  progress?: number;
   _id: string;
   title: string;
   subtitle?: string;
@@ -30,4 +40,4 @@ export interface ICourse {
   isFree?: string;
   createdAt?: Date;
   updatedAt?: Date;
-} 
+}

@@ -105,8 +105,6 @@ const CartSheet = () => {
         toast.error("Failed to get checkout URL from server");
         return;
       }
-
-      console.log("Redirecting to:", checkoutUrl);
       window.location.href = checkoutUrl;
     } catch (error) {
       console.error("Checkout error:", error);
