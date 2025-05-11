@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
@@ -32,7 +32,7 @@ const Settings = () => {
             <p className="mb-4 text-muted-foreground">
               Connect your Stripe account to receive payments for your courses.
             </p>
-            <Button className="bg-edu-accent hover:bg-orange-600 text-white w-full sm:w-auto flex items-center gap-2">
+            <Button className="bg-orange-600 text-white w-full sm:w-auto flex items-center gap-2">
               <ExternalLink className="h-4 w-4" />
               Connect Stripe
             </Button>

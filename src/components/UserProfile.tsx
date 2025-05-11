@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { TUser } from "@/redux/features/auth/authSlice";
 import { cn } from "@/lib/utils";
 import { USER_ROLE } from "@/constants/global";
+import { useGetMeQuery } from "@/redux/features/auth/authApi";
 
 interface UserProfileProps {
   user: TUser | null;
@@ -32,12 +33,20 @@ const UserProfile = ({
   open,
   setOpen,
 }: UserProfileProps) => {
+  const { data } = useGetMeQuery(undefined);
+
+  const student = data?.data;
+
+  console.log(student);
+
   if (!user) {
     return null; // Don't render anything if user is null
   }
 
-
-  const userName = `${user.name?.firstName || ''} ${user.name?.middleName || ''} ${user.name?.lastName || ''}`.trim() || 'User';
+  const userName =
+    `${user.name?.firstName || ""} ${user.name?.middleName || ""} ${
+      user.name?.lastName || ""
+    }`.trim() || "User";
 
   const photoUrl: string | undefined = user.photoUrl || user.profileImg;
 
@@ -108,48 +117,24 @@ const UserProfile = ({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-200" />
-        <DropdownMenuGroup>
+
+        {user &&
+          user.role === USER_ROLE.STUDENT &&
+          student &&
+          student.enrolledCourses.length > 0 && (
+            <DropdownMenuItem asChild>
+              <Link to={"/student/dashboard"}>Dashboard</Link>
+            </DropdownMenuItem>
+          )}
+
+        {user && user.role === USER_ROLE.TEACHER && (
           <DropdownMenuItem asChild>
-            <Link to={"/profile"}>My Learning</Link>
+            <Link to={"/teacher/dashboard"}>Dashboard</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to={"/my-courses"}>My Courses</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to={"/settings"}>My Cart</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to={"/settings"}>Wishlist</Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="bg-gray-200" />
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link to={"/profile"}>Notification</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to={"/settings"}>Messages</Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="bg-gray-200" />
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link to={"/profile"}>Account Settings</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to={"/settings"}>Payment Methods</Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="bg-gray-200" />
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link to={"/profile"}>Public Profile</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to={"/user/edit-profile"}>Edit Profile</Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="bg-gray-200" />
+        )}
+        <DropdownMenuItem asChild>
+          <Link to={"/user/edit-profile"}>Edit Profile</Link>
+        </DropdownMenuItem>
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link to={"/profile"}>Help and Support</Link>

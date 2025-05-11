@@ -7,16 +7,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, AlertCircle, CheckCircle, ExternalLink, Loader2 } from "lucide-react";
+import {
+  ArrowUpDown,
+  AlertCircle,
+  CheckCircle,
+  ExternalLink,
+  Loader2,
+  Calendar,
+  DollarSign,
+  Users,
+  CreditCard,
+  Clock,
+  BarChart3,
+} from "lucide-react";
 import {
   useConnectStripeAccountMutation,
   useGetTeacherEarningsQuery,
+  useGetTeacherTransactionsQuery,
+  useGetPayoutInfoQuery,
 } from "@/redux/features/payment/payment.api";
 import { toast } from "sonner";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Earnings = () => {
   const [searchParams] = useSearchParams();
@@ -26,7 +43,32 @@ const Earnings = () => {
   const user = userData?.data;
   const [connectStripeAccount, { isLoading: isConnecting }] =
     useConnectStripeAccountMutation();
+
+  // Transaction period state
+  const [transactionPeriod, setTransactionPeriod] = useState<"month" | "3months" | "6months" | "year" | "all">("month");
+  const [activeTab, setActiveTab] = useState("overview");
+
+  // Fetch earnings data
   const { data: earningsData, refetch, isLoading: isEarningsLoading } = useGetTeacherEarningsQuery(
+    user?.id || "",
+    {
+      skip: !user?.id,
+    }
+  );
+
+  // Fetch transactions data
+  const { data: transactionsData, isLoading: isTransactionsLoading } = useGetTeacherTransactionsQuery(
+    {
+      teacherId: user?.id || "",
+      period: transactionPeriod
+    },
+    {
+      skip: !user?.id,
+    }
+  );
+
+  // Fetch payout info
+  const { data: payoutInfoData, isLoading: isPayoutInfoLoading } = useGetPayoutInfoQuery(
     user?.id || "",
     {
       skip: !user?.id,
@@ -164,112 +206,152 @@ const Earnings = () => {
     }
   };
 
+  // Define transaction interfaces
+  interface Transaction {
+    id: string | number;
+    date: string;
+    course: string;
+    amount: string;
+    status: string;
+  }
+
+  interface ApiTransaction {
+    _id: string;
+    createdAt: string;
+    courseName: string;
+    teacherShare: number;
+    status: string;
+  }
+
+  // Define payout info interface
+  interface PayoutInfo {
+    payoutMethod: string;
+    nextPayoutDate: Date | string;
+    payoutSchedule: string;
+    accountStatus: string;
+  }
+
+  // Define earning stats with icons
   const earningStats = [
     {
       label: "Total Earnings",
       value: `$${earningsData?.data?.totalEarnings?.toFixed(2) || "0.00"}`,
+      icon: <DollarSign className="h-5 w-5 text-green-500" />,
+      color: "bg-green-50 text-green-700 border-green-200",
     },
     {
       label: "This Month",
       value: `$${earningsData?.data?.monthlyEarnings?.toFixed(2) || "0.00"}`,
+      icon: <Calendar className="h-5 w-5 text-blue-500" />,
+      color: "bg-blue-50 text-blue-700 border-blue-200",
     },
     {
       label: "Pending Payout",
       value: `$${earningsData?.data?.weeklyEarnings?.toFixed(2) || "0.00"}`,
+      icon: <Clock className="h-5 w-5 text-amber-500" />,
+      color: "bg-amber-50 text-amber-700 border-amber-200",
     },
     {
       label: "Lifetime Students",
       value: earningsData?.data?.enrolledStudents || "0",
+      icon: <Users className="h-5 w-5 text-purple-500" />,
+      color: "bg-purple-50 text-purple-700 border-purple-200",
     },
   ];
 
-  const transactionHistory = [
-    {
-      id: 1,
-      date: "2023-05-15",
-      course: "Introduction to React",
-      amount: "$29.99",
-      status: "completed",
-    },
-    {
-      id: 2,
-      date: "2023-05-14",
-      course: "Introduction to React",
-      amount: "$29.99",
-      status: "completed",
-    },
-    {
-      id: 3,
-      date: "2023-05-12",
-      course: "Advanced TypeScript Patterns",
-      amount: "$49.99",
-      status: "completed",
-    },
-    {
-      id: 4,
-      date: "2023-05-10",
-      course: "Full Stack Development with Node.js",
-      amount: "$59.99",
-      status: "completed",
-    },
-    {
-      id: 5,
-      date: "2023-05-08",
-      course: "Introduction to React",
-      amount: "$29.99",
-      status: "completed",
-    },
-    {
-      id: 6,
-      date: "2023-05-05",
-      course: "Python for Data Science",
-      amount: "$39.99",
-      status: "completed",
-    },
-    {
-      id: 7,
-      date: "2023-05-03",
-      course: "Advanced TypeScript Patterns",
-      amount: "$49.99",
-      status: "pending",
-    },
-  ];
+  // Use real transaction data if available, otherwise fallback to mock data
+  const transactionHistory: Transaction[] = transactionsData?.data?.length > 0
+    ? transactionsData.data.map((transaction: ApiTransaction) => ({
+        id: transaction._id,
+        date: format(new Date(transaction.createdAt), "yyyy-MM-dd"),
+        course: transaction.courseName || "Unknown Course",
+        amount: `$${transaction.teacherShare.toFixed(2)}`,
+        status: transaction.status,
+      }))
+    : [
+        {
+          id: 1,
+          date: format(new Date(), "yyyy-MM-dd"),
+          course: "Introduction to React",
+          amount: "$29.99",
+          status: "completed",
+        },
+        {
+          id: 2,
+          date: format(new Date(Date.now() - 86400000), "yyyy-MM-dd"),
+          course: "Advanced TypeScript Patterns",
+          amount: "$49.99",
+          status: "completed",
+        },
+        {
+          id: 3,
+          date: format(new Date(Date.now() - 172800000), "yyyy-MM-dd"),
+          course: "Full Stack Development with Node.js",
+          amount: "$59.99",
+          status: "completed",
+        },
+      ];
+
+  // Payout information with real data or fallback
+  const payoutInfo: PayoutInfo = payoutInfoData?.data || {
+    payoutMethod: "Stripe",
+    nextPayoutDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    payoutSchedule: "Monthly",
+    accountStatus: user?.stripeVerified ? "Active" : "Not Connected"
+  };
+
+  // Handle period change
+  const handlePeriodChange = (period: "month" | "3months" | "6months" | "year" | "all") => {
+    setTransactionPeriod(period);
+  };
+
+  // Loading states for skeleton UI
+  const isLoading = isUserLoading || isEarningsLoading || isTransactionsLoading || isPayoutInfoLoading;
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6 px-4 sm:px-6 lg:px-8 pb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Earnings</h1>
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          {isUserLoading ? (
-            <Button disabled className="flex items-center gap-2 w-full sm:w-auto">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading...</span>
-            </Button>
-          ) : user?.stripeVerified ? (
-            <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 border-green-200 w-full sm:w-auto justify-center">
-              <CheckCircle className="h-4 w-4" />
-              <span>Stripe Connected</span>
-            </Badge>
-          ) : (
-            <Button
-              onClick={handleConnectStripe}
-              disabled={isConnecting}
-              className="flex items-center gap-2 w-full sm:w-auto"
-            >
-              {isConnecting ? (
-                <>
+        {isLoading ? (
+          <>
+            <Skeleton className="h-10 w-48 sm:w-64" />
+            <Skeleton className="h-10 w-full sm:w-40" />
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Earnings Dashboard</h1>
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              {isUserLoading ? (
+                <Button disabled className="flex items-center gap-2 w-full sm:w-auto">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Connecting...</span>
-                </>
+                  <span>Loading...</span>
+                </Button>
+              ) : user?.stripeVerified ? (
+                <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 border-green-200 w-full sm:w-auto justify-center">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Stripe Connected</span>
+                </Badge>
               ) : (
-                <>
-                  <ExternalLink className="h-4 w-4" />
-                  <span>Connect with Stripe</span>
-                </>
+                <Button
+                  onClick={handleConnectStripe}
+                  disabled={isConnecting}
+                  className="flex items-center gap-2 w-full sm:w-auto"
+                >
+                  {isConnecting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Connecting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4" />
+                      <span>Connect with Stripe</span>
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Stripe Status Alert */}
@@ -320,113 +402,267 @@ const Earnings = () => {
         </Alert>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {earningStats.map((stat, index) => (
-          <Card key={index} className="stats-card">
-            <CardContent className="pt-6">
-              <h3 className="text-sm font-medium text-gray-500">
-                {stat.label}
-              </h3>
-              <p className="text-xl sm:text-2xl font-bold mt-2">{stat.value}</p>
+      {isLoading ? (
+        <div className="space-y-4 mt-6">
+          <Skeleton className="h-10 w-full max-w-[300px]" />
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-6">
+            {[1, 2, 3, 4].map((index) => (
+              <Card key={index} className="border border-gray-100 shadow-sm">
+                <CardContent className="pt-6 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                  </div>
+                  <Skeleton className="h-8 w-24" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Skeleton for Payout Information */}
+          <Card className="border border-gray-100 shadow-sm mt-6">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-6 w-40" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {[1, 2, 3, 4].map((index) => (
+                  <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 gap-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-6 w-24 sm:w-32" />
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          </TabsList>
 
-      {/* Transaction History */}
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <CardTitle>Transaction History</CardTitle>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                This Month <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-full sm:w-auto">
-              <DropdownMenuItem>This Month</DropdownMenuItem>
-              <DropdownMenuItem>Last Month</DropdownMenuItem>
-              <DropdownMenuItem>Last 3 Months</DropdownMenuItem>
-              <DropdownMenuItem>All Time</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="inline-block min-w-full align-middle">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">
-                      Date
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">
-                      Course
-                    </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500">
-                      Amount
-                    </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactionHistory.map((transaction) => (
-                    <tr
-                      key={transaction.id}
-                      className="border-b border-gray-100 hover:bg-gray-50"
+          <TabsContent value="overview" className="space-y-6 mt-6">
+            {/* Stats Cards */}
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              {earningStats.map((stat, index) => (
+                <Card key={index} className={`border ${stat.color} transition-all duration-200 hover:shadow-md`}>
+                  <CardContent className="pt-6 pb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium text-gray-600">
+                        {stat.label}
+                      </h3>
+                      {stat.icon}
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Payout Information */}
+            <Card className="border-blue-100 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-blue-500" />
+                  <span>Payout Information</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 gap-2">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <span className="w-32">Payout Method</span>
+                    </span>
+                    <Badge variant="outline" className="text-sm font-normal">
+                      {payoutInfo.payoutMethod}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 gap-2">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <span className="w-32">Next Payout</span>
+                    </span>
+                    <Badge variant="outline" className="text-sm font-normal">
+                      {format(new Date(payoutInfo.nextPayoutDate), "MMMM d, yyyy")}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 gap-2">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <span className="w-32">Schedule</span>
+                    </span>
+                    <Badge variant="outline" className="text-sm font-normal">
+                      {payoutInfo.payoutSchedule}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <span className="w-32">Account Status</span>
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className={`text-sm font-normal ${
+                        payoutInfo.accountStatus === "Active"
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
                     >
-                      <td className="py-3 px-4">{transaction.date}</td>
-                      <td className="py-3 px-4">{transaction.course}</td>
-                      <td className="py-3 px-4 text-right">
-                        {transaction.amount}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span
-                          className={`inline-flex rounded-full px-2 text-xs font-semibold ${
-                            transaction.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {transaction.status === "completed"
-                            ? "Completed"
-                            : "Pending"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                      {payoutInfo.accountStatus}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      {/* Payout Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payout Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 gap-2">
-              <span className="text-sm font-medium">Payout Method</span>
-              <span className="text-sm">Stripe</span>
-            </div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 gap-2">
-              <span className="text-sm font-medium">Next Payout Date</span>
-              <span className="text-sm">June 1, 2023</span>
-            </div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <span className="text-sm font-medium">Payout Schedule</span>
-              <span className="text-sm">Monthly</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <TabsContent value="transactions" className="space-y-6 mt-6">
+            {/* Transaction History */}
+            <Card className="border-blue-100 shadow-sm">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                  <span>Transaction History</span>
+                </CardTitle>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                      {transactionPeriod === "month" && "This Month"}
+                      {transactionPeriod === "3months" && "Last 3 Months"}
+                      {transactionPeriod === "6months" && "Last 6 Months"}
+                      {transactionPeriod === "year" && "This Year"}
+                      {transactionPeriod === "all" && "All Time"}
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-full sm:w-auto">
+                    <DropdownMenuItem onClick={() => handlePeriodChange("month")}>
+                      This Month
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePeriodChange("3months")}>
+                      Last 3 Months
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePeriodChange("6months")}>
+                      Last 6 Months
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePeriodChange("year")}>
+                      This Year
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePeriodChange("all")}>
+                      All Time
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  <div className="inline-block min-w-full align-middle">
+                    {transactionHistory.length > 0 ? (
+                      <>
+                        {/* Desktop view */}
+                        <table className="w-full hidden sm:table">
+                          <thead>
+                            <tr className="border-b border-gray-200">
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">
+                                Date
+                              </th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">
+                                Course
+                              </th>
+                              <th className="text-right py-3 px-4 font-medium text-gray-500">
+                                Amount
+                              </th>
+                              <th className="text-right py-3 px-4 font-medium text-gray-500">
+                                Status
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {transactionHistory.map((transaction) => (
+                              <tr
+                                key={transaction.id}
+                                className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="py-3 px-4 text-sm">{transaction.date}</td>
+                                <td className="py-3 px-4 text-sm font-medium">{transaction.course}</td>
+                                <td className="py-3 px-4 text-right text-sm font-medium">
+                                  {transaction.amount}
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  <Badge
+                                    variant="outline"
+                                    className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                                      transaction.status === "completed" || transaction.status === "success"
+                                        ? "bg-green-50 text-green-700 border-green-200"
+                                        : transaction.status === "pending"
+                                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                                        : "bg-red-50 text-red-700 border-red-200"
+                                    }`}
+                                  >
+                                    {transaction.status === "completed" || transaction.status === "success"
+                                      ? "Completed"
+                                      : transaction.status === "pending"
+                                      ? "Pending"
+                                      : "Failed"}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        {/* Mobile view */}
+                        <div className="sm:hidden space-y-4">
+                          {transactionHistory.map((transaction) => (
+                            <div
+                              key={transaction.id}
+                              className="border-b border-gray-100 pb-4 space-y-2 hover:bg-gray-50 p-2 rounded transition-colors"
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500">Date</span>
+                                <span className="text-sm">{transaction.date}</span>
+                              </div>
+                              <div className="space-y-1">
+                                <span className="text-xs text-gray-500">Course</span>
+                                <p className="text-sm font-medium">{transaction.course}</p>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">{transaction.amount}</span>
+                                <Badge
+                                  variant="outline"
+                                  className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                                    transaction.status === "completed" || transaction.status === "success"
+                                      ? "bg-green-50 text-green-700 border-green-200"
+                                      : transaction.status === "pending"
+                                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                                      : "bg-red-50 text-red-700 border-red-200"
+                                  }`}
+                                >
+                                  {transaction.status === "completed" || transaction.status === "success"
+                                    ? "Completed"
+                                    : transaction.status === "pending"
+                                    ? "Pending"
+                                    : "Failed"}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">No transactions found for this period.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 };

@@ -154,6 +154,7 @@ export const baseApi = createApi({
     "lectures",
     "lecture",
     "enrolledCourses",
+    "enrolledStudents",
     "courseProgress",
     "bookmarks",
     "questions",

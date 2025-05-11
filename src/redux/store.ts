@@ -16,6 +16,7 @@ import courseReducer from "../redux/features/course/courseSlice";
 import lectureReducer from "../redux/features/lecture/lectureSlice";
 import cartReducer from "@/redux/features/cart/cartSlice";
 import studentReducer from "@/redux/features/student/studentSlice";
+import teacherReducer from "@/redux/features/teacher/teacherSlice";
 import playerReducer from "@/redux/features/player/playerSlice";
 import noteReducer from "@/redux/features/note/noteSlice";
 import bookmarkReducer from "@/redux/features/bookmark/bookmarkSlice";
@@ -44,6 +45,11 @@ const persistCartConfig = {
 
 const persistStudentConfig = {
   key: "student",
+  storage,
+};
+
+const persistTeacherConfig = {
+  key: "teacher",
   storage,
 };
 
@@ -79,6 +85,7 @@ const persistedLectureReducer = persistReducer(
 
 const persistedCartReducer = persistReducer(persistCartConfig, cartReducer);
 const persistedStudentReducer = persistReducer(persistStudentConfig, studentReducer);
+const persistedTeacherReducer = persistReducer(persistTeacherConfig, teacherReducer);
 const persistedPlayerReducer = persistReducer(persistPlayerConfig, playerReducer);
 const persistedNoteReducer = persistReducer(persistNoteConfig, noteReducer);
 const persistedBookmarkReducer = persistReducer(persistBookmarkConfig, bookmarkReducer);
@@ -92,6 +99,7 @@ export const store = configureStore({
     lecture: persistedLectureReducer,
     cart: persistedCartReducer,
     student: persistedStudentReducer,
+    teacher: persistedTeacherReducer,
     player: persistedPlayerReducer,
     note: persistedNoteReducer,
     bookmark: persistedBookmarkReducer,

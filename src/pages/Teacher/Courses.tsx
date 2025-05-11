@@ -1,14 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Search,
-  Plus,
-  ArrowUpDown,
-  Ellipsis,
-  Edit,
-  Trash,
-  Loader,
-} from "lucide-react";
+import { Search, Plus, ArrowUpDown, Ellipsis, Edit, Trash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +25,7 @@ import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { useGetCreatorCourseQuery } from "@/redux/features/course/courseApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ICourse } from "@/types/course";
+import DeleteCourseModal from "./DeleteCourseModal";
 
 const Courses = () => {
   const { data: meData, isLoading: isUserLoading } = useGetMeQuery(undefined);
@@ -56,9 +49,12 @@ const Courses = () => {
       subtitle: course.subtitle || "",
       status: course.status || "draft",
       students: course.enrolledStudents?.length || 0,
-      revenue: course.isFree === "paid" && course.coursePrice && course.enrolledStudents?.length > 0
-        ? `$${course.coursePrice * course.enrolledStudents.length}`
-        : "$0",
+      revenue:
+        course.isFree === "paid" &&
+        course.coursePrice &&
+        course.enrolledStudents?.length > 0
+          ? `$${course.coursePrice * course.enrolledStudents.length}`
+          : "$0",
       lastUpdated: new Date(course.updatedAt).toLocaleDateString(),
       isFree: course.isFree,
       coursePrice: course.coursePrice,
@@ -77,7 +73,9 @@ const Courses = () => {
   return (
     <div className="space-y-6 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Courses</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Courses
+        </h1>
         <Button asChild className="bg-orange-600 w-full sm:w-auto">
           <Link to="/teacher/courses/create">
             <Plus className="mr-2 h-4 w-4" /> Create New Course
@@ -136,11 +134,21 @@ const Courses = () => {
                   <TableRow>
                     <TableHead className="min-w-[200px]">Course</TableHead>
                     <TableHead className="min-w-[100px]">Status</TableHead>
-                    <TableHead className="text-right min-w-[80px]">Students</TableHead>
-                    <TableHead className="text-right min-w-[80px]">Price</TableHead>
-                    <TableHead className="text-right min-w-[80px]">Revenue</TableHead>
-                    <TableHead className="text-right min-w-[100px]">Last Updated</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Actions</TableHead>
+                    <TableHead className="text-right min-w-[80px]">
+                      Students
+                    </TableHead>
+                    <TableHead className="text-right min-w-[80px]">
+                      Price
+                    </TableHead>
+                    <TableHead className="text-right min-w-[80px]">
+                      Revenue
+                    </TableHead>
+                    <TableHead className="text-right min-w-[100px]">
+                      Last Updated
+                    </TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -198,7 +206,11 @@ const Courses = () => {
                             {course.students}
                           </TableCell>
                           <TableCell className="text-right">
-                            {course.isFree === "free" ? "Free" : course.coursePrice ? `$${course.coursePrice}` : "Not set"}
+                            {course.isFree === "free"
+                              ? "Free"
+                              : course.coursePrice
+                              ? `$${course.coursePrice}`
+                              : "Not set"}
                           </TableCell>
                           <TableCell className="text-right">
                             {course.revenue}
@@ -208,12 +220,22 @@ const Courses = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end items-center gap-2">
-                              <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                asChild
+                                className="hidden sm:inline-flex"
+                              >
                                 <Link to={`/teacher/courses/${course.id}`}>
                                   Manage
                                 </Link>
                               </Button>
-                              <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className="hidden sm:inline-flex"
+                              >
                                 <Link
                                   to={`/teacher/courses/${course.id}/lecture/create`}
                                 >
@@ -230,25 +252,34 @@ const Courses = () => {
                                     <Ellipsis />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-[200px]">
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-[200px]"
+                                >
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuGroup>
                                     <DropdownMenuItem asChild>
-                                      <Link to={`/teacher/courses/${course.id}`}>
+                                      <Link
+                                        to={`/teacher/courses/edit-course/${course.id}`}
+                                      >
                                         <Edit className="mr-2 size-4" />
-                                        Manage Course
+                                        Edit Course
                                       </Link>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                      <Link to={`/teacher/courses/${course.id}/lecture/create`}>
-                                        <Plus className="mr-2 size-4" />
-                                        Add Lecture
-                                      </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem className="hover:bg-red-500 hover:text-gray-200">
-                                      <Trash className="mr-2 size-4" />
-                                      Delete Course
+                                    <DropdownMenuItem
+                                      onSelect={(e) => e.preventDefault()}
+                                    >
+                                      <DeleteCourseModal
+                                        courseId={course.id as string}
+                                        courseName={course.title}
+                                        trigger={
+                                          <div className="flex items-center text-red-600 w-full">
+                                            <Trash className="mr-2 size-4" />
+                                            <span>Delete Course</span>
+                                          </div>
+                                        }
+                                      />
                                     </DropdownMenuItem>
                                   </DropdownMenuGroup>
                                 </DropdownMenuContent>

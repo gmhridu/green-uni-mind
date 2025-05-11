@@ -112,6 +112,8 @@ const PopularCoursesSection = () => {
   const navigate = useNavigate();
   const { data: userData } = useGetMeQuery(undefined);
 
+  console.log(courses);
+
   if (isError) {
     return (
       <section className="py-16 bg-green-50">
@@ -156,7 +158,7 @@ const PopularCoursesSection = () => {
                     </CardContent>
                   </Card>
                 ))
-            : courses?.map((course: ICourse) => (
+            : courses?.data?.map((course: ICourse) => (
                 <Card
                   key={course._id}
                   className="overflow-hidden border-[1.01px] border-solid border-[#b8cad0] rounded-xl bg-[#f1f8e9] cursor-pointer flex flex-col h-full transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg"
@@ -188,23 +190,30 @@ const PopularCoursesSection = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!userData?.data?._id) {
-                              toast.error("Please login to enroll in this course");
+                              toast.error(
+                                "Please login to enroll in this course"
+                              );
                               navigate("/login");
                               return;
                             }
 
                             // Check if student is already enrolled in this course
-                            const isAlreadyEnrolled = userData?.data?.enrolledCourses?.some(
-                              (enrolledCourse: IEnrolledCourse) =>
-                                enrolledCourse.courseId === course._id
-                            );
+                            const isAlreadyEnrolled =
+                              userData?.data?.enrolledCourses?.some(
+                                (enrolledCourse: IEnrolledCourse) =>
+                                  enrolledCourse.courseId === course._id
+                              );
 
                             if (isAlreadyEnrolled) {
-                              toast.error("You are already enrolled in this course");
+                              toast.error(
+                                "You are already enrolled in this course"
+                              );
                               return;
                             }
 
-                            dispatch(addToCart({ course, userId: userData.data._id }));
+                            dispatch(
+                              addToCart({ course, userId: userData.data._id })
+                            );
                             toast.success("Course added to cart");
                           }}
                         >

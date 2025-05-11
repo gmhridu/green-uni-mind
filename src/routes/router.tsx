@@ -10,7 +10,6 @@ import Index from "@/pages/Index";
 // import CreateLecture from "@/pages/Lecture/CreateLecture";
 import NotFound from "@/pages/NotFound";
 import { createBrowserRouter } from "react-router-dom";
-import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { USER_ROLE } from "@/constants/global";
 import CreateCourse from "@/pages/Course/CreateCourse";
 import Layout from "@/components/layouts/Layout";
@@ -19,12 +18,10 @@ import Courses from "@/pages/Teacher/Courses";
 import CourseCreate from "@/pages/Teacher/CourseCreate";
 import Earnings from "@/pages/Teacher/Earnings";
 import Settings from "@/pages/Teacher/Settings";
-import Materials from "@/pages/Teacher/Materials";
 import Students from "@/pages/Teacher/Students";
 import LectureCreate from "@/pages/Teacher/LectureCreate";
 import CourseLectures from "@/pages/Teacher/CourseLectures";
 import EditLecture from "@/components/Dashboard/EditLecture";
-import StudentHome from "@/pages/Student/StudentHome";
 import StudentDashboard from "@/pages/Student/StudentDashboard";
 import StudentLayout from "@/pages/Student/StudentLayout";
 import CoursePage from "@/pages/Student/CoursePage";
@@ -33,7 +30,10 @@ import PublicRoute from "@/components/layouts/PublicRoutes";
 import CourseDetails from "@/pages/CourseDetails";
 import PaymentSuccess from "@/pages/payment/success";
 import PaymentCancel from "@/pages/payment/cancel";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import EditCourse from "@/pages/Teacher/EditCourse";
+import About from "@/pages/About";
+import Contact from "@/pages/Contact";
+import AllCourses from "@/pages/AllCourses";
 // import CloudinaryPlayerDemo from "@/pages/CloudinaryPlayerDemo";
 
 const router = createBrowserRouter([
@@ -44,6 +44,18 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <Home />,
+      },
+      {
+        path: "about",
+        element: <About />,
+      },
+      {
+        path: "contact",
+        element: <Contact />,
+      },
+      {
+        path: "courses",
+        element: <AllCourses />,
       },
       {
         path: "user",
@@ -115,6 +127,10 @@ const router = createBrowserRouter([
         element: <Courses />,
       },
       {
+        path: "courses/edit-course/:courseId",
+        element: <EditCourse />,
+      },
+      {
         path: "courses/create",
         element: <CourseCreate />,
       },
@@ -129,10 +145,6 @@ const router = createBrowserRouter([
       {
         path: "courses/:courseId/lecture/edit/:lectureId",
         element: <EditLecture />,
-      },
-      {
-        path: "materials",
-        element: <Materials />,
       },
       {
         path: "earnings",

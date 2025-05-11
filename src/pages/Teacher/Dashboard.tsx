@@ -1,4 +1,5 @@
-import { BookOpen, Users, DollarSign, TrendingUp, Loader2, Ellipsis, Edit, Eye } from "lucide-react";
+import React from 'react';
+import { BookOpen, Users, DollarSign, TrendingUp, Loader2, Ellipsis, Edit, Eye, Plus, Trash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -6,6 +7,8 @@ import { useGetCreatorCourseQuery } from "@/redux/features/course/courseApi";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { ICourse } from "@/types/course";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import DeleteCourseModal from "./DeleteCourseModal";
 
 const Dashboard = () => {
   const { data: userData } = useGetMeQuery(undefined);
@@ -68,34 +71,37 @@ const Dashboard = () => {
   ];
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (isError) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-red-500">Error loading dashboard data</p>
+      <div className="flex justify-center items-center min-h-[50vh] p-4">
+        <div className="text-center space-y-4">
+          <p className="text-red-500 font-medium">Error loading dashboard data</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+    <main className="space-y-6 px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Teacher Dashboard</h1>
-        <Button asChild className="bg-orange-600 w-full sm:w-auto">
-          <Link to="/teacher/courses/create">Create New Course</Link>
+        <Button asChild className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
+          <Link to="/teacher/courses/create" className="flex items-center">
+            <BookOpen className="mr-2 h-4 w-4" /> Create New Course
+          </Link>
         </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
-          <Card key={index} className="stats-card">
+          <Card key={index} className="stats-card overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
                 {stat.title}
@@ -112,53 +118,61 @@ const Dashboard = () => {
 
       {/* Recent Courses Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <CardTitle>Recent Courses</CardTitle>
+          {courses.length > 0 && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/teacher/courses">View All Courses</Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="inline-block min-w-full align-middle">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">
-                      Course
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">
-                      Status
-                    </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500">
-                      Students
-                    </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500">
-                      Price
-                    </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {courses.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="text-center pt-10">
-                        No courses found
-                      </td>
+          {courses.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">
+                You haven't created any courses yet.
+              </p>
+              <Button asChild className="bg-orange-600 hover:bg-orange-700">
+                <Link to="/teacher/courses/create" className="flex items-center">
+                  <BookOpen className="mr-2 h-4 w-4" /> Create Your First Course
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-500">
+                        Course
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 hidden sm:table-cell">
+                        Status
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-500 hidden md:table-cell">
+                        Students
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-500 hidden md:table-cell">
+                        Price
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-500">
+                        Actions
+                      </th>
                     </tr>
-                  ) : (
-                    <>
-                      {courses.map((course: ICourse) => (
-                        <tr
-                          key={course._id}
-                          className="border-b border-gray-100 hover:bg-gray-50"
-                        >
-                          <td className="py-3 px-4">
-                            <div className="font-medium">{course.title}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {course.subtitle}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
+                  </thead>
+                  <tbody>
+                    {courses.slice(0, 5).map((course: ICourse) => (
+                      <tr
+                        key={course._id}
+                        className="border-b border-gray-100 hover:bg-gray-50"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="font-medium line-clamp-1">{course.title}</div>
+                          <div className="text-sm text-muted-foreground line-clamp-1 hidden sm:block">
+                            {course.subtitle || "No subtitle"}
+                          </div>
+                          <div className="text-xs text-muted-foreground sm:hidden">
                             <span
                               className={`inline-flex rounded-full px-2 text-xs font-semibold ${
                                 course.status === "published"
@@ -166,65 +180,80 @@ const Dashboard = () => {
                                   : "bg-amber-100 text-amber-800"
                               }`}
                             >
-                              {course.status === "published"
-                                ? "Published"
-                                : "Draft"}
+                              {course.status === "published" ? "Published" : "Draft"}
                             </span>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            {course.enrolledStudents?.length || 0}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            {course.isFree === "free"
-                              ? "Free"
-                              : course.coursePrice
-                              ? `$${course.coursePrice}`
-                              : "Not set"}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
-                                <Link to={`/teacher/courses/edit/${course._id}`}>
-                                  Edit
-                                </Link>
-                              </Button>
-                              <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-                                <Link to={`/teacher/courses/${course._id}`}>
-                                  View
-                                </Link>
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="icon">
-                                    <Ellipsis className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-[200px]">
-                                  <DropdownMenuItem asChild>
-                                    <Link to={`/teacher/courses/edit/${course._id}`}>
-                                      <Edit className="mr-2 size-4" />
-                                      Edit Course
-                                    </Link>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem asChild>
-                                    <Link to={`/teacher/courses/${course._id}`}>
-                                      <Eye className="mr-2 size-4" />
-                                      View Course
-                                    </Link>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </>
-                  )}
-                </tbody>
-              </table>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 hidden sm:table-cell">
+                          <span
+                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                              course.status === "published"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {course.status === "published" ? "Published" : "Draft"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right hidden md:table-cell">
+                          {course.enrolledStudents?.length || 0}
+                        </td>
+                        <td className="py-3 px-4 text-right hidden md:table-cell">
+                          {course.isFree === "free"
+                            ? "Free"
+                            : course.coursePrice
+                            ? `$${course.coursePrice}`
+                            : "Not set"}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
+                              <Link to={`/teacher/courses/${course._id}`}>
+                                <Edit className="h-4 w-4 mr-1" /> Manage
+                              </Link>
+                            </Button>
+                            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+                              <Link to={`/teacher/courses/${course._id}/lecture/create`}>
+                                <Plus className="h-4 w-4 mr-1" /> Add Lecture
+                              </Link>
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon" className="h-8 w-8">
+                                  <Ellipsis className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-[160px]">
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/teacher/courses/edit-course/${course._id}`} className="flex items-center">
+                                    <Edit className="mr-2 size-4" />
+                                    Edit Course
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <DeleteCourseModal
+                                    courseId={course._id as string}
+                                    courseName={course.title}
+                                    trigger={
+                                      <div className="flex items-center text-red-600 w-full">
+                                        <Trash className="mr-2 size-4" />
+                                        <span>Delete Course</span>
+                                      </div>
+                                    }
+                                  />
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-          <div className="flex justify-center mt-4">
+          )}
+          <div className="flex justify-center mt-6">
             {courses.length > 0 && (
               <Button variant="outline" asChild>
                 <Link to="/teacher/courses">View All Courses</Link>
@@ -233,7 +262,99 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </main>
+  );
+};
+
+const DashboardSkeleton = () => {
+  return (
+    <main className="space-y-6 px-4 sm:px-6 lg:px-8 py-6">
+      {/* Header Skeleton */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-10 w-full sm:w-48" />
+      </div>
+
+      {/* Stats Cards Skeleton */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((index) => (
+          <Card key={index} className="stats-card overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-6 w-6 rounded-full" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-4 w-32" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Recent Courses Table Skeleton */}
+      <Card>
+        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-9 w-36" />
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <Skeleton className="h-4 w-16" />
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500 hidden sm:table-cell">
+                      <Skeleton className="h-4 w-16" />
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-500 hidden md:table-cell">
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-500 hidden md:table-cell">
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-500">
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3, 4, 5].map((index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-3 px-4">
+                        <Skeleton className="h-5 w-full max-w-[200px] mb-1" />
+                        <Skeleton className="h-4 w-3/4 hidden sm:block" />
+                      </td>
+                      <td className="py-3 px-4 hidden sm:table-cell">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4 text-right hidden md:table-cell">
+                        <Skeleton className="h-5 w-8 ml-auto" />
+                      </td>
+                      <td className="py-3 px-4 text-right hidden md:table-cell">
+                        <Skeleton className="h-5 w-16 ml-auto" />
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Skeleton className="h-8 w-20 hidden sm:block" />
+                          <Skeleton className="h-8 w-20 hidden sm:block" />
+                          <Skeleton className="h-8 w-8" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="flex justify-center mt-6">
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </CardContent>
+      </Card>
+    </main>
   );
 };
 

@@ -4,7 +4,7 @@ const paymentApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     connectStripeAccount: builder.mutation({
       query: (teacherId) => ({
-        url: `/payments/connect-stripe/${teacherId}`,
+        url: `/teachers/${teacherId}/connect-stripe`,
         method: "POST",
       }),
     }),
@@ -20,6 +20,21 @@ const paymentApi = baseApi.injectEndpoints({
         url: `/payments/earnings/${teacherId}`,
         method: "GET",
       }),
+      // providesTags: ["Earnings"],
+    }),
+    getTeacherTransactions: builder.query({
+      query: ({ teacherId, period = "month" }) => ({
+        url: `/payments/transactions/${teacherId}?period=${period}`,
+        method: "GET",
+      }),
+      // providesTags: ["Transactions"],
+    }),
+    getPayoutInfo: builder.query({
+      query: (teacherId) => ({
+        url: `/payments/payout-info/${teacherId}`,
+        method: "GET",
+      }),
+      // providesTags: ["PayoutInfo"],
     }),
     getStripeConnectUrl: builder.query({
       query: (teacherId) => ({
@@ -33,6 +48,7 @@ const paymentApi = baseApi.injectEndpoints({
         method: "POST",
         body: { code, teacherId },
       }),
+      // invalidatesTags: ["Earnings", "Transactions", "PayoutInfo"],
     }),
     createPaymentIntent: builder.mutation({
       query: ({ studentId, courseId, amount }) => ({
@@ -57,6 +73,8 @@ export const {
   useConnectStripeAccountMutation,
   useSaveStripeAccountDetailsMutation,
   useGetTeacherEarningsQuery,
+  useGetTeacherTransactionsQuery,
+  useGetPayoutInfoQuery,
   useGetStripeConnectUrlQuery,
   useExchangeStripeCodeMutation
 } = paymentApi;

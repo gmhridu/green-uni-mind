@@ -1,15 +1,16 @@
-import React from "react";
 import { Outlet } from "react-router-dom";
-import DashboardHeader from "./DashboardHeader";
 import DashboardSidebar from "./DashboardSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Layout = () => {
+  const isMobile = useIsMobile();
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
+      {/* <DashboardHeader /> */}
       <DashboardSidebar />
-      <main className="pl-64 pt-16 min-h-screen mt-3">
-        <div className="p-6">
+      <main className={`${isMobile ? 'pl-0' : 'pl-64'} min-h-screen mt-3`}>
+        <div className="p-4 md:p-6">
           <Outlet />
         </div>
       </main>

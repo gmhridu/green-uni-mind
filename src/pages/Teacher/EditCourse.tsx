@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Check,
   ArrowLeft,
@@ -7,12 +7,13 @@ import {
   CloudUpload,
   X,
   Loader,
-  ExternalLink,
+  Save,
 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { debounce } from "lodash";
+import { toast } from "sonner";
+import StepIndicator from "@/components/StepIndicator";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,29 +48,14 @@ import {
 } from "@/components/ui/file-upload";
 import { useAppDispatch } from "@/redux/hooks";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
-import { useCreateCourseMutation } from "@/redux/features/course/courseApi";
+import {
+  useGetCourseByIdQuery,
+  useEditCourseMutation,
+} from "@/redux/features/course/courseApi";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { COURSE_CATEGORIES, COURSE_LEVEL } from "@/types";
 import { setCourse } from "@/redux/features/course/courseSlice";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { toast } from "sonner";
-import { useConnectStripeAccountMutation } from "@/redux/features/payment/payment.api";
-import StepIndicator from "@/components/StepIndicator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const courseSchema = z
   .object({
@@ -88,7 +74,7 @@ const courseSchema = z
     courseThumbnail: z.instanceof(File).optional(),
 
     // Step 3: Settings
-    status: z.enum(["draft", "published"]),
+    status: z.enum(["draft", "published", "upcoming", "ongoing", "finished"]),
     coursePrice: z.string().optional(),
     isFree: z.enum(["free", "paid"]),
   })
@@ -103,40 +89,46 @@ const courseSchema = z
   });
 
 const steps = [
-  { id: "info", title: "Course Info" },
-  { id: "materials", title: "Upload Materials" },
-  { id: "settings", title: "Settings" },
-  { id: "review", title: "Review & Publish" },
+  {
+    id: "info",
+    title: "Course Info",
+    description: "Enter basic information about your course including title, description, category, and level."
+  },
+  {
+    id: "materials",
+    title: "Upload Materials",
+    description: "Upload your course thumbnail and other teaching materials."
+  },
+  {
+    id: "settings",
+    title: "Settings",
+    description: "Configure course settings including status and pricing options."
+  },
+  {
+    id: "review",
+    title: "Review & Save",
+    description: "Review all your course information before saving changes."
+  },
 ];
 
-const CourseCreate = () => {
+const EditCourse = () => {
   const dispatch = useAppDispatch();
-  const { data } = useGetMeQuery(undefined);
-  const [createCourse, { isLoading }] = useCreateCourseMutation();
+  const { courseId } = useParams<{ courseId: string }>();
+  const { data: userData } = useGetMeQuery(undefined);
+  const { data: courseData, isLoading: isLoadingCourse } =
+    useGetCourseByIdQuery(courseId as string, {
+      skip: !courseId,
+    });
+
+  console.log("Course ID:", courseId);
+  const [editCourse, { isLoading }] = useEditCourseMutation();
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [formInitialized, setFormInitialized] = useState(false);
-  const [showStripeModal, setShowStripeModal] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [connectStripeAccount, { isLoading: isConnectingStripe }] = useConnectStripeAccountMutation();
-
-  // Check if the screen is mobile
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-
-    return () => {
-      window.removeEventListener('resize', checkIsMobile);
-    };
-  }, []);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const teacherId = data?.data?._id;
-  const hasStripeConnected = data?.data?.stripeVerified;
+  const teacherId = userData?.data?._id;
 
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
@@ -147,37 +139,43 @@ const CourseCreate = () => {
     },
   });
 
-  // Load saved form data
+  // Load course data when available
   useEffect(() => {
-    const savedData = localStorage.getItem("courseForm");
-    if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
-        if (parsedData.courseThumbnail) {
-          delete parsedData.courseThumbnail;
-        }
-        form.reset(parsedData);
-      } catch (e) {
-        console.error("Failed to parse saved form data", e);
+    console.log("EditCourse useEffect - Loading state:", isLoadingCourse);
+    console.log("EditCourse useEffect - Course data:", courseData);
+    console.log("EditCourse useEffect - Course ID:", courseId);
+
+    if (courseData?.data) {
+      console.log(
+        "EditCourse useEffect - Course data available:",
+        courseData.data
+      );
+      const course = courseData.data;
+
+      form.reset({
+        title: course.title || "",
+        subtitle: course.subtitle || "",
+        description: course.description || "",
+        category: course.category as any,
+        courseLevel: course.courseLevel as any,
+        status: (course.status as any) || "draft",
+        isFree: (course.isFree as any) || "free",
+        coursePrice: course.coursePrice ? course.coursePrice.toString() : "",
+      });
+
+      if (course.courseThumbnail) {
+        setThumbnailPreview(course.courseThumbnail);
       }
+
+      setFormInitialized(true);
+      console.log("EditCourse useEffect - Form initialized");
+    } else if (!isLoadingCourse && courseId && courseData === undefined) {
+      // If we're not loading, have a courseId, but no data, there might be an error
+      console.error("Failed to load course data");
+      toast.error("Failed to load course data");
+      navigate("/teacher/courses");
     }
-    setFormInitialized(true);
-  }, []);
-
-  // Save form data to localStorage
-  useEffect(() => {
-    const saveFormData = debounce(() => {
-      const values = form.getValues();
-      const serializableValues = { ...values };
-      if (values.courseThumbnail) {
-        delete serializableValues.courseThumbnail;
-      }
-      localStorage.setItem("courseForm", JSON.stringify(serializableValues));
-    }, 500);
-
-    const subscription = form.watch(saveFormData);
-    return () => subscription.unsubscribe();
-  }, [form.watch]);
+  }, [courseData, isLoadingCourse, courseId, form, navigate]);
 
   const goToNextStep = useCallback(() => {
     setCompletedSteps((prev) => [...prev, currentStep]);
@@ -188,69 +186,15 @@ const CourseCreate = () => {
     setCurrentStep((prev) => prev - 1);
   }, []);
 
-  const handleConnectStripe = async () => {
-    try {
-      // Check if teacherId exists
-      if (!teacherId) {
-        console.error("Teacher ID is missing");
-        toast.error("Teacher ID is missing. Please try again or contact support.");
-        return;
-      }
-
-      console.log("Connecting Stripe with teacherId:", teacherId);
-      console.log("Current auth state:", { token: data?.data?.accessToken });
-
-      // Call the API to connect Stripe
-      const result = await connectStripeAccount(teacherId).unwrap();
-      console.log("Stripe connection result:", result);
-
-      if (result?.data?.url) {
-        // Open Stripe onboarding in a new tab
-        window.open(result.data.url, "_blank");
-        toast.info("Completing your Stripe setup in a new tab. Please complete all steps.");
-        setShowStripeModal(false);
-      } else if (result?.status === "complete") {
-        toast.success("Your Stripe account is already set up and verified!");
-        setShowStripeModal(false);
-      } else {
-        console.warn("Unexpected result format:", result);
-        toast.warning("Received an unexpected response. Please try again.");
-      }
-    } catch (error: unknown) {
-      const err = error as {
-        status?: number;
-        data?: { message?: string };
-        error?: string
-      };
-      console.error("Stripe connection error:", error);
-
-      // Detailed error logging
-      console.error("Error details:", {
-        status: err.status,
-        data: err.data,
-        message: err.data?.message,
-        error: err.error,
-      });
-
-      // More specific error messages based on status codes
-      if (err.data?.message?.includes("Stripe")) {
-        toast.error(err.data.message);
-      } else if (err.status === 404) {
-        toast.error("Teacher account not found. Please contact support.");
-      } else if (err.status === 401) {
-        toast.error("Authentication error. Please log in again.");
-      } else if (err.status === 403) {
-        toast.error("You don't have permission to connect a Stripe account.");
-      } else if (err.status === 500) {
-        toast.error("Server error. Please try again later or contact support.");
-      } else {
-        toast.error(err.data?.message || "Failed to connect Stripe account");
-      }
+  const updateCourse = useCallback(async () => {
+    if (!courseId) {
+      console.error("Cannot update course: courseId is undefined");
+      toast.error("Cannot update course: missing course ID");
+      return;
     }
-  };
 
-  const publishCourse = useCallback(async () => {
     try {
+      console.log("Updating course with ID:", courseId);
       const values = form.getValues();
       const formData = new FormData();
 
@@ -268,7 +212,10 @@ const CourseCreate = () => {
       }
 
       // Set isPublished as boolean
-      formData.append("isPublished", JSON.stringify(values.status === "published"));
+      formData.append(
+        "isPublished",
+        JSON.stringify(values.status === "published")
+      );
 
       // Set status
       formData.append("status", values.status || "draft");
@@ -279,44 +226,61 @@ const CourseCreate = () => {
       // Add required fields with proper type handling
       if (values.title) formData.append("title", values.title);
       if (values.category) formData.append("category", values.category);
-      if (values.courseLevel) formData.append("courseLevel", values.courseLevel);
+      if (values.courseLevel)
+        formData.append("courseLevel", values.courseLevel);
       if (values.isFree) formData.append("isFree", values.isFree);
-      if (values.description) formData.append("description", values.description);
+      if (values.description)
+        formData.append("description", values.description);
       if (values.subtitle) formData.append("subtitle", values.subtitle);
 
-      const res = await createCourse({
-        id: teacherId,
+      console.log("Calling editCourse mutation with ID:", courseId);
+      const res = await editCourse({
+        id: courseId,
         data: formData,
+        file: values.courseThumbnail,
       }).unwrap();
 
       dispatch(setCourse(res.data));
-      localStorage.removeItem("courseForm");
-
-      // Check if teacher has connected Stripe
-      if (!hasStripeConnected) {
-        setShowStripeModal(true);
-      } else {
-        navigate("/teacher/courses");
-      }
+      toast.success("Course updated successfully");
+      navigate("/teacher/courses");
     } catch (error: unknown) {
-      console.error("Failed to create course:", error);
+      console.error("Failed to update course:", error);
       const err = error as { data?: { message?: string } };
-      toast.error(err?.data?.message || "Failed to create course");
+      toast.error(err?.data?.message || "Failed to update course");
     }
-  }, [form, createCourse, teacherId, dispatch, navigate, hasStripeConnected]);
+  }, [form, editCourse, courseId, dispatch, navigate]);
 
-  if (!formInitialized) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader className="animate-spin" />
-      </div>
-    );
+  // Add a timeout to prevent infinite loading
+  useEffect(() => {
+    if (isLoadingCourse) {
+      const timeout = setTimeout(() => {
+        if (isLoadingCourse) {
+          console.error("Loading timeout - course data not received");
+          toast.error("Failed to load course data - timeout");
+          navigate("/teacher/courses");
+        }
+      }, 10000); // 10 seconds timeout
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoadingCourse, navigate]);
+
+  console.log(
+    "Render state - isLoadingCourse:",
+    isLoadingCourse,
+    "formInitialized:",
+    formInitialized
+  );
+
+  if (isLoadingCourse || !formInitialized) {
+    return <EditCourseSkeleton />;
   }
+
   return (
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight mb-4">
-          Create New Course
+          Edit Course
         </h1>
 
         {/* Step indicators */}
@@ -405,7 +369,7 @@ const CourseCreate = () => {
                         <FormLabel className="text-sm sm:text-base">Category*</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className="text-sm sm:text-base">
@@ -433,7 +397,7 @@ const CourseCreate = () => {
                         <FormLabel className="text-sm sm:text-base">Course Level*</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className="text-sm sm:text-base">
@@ -495,55 +459,78 @@ const CourseCreate = () => {
                     <FormItem>
                       <FormLabel className="text-sm sm:text-base">Course Thumbnail</FormLabel>
                       <FormControl>
-                        <FileUpload
-                          value={field.value ? [field.value] : []}
-                          onValueChange={(files) => field.onChange(files[0])}
-                          accept="image/*"
-                          maxFiles={1}
-                          maxSize={5 * 1024 * 1024}
-                          onFileReject={(_, message) => {
-                            form.setError("courseThumbnail", { message });
-                          }}
-                          multiple={false}
-                        >
-                          <FileUploadDropzone className="flex-row border-dotted text-xs sm:text-sm p-3 sm:p-4">
-                            <CloudUpload className="size-3 sm:size-4" />
-                            <span className="hidden sm:inline">Drag and drop or</span>
-                            <span className="sm:hidden">Upload</span>
-                            <FileUploadTrigger asChild>
-                              <Button
-                                variant="link"
-                                size="sm"
-                                className="p-0 text-xs sm:text-sm"
-                              >
-                                choose a file
-                              </Button>
-                            </FileUploadTrigger>
-                            <span className="hidden sm:inline">to upload</span>
-                          </FileUploadDropzone>
-                          <FileUploadList>
-                            {field.value && (
-                              <FileUploadItem value={field.value}>
-                                <FileUploadItemPreview />
-                                <FileUploadItemMetadata className="text-xs sm:text-sm" />
-                                <FileUploadItemDelete asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-6 sm:size-7"
-                                    onClick={() => field.onChange(undefined)}
-                                  >
-                                    <X className="size-3 sm:size-4" />
-                                    <span className="sr-only">Delete</span>
-                                  </Button>
-                                </FileUploadItemDelete>
-                              </FileUploadItem>
-                            )}
-                          </FileUploadList>
-                        </FileUpload>
+                        <div className="space-y-3 sm:space-y-4">
+                          {thumbnailPreview && !field.value && (
+                            <div className="mb-3 sm:mb-4">
+                              <p className="text-xs sm:text-sm mb-2">Current Thumbnail:</p>
+                              <div className="relative w-full max-w-[200px] sm:max-w-[300px] mx-auto sm:mx-0 rounded-md overflow-hidden">
+                                <img
+                                  src={thumbnailPreview}
+                                  alt="Current thumbnail"
+                                  className="w-full h-auto object-cover"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <FileUpload
+                            value={field.value ? [field.value] : []}
+                            onValueChange={(files) => {
+                              field.onChange(files[0]);
+                              // Clear the preview when a new file is selected
+                              if (files[0]) {
+                                setThumbnailPreview(null);
+                              }
+                            }}
+                            accept="image/*"
+                            maxFiles={1}
+                            maxSize={5 * 1024 * 1024}
+                            onFileReject={(_, message) => {
+                              form.setError("courseThumbnail", { message });
+                            }}
+                            multiple={false}
+                          >
+                            <FileUploadDropzone className="flex-row border-dotted text-xs sm:text-sm p-3 sm:p-4">
+                              <CloudUpload className="size-3 sm:size-4" />
+                              <span className="hidden sm:inline">Drag and drop or</span>
+                              <span className="sm:hidden">Upload</span>
+                              <FileUploadTrigger asChild>
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="p-0 text-xs sm:text-sm"
+                                >
+                                  choose a file
+                                </Button>
+                              </FileUploadTrigger>
+                              <span className="hidden sm:inline">to upload</span>
+                            </FileUploadDropzone>
+                            <FileUploadList>
+                              {field.value && (
+                                <FileUploadItem value={field.value}>
+                                  <FileUploadItemPreview />
+                                  <FileUploadItemMetadata className="text-xs sm:text-sm" />
+                                  <FileUploadItemDelete asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-6 sm:size-7"
+                                      onClick={() => field.onChange(undefined)}
+                                    >
+                                      <X className="size-3 sm:size-4" />
+                                      <span className="sr-only">Delete</span>
+                                    </Button>
+                                  </FileUploadItemDelete>
+                                </FileUploadItem>
+                              )}
+                            </FileUploadList>
+                          </FileUpload>
+                        </div>
                       </FormControl>
                       <FormDescription className="text-xs sm:text-sm">
-                        Upload a thumbnail image up to 5MB.
+                        {field.value
+                          ? "New thumbnail will replace the current one."
+                          : "Upload a new thumbnail image up to 5MB or keep the current one."}
                       </FormDescription>
                       <FormMessage className="text-xs sm:text-sm" />
                     </FormItem>
@@ -585,7 +572,7 @@ const CourseCreate = () => {
                       <FormLabel className="text-sm sm:text-base">Course Status</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger className="text-sm sm:text-base">
@@ -595,6 +582,9 @@ const CourseCreate = () => {
                         <SelectContent>
                           <SelectItem value="draft" className="text-sm sm:text-base">Draft</SelectItem>
                           <SelectItem value="published" className="text-sm sm:text-base">Published</SelectItem>
+                          <SelectItem value="upcoming" className="text-sm sm:text-base">Upcoming</SelectItem>
+                          <SelectItem value="ongoing" className="text-sm sm:text-base">Ongoing</SelectItem>
+                          <SelectItem value="finished" className="text-sm sm:text-base">Finished</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage className="text-xs sm:text-sm" />
@@ -696,7 +686,7 @@ const CourseCreate = () => {
               </div>
             )}
 
-            {/* Step 4: Review & Publish */}
+            {/* Step 4: Review & Save */}
             {currentStep === 3 && (
               <div className="space-y-6 sm:space-y-8">
                 <div>
@@ -732,19 +722,29 @@ const CourseCreate = () => {
                         Materials
                       </h4>
                       <div className="flex items-center gap-3">
-                        {form.watch("courseThumbnail") && (
+                        {(form.watch("courseThumbnail") || thumbnailPreview) && (
                           <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
-                            <img
-                              src={URL.createObjectURL(form.watch("courseThumbnail"))}
-                              alt="Course thumbnail"
-                              className="w-full h-full object-cover"
-                            />
+                            {form.watch("courseThumbnail") ? (
+                              <img
+                                src={URL.createObjectURL(form.watch("courseThumbnail"))}
+                                alt="New thumbnail"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : thumbnailPreview ? (
+                              <img
+                                src={thumbnailPreview}
+                                alt="Current thumbnail"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : null}
                           </div>
                         )}
                         <p className="text-xs sm:text-sm text-gray-600">
                           {form.watch("courseThumbnail")
-                            ? "Course thumbnail uploaded"
-                            : "No thumbnail uploaded"}
+                            ? "New thumbnail will be uploaded"
+                            : thumbnailPreview
+                            ? "Using existing thumbnail"
+                            : "No thumbnail"}
                         </p>
                       </div>
                     </div>
@@ -762,12 +762,17 @@ const CourseCreate = () => {
                             className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
                               form.watch("status") === "published"
                                 ? "bg-green-100 text-green-800"
-                                : "bg-amber-100 text-amber-800"
+                                : form.watch("status") === "draft"
+                                ? "bg-amber-100 text-amber-800"
+                                : form.watch("status") === "upcoming"
+                                ? "bg-blue-100 text-blue-800"
+                                : form.watch("status") === "ongoing"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-gray-100 text-gray-800"
                             }`}
                           >
-                            {form.watch("status") === "published"
-                              ? "Published"
-                              : "Draft"}
+                            {form.watch("status").charAt(0).toUpperCase() +
+                              form.watch("status").slice(1)}
                           </span>
                         </div>
                         <div>
@@ -796,25 +801,20 @@ const CourseCreate = () => {
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back
                   </Button>
                   <Button
-                    onClick={publishCourse}
+                    onClick={updateCourse}
                     className="bg-blue-700 w-full sm:w-auto order-1 sm:order-2"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <div className="flex items-center gap-2">
                         <Loader className="animate-spin w-4 h-4" />
-                        <span className="text-sm sm:text-base">
-                          {form.watch("status") === "published"
-                            ? "Publishing..."
-                            : "Saving to Draft..."}
-                        </span>
+                        <span className="text-sm sm:text-base">Saving Changes...</span>
                       </div>
                     ) : (
-                      <span className="text-sm sm:text-base">
-                        {form.watch("status") === "published"
-                          ? "Publish Course"
-                          : "Save as Draft"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <Save className="w-4 h-4" />
+                        <span className="text-sm sm:text-base">Save Changes</span>
+                      </div>
                     )}
                   </Button>
                 </div>
@@ -823,108 +823,89 @@ const CourseCreate = () => {
           </Form>
         </CardContent>
       </Card>
-      {/* Responsive Stripe Connection Modal - Dialog for desktop, Drawer for mobile */}
-      {isMobile ? (
-        <Drawer open={showStripeModal} onOpenChange={setShowStripeModal}>
-          <DrawerContent>
-            <DrawerHeader className="space-y-2 text-center">
-              <DrawerTitle className="text-lg">Connect Stripe to Receive Payments</DrawerTitle>
-              <DrawerDescription className="text-xs">
-                To receive payments for your courses, you need to connect your Stripe account. This is a one-time setup process.
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="px-4 flex flex-col space-y-3 py-3">
-              <p className="text-sm font-medium">Benefits of connecting Stripe:</p>
-              <ul className="list-disc pl-4 space-y-1 text-xs">
-                <li>Receive payments directly to your bank account</li>
-                <li>Track earnings in real-time</li>
-                <li>Manage payouts and transactions</li>
-              </ul>
-            </div>
-            <DrawerFooter className="flex flex-col gap-3 pt-2">
-              <Button
-                onClick={handleConnectStripe}
-                disabled={isConnectingStripe}
-                className="flex items-center justify-center gap-2 w-full text-xs"
-              >
-                {isConnectingStripe ? (
-                  <>
-                    <Loader className="h-3 w-3 animate-spin" />
-                    <span>Connecting...</span>
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="h-3 w-3" />
-                    <span>Connect with Stripe</span>
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowStripeModal(false);
-                  navigate("/teacher/courses");
-                }}
-                className="w-full text-xs"
-              >
-                Skip for now
-              </Button>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
-          <DialogContent className="sm:max-w-md p-6">
-            <DialogHeader className="space-y-2">
-              <DialogTitle className="text-xl">Connect Stripe to Receive Payments</DialogTitle>
-              <DialogDescription className="text-sm">
-                To receive payments for your courses, you need to connect your Stripe account. This is a one-time setup process.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col space-y-4 py-4">
-              <p className="text-base font-medium">Benefits of connecting Stripe:</p>
-              <ul className="list-disc pl-5 space-y-2 text-sm">
-                <li>Receive payments directly to your bank account</li>
-                <li>Track earnings in real-time</li>
-                <li>Manage payouts and transactions</li>
-              </ul>
-            </div>
-            <DialogFooter className="flex flex-row justify-between gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowStripeModal(false);
-                  navigate("/teacher/courses");
-                }}
-                className="w-auto text-sm"
-              >
-                Skip for now
-              </Button>
-              <Button
-                onClick={handleConnectStripe}
-                disabled={isConnectingStripe}
-                className="flex items-center justify-center gap-2 w-auto text-sm"
-              >
-                {isConnectingStripe ? (
-                  <>
-                    <Loader className="h-4 w-4 animate-spin" />
-                    <span>Connecting...</span>
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="h-4 w-4" />
-                    <span>Connect with Stripe</span>
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };
 
-export default React.memo(CourseCreate);
+const EditCourseSkeleton = () => {
+  return (
+    <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div className="mb-6 sm:mb-8">
+        <Skeleton className="h-8 sm:h-10 w-36 sm:w-48 mb-4" />
+
+        {/* Step indicators skeleton */}
+        <div className="relative mb-6 sm:mb-10">
+          {/* Mobile step indicators skeleton */}
+          <div className="flex md:hidden justify-between items-center px-2 py-2">
+            {[1, 2, 3, 4].map((_, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <Skeleton className="w-12 h-3 mt-2" />
+              </div>
+            ))}
+          </div>
+
+          {/* Tablet/Desktop step indicators skeleton */}
+          <div className="hidden md:flex justify-between items-center">
+            {[1, 2, 3, 4].map((_, index) => (
+              <React.Fragment key={index}>
+                <div className="flex flex-col items-center">
+                  <Skeleton className="w-12 h-12 lg:w-16 lg:h-16 rounded-full" />
+                  <Skeleton className="w-16 h-4 mt-2" />
+                </div>
+
+                {index < 3 && (
+                  <div className="flex-1 mx-2">
+                    <Skeleton className="h-1 w-full" />
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Card className="form-card mb-6 w-full">
+        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Form fields skeleton */}
+            <div>
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-9 sm:h-10 w-full" />
+            </div>
+
+            <div>
+              <Skeleton className="h-4 w-28 mb-2" />
+              <Skeleton className="h-9 sm:h-10 w-full" />
+            </div>
+
+            <div>
+              <Skeleton className="h-4 w-32 mb-2" />
+              <Skeleton className="h-24 sm:h-32 w-full" />
+            </div>
+
+            {/* Grid layout for category and level */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <Skeleton className="h-4 w-20 mb-2" />
+                <Skeleton className="h-9 sm:h-10 w-full" />
+              </div>
+              <div>
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-9 sm:h-10 w-full" />
+              </div>
+            </div>
+
+            {/* Buttons skeleton */}
+            <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
+              <Skeleton className="h-9 sm:h-10 w-full sm:w-24 order-2 sm:order-1" />
+              <Skeleton className="h-9 sm:h-10 w-full sm:w-24 order-1 sm:order-2" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default EditCourse;

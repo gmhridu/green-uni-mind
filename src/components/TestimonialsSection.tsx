@@ -1,91 +1,88 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  Star,
-} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TestimonialProps {
   quote: string;
   name: string;
-  role: string;
   avatarSrc: string;
-  rating: number;
 }
 
-const Testimonial = ({
-  quote,
-  name,
-  role,
-  avatarSrc,
-  rating,
-}: TestimonialProps) => (
-  <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-    <div className="flex items-center mb-3 sm:mb-4">
-      {[...Array(5)].map((_, i) => (
-        <Star
-          key={i}
-          size={14}
-          className={
-            i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-          }
-        />
-      ))}
+const Testimonial = ({ quote, name, avatarSrc }: TestimonialProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    transition={{ duration: 0.5 }}
+    className="bg-white p-6 rounded-lg shadow-md flex flex-col h-full"
+  >
+    <p className="text-gray-700 mb-6 text-sm leading-relaxed flex-grow">
+      {quote}
+    </p>
+    <div className="flex items-center mt-auto">
+      <img
+        src={avatarSrc}
+        alt={name}
+        className="w-10 h-10 rounded-full mr-3 object-cover border-2 border-green-100"
+      />
+      <p className="font-medium text-sm">{name}</p>
     </div>
-    <p className="text-gray-700 mb-3 sm:mb-4 text-sm sm:text-base line-clamp-4">"{quote}"</p>
-    <div className="flex items-center">
-      <img src={avatarSrc} alt={name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full mr-2 sm:mr-3" />
-      <div>
-        <p className="font-semibold text-sm sm:text-base">{name}</p>
-        <p className="text-gray-600 text-xs sm:text-sm">{role}</p>
-      </div>
-    </div>
-  </div>
+  </motion.div>
 );
 
 const TestimonialsSection = () => {
   const [currentPage, setCurrentPage] = useState(0);
+  const [width, setWidth] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Update width on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (carouselRef.current) {
+        setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const testimonials = [
     {
       quote:
-        "The AI matched me with the perfect teacher for my style. I've improved more in 3 months than in years of trying to learn on my own.",
-      name: "Emma Thompson",
-      role: "Beginner Artist",
-      avatarSrc: "https://images.unsplash.com/photo-1517022812141-23620dba5c23",
-      rating: 5,
+        "Lorem ipsum dolor sit amet, consectetur adipiscing. Nulla non mauris elit aliquam mi maecenas elit aliquot est sed consectetur. Vitae quis orci vitae praesent morbi adipiscing purus consectetur mi.",
+      name: "Helen Jimmy",
+      avatarSrc: "/images/teacher1.png",
     },
     {
       quote:
-        "As someone who travels frequently, the flexibility of scheduling lessons with teachers across time zones has been incredible.",
-      name: "David Chen",
-      role: "Intermediate Artist",
-      avatarSrc: "https://images.unsplash.com/photo-1582562124811-c09040d0a901",
-      rating: 5,
+        "Ordo furiosa ornare gravem. Maleate vel duis non consequatur. Maleate vel duis non viverra sagittis ultricis nisi, nec tortor. Vestibulum, aliquet diam ex neque, hac ultricis nibh.",
+      name: "Ralph Edwards",
+      avatarSrc: "/images/teacher2.png",
     },
     {
       quote:
-        "The community aspect of GreenthyMind has exposed me to so many different styles and approaches. It's expanded my artistic horizons.",
-      name: "Sophia Rodriguez",
-      role: "Advanced Artist",
-      avatarSrc: "https://images.unsplash.com/photo-1535268647677-300dbf3d78d1",
-      rating: 4,
+        "Sagittis nunc egestas leo et malesuada tincidunt. Morbi nunc et non viverra pharetra. Diam tellus, amet, hac imperdiet. Tellus mi volutpat tellus, congue malesuada sit nisi donec a.",
+      name: "Helena John",
+      avatarSrc: "/images/teacher3.png",
     },
     {
       quote:
-        "I was skeptical about learning art online, but the platform makes it so engaging and effective. My teacher is amazing!",
-      name: "Michael Johnson",
-      role: "Hobby Artist",
-      avatarSrc: "https://images.unsplash.com/photo-1498936178812-4b2e558d2937",
-      rating: 5,
+        "Sagittis nunc egestas leo et malesuada tincidunt. Morbi nunc et non viverra pharetra. Diam tellus, amet, hac imperdiet. Tellus mi volutpat tellus.",
+      name: "Michael Brown",
+      avatarSrc: "/images/teacher4.png",
     },
   ];
 
   const nextPage = () => {
-    setCurrentPage((prev) => (prev + 1) % Math.ceil(testimonials.length / 3));
+    setCurrentPage((prev) =>
+      prev === Math.ceil(testimonials.length / 3) - 1 ? 0 : prev + 1
+    );
   };
 
   const prevPage = () => {
@@ -94,49 +91,76 @@ const TestimonialsSection = () => {
     );
   };
 
+  // Calculate visible testimonials based on screen size
+  const getVisibleCount = () => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 640) return 1;
+      if (window.innerWidth < 1024) return 2;
+      return 3;
+    }
+    return 3; // Default for SSR
+  };
+
+  const visibleCount = getVisibleCount();
+  const startIndex = currentPage * visibleCount;
   const visibleTestimonials = testimonials.slice(
-    currentPage * 3,
-    (currentPage + 1) * 3
+    startIndex,
+    startIndex + visibleCount
   );
 
   return (
     <section
-      className="py-10 sm:py-12 md:py-16 my-10 sm:my-12 md:my-16"
-      style={{ backgroundColor: "rgba(74, 122, 74, 0.40)" }}
+      className="py-12 sm:py-16 md:py-20 relative overflow-hidden my-16"
+      style={{ backgroundColor: "#4A7A4A66" }}
     >
       <div className="responsive-container">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 md:mb-12 gap-4">
+        <div className="flex justify-between items-center mb-8 sm:mb-10 md:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl text-white font-display font-semibold">
             What Students Say
           </h2>
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={prevPage}
-              className="p-1.5 sm:p-2 border text-white border-white rounded-full hover:bg-white/10 transition-colors"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 sm:h-10 sm:w-10 rounded-full border-white text-white hover:bg-white/10 hover:text-white"
               aria-label="Previous testimonials"
+              style={{ backgroundColor: "transparent", borderColor: "white" }}
             >
-              <ArrowLeft size={16} className="sm:size-20" />
-            </button>
-            <button
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button
               onClick={nextPage}
-              className="p-1.5 sm:p-2 border text-white border-white rounded-full hover:bg-white/10 transition-colors"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 sm:h-10 sm:w-10 rounded-full border-white text-white hover:bg-white/10 hover:text-white"
               aria-label="Next testimonials"
+              style={{ backgroundColor: "transparent", borderColor: "white" }}
             >
-              <ArrowRight size={16} className="sm:size-20" />
-            </button>
+              <ChevronRight className="h-5 w-5" />
+            </Button>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {visibleTestimonials.map((testimonial, index) => (
-            <Testimonial
-              key={index}
-              quote={testimonial.quote}
-              name={testimonial.name}
-              role={testimonial.role}
-              avatarSrc={testimonial.avatarSrc}
-              rating={testimonial.rating}
-            />
-          ))}
+
+        <div
+          ref={carouselRef}
+          className="overflow-hidden"
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPage}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+            >
+              {visibleTestimonials.map((testimonial, index) => (
+                <Testimonial
+                  key={`${currentPage}-${index}`}
+                  quote={testimonial.quote}
+                  name={testimonial.name}
+                  avatarSrc={testimonial.avatarSrc}
+                />
+              ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </section>

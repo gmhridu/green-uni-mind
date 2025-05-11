@@ -43,14 +43,117 @@ export const courseApi = baseApi.injectEndpoints({
       providesTags: ["courses"],
       transformResponse: (response: TResponseRedux<any>) => {
         // The backend returns the courses directly in the data field
-        return response.data;
+        return {
+          data: response.data,
+          meta: response.meta,
+        };
       },
+    }),
+    getCourseById: builder.query({
+      query: (id) => {
+        console.log("getCourseById query function called with ID:", id);
+        if (!id) {
+          console.error("getCourseById called with invalid ID:", id);
+          throw new Error("Invalid course ID");
+        }
+        return {
+          url: `/courses/${id}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["course"],
+      transformResponse: (response: TResponseRedux<any>) => {
+        console.log("getCourseById response:", response);
+        if (!response.data) {
+          console.error("No data in response:", response);
+          throw new Error("No course data found");
+        }
+        return {
+          data: response.data,
+        };
+      },
+      // Add error handling
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        try {
+          console.log("getCourseById query started for ID:", id);
+          const result = await queryFulfilled;
+          console.log(
+            "getCourseById query fulfilled for ID:",
+            id,
+            "Result:",
+            result
+          );
+        } catch (error) {
+          console.error("getCourseById query failed for ID:", id, error);
+        }
+      },
+    }),
+    editCourse: builder.mutation({
+      query: (args) => {
+        // For FormData, we need to let the browser set the Content-Type
+        // to include the boundary string
+        const formData = new FormData();
+
+        // Add course data to FormData
+        Object.keys(args.data).forEach((key) => {
+          formData.append(key, args.data[key]);
+        });
+
+        // Add thumbnail if provided
+        if (args.file) {
+          formData.append("file", args.file);
+        }
+
+        return {
+          url: `/courses/edit-course/${args.id}`,
+          method: "PATCH",
+          body: formData,
+          formData: true, // This signals to use FormData
+        };
+      },
+      transformResponse: (response: TResponseRedux<any>) => ({
+        data: response.data,
+      }),
+      onQueryStarted: async (args, { dispatch, queryFulfilled }) => {
+        dispatch(setLoading(true));
+        try {
+          await queryFulfilled;
+        } catch (error) {
+          dispatch(setError("Error editing course"));
+        } finally {
+          dispatch(setLoading(false));
+        }
+      },
+      invalidatesTags: ["courses", "course"],
+    }),
+    deleteCourse: builder.mutation({
+      query: (id) => ({
+        url: `/courses/delete-course/${id}`,
+        method: "DELETE",
+      }),
+      transformResponse: (response: TResponseRedux<any>) => ({
+        data: response.data,
+      }),
+      onQueryStarted: async (args, { dispatch, queryFulfilled }) => {
+        dispatch(setLoading(true));
+        try {
+          await queryFulfilled;
+        } catch (error) {
+          dispatch(setError("Error deleting course"));
+        } finally {
+          dispatch(setLoading(false));
+        }
+      },
+      invalidatesTags: ["courses"],
     }),
   }),
 });
 
-export const { 
-  useCreateCourseMutation, 
+export const {
+  useCreateCourseMutation,
   useGetCreatorCourseQuery,
   useGetPublishedCoursesQuery,
+  useGetCourseByIdQuery,
+  useEditCourseMutation,
+  useDeleteCourseMutation,
 } = courseApi;
