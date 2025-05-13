@@ -16,6 +16,7 @@ const Dashboard = () => {
     data: coursesData,
     isLoading,
     isError,
+    isFetching,
   } = useGetCreatorCourseQuery(
     { id: userData?.data?._id },
     { skip: !userData?.data?._id }
@@ -70,7 +71,8 @@ const Dashboard = () => {
     },
   ];
 
-  if (isLoading) {
+  // Show the full skeleton during initial loading
+  if (isLoading && !coursesData) {
     return <DashboardSkeleton />;
   }
 
@@ -88,10 +90,10 @@ const Dashboard = () => {
   }
 
   return (
-    <main className="space-y-6 px-4 sm:px-6 lg:px-8 py-6">
+    <main className="space-y-6 px-4 sm:px-6 lg:px-8 py-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Teacher Dashboard</h1>
-        <Button asChild className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-800">Teacher Dashboard</h1>
+        <Button asChild className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto transition-all duration-300 shadow-sm hover:shadow-md">
           <Link to="/teacher/courses/create" className="flex items-center">
             <BookOpen className="mr-2 h-4 w-4" /> Create New Course
           </Link>
@@ -101,12 +103,14 @@ const Dashboard = () => {
       {/* Stats Cards */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
-          <Card key={index} className="stats-card overflow-hidden">
+          <Card key={index} className="stats-card overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
                 {stat.title}
               </CardTitle>
-              {stat.icon}
+              <div className="p-2 rounded-full bg-gray-50">
+                {stat.icon}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
@@ -117,29 +121,37 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Courses Table */}
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <CardTitle>Recent Courses</CardTitle>
-          {courses.length > 0 && (
-            <Button variant="outline" size="sm" asChild>
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-gray-50/50">
+          <CardTitle className="text-gray-800">Recent Courses</CardTitle>
+          {courses.length > 0 && !(isLoading || isFetching) && (
+            <Button variant="outline" size="sm" asChild className="hover:bg-gray-100 transition-colors">
               <Link to="/teacher/courses">View All Courses</Link>
             </Button>
           )}
         </CardHeader>
         <CardContent>
-          {courses.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                You haven't created any courses yet.
+          {/* Always show skeleton during any loading/fetching state */}
+          {(isLoading || isFetching) ? (
+            <CourseTableSkeleton />
+          ) : courses.length === 0 ? (
+            // Only show "No Courses" when we're absolutely sure there are no courses
+            <div className="text-center py-12 px-4 animate-in fade-in duration-300">
+              <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 text-orange-600">
+                <BookOpen className="h-8 w-8" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No Courses Yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                You haven't created any courses yet. Start your teaching journey by creating your first course.
               </p>
-              <Button asChild className="bg-orange-600 hover:bg-orange-700">
+              <Button asChild className="bg-orange-600 hover:bg-orange-700 transition-all duration-300 shadow-sm hover:shadow-md">
                 <Link to="/teacher/courses/create" className="flex items-center">
                   <BookOpen className="mr-2 h-4 w-4" /> Create Your First Course
                 </Link>
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="overflow-x-auto -mx-4 sm:mx-0 animate-in fade-in duration-300">
               <div className="inline-block min-w-full align-middle">
                 <table className="w-full">
                   <thead className="bg-gray-50">
@@ -165,7 +177,7 @@ const Dashboard = () => {
                     {courses.slice(0, 5).map((course: ICourse) => (
                       <tr
                         key={course._id}
-                        className="border-b border-gray-100 hover:bg-gray-50"
+                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150"
                       >
                         <td className="py-3 px-4">
                           <div className="font-medium line-clamp-1">{course.title}</div>
@@ -186,7 +198,7 @@ const Dashboard = () => {
                         </td>
                         <td className="py-3 px-4 hidden sm:table-cell">
                           <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                               course.status === "published"
                                 ? "bg-green-100 text-green-800"
                                 : "bg-amber-100 text-amber-800"
@@ -196,30 +208,32 @@ const Dashboard = () => {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right hidden md:table-cell">
-                          {course.enrolledStudents?.length || 0}
+                          <span className="font-medium">{course.enrolledStudents?.length || 0}</span>
                         </td>
                         <td className="py-3 px-4 text-right hidden md:table-cell">
-                          {course.isFree === "free"
-                            ? "Free"
-                            : course.coursePrice
-                            ? `$${course.coursePrice}`
-                            : "Not set"}
+                          <span className="font-medium">
+                            {course.isFree === "free"
+                              ? "Free"
+                              : course.coursePrice
+                              ? `$${course.coursePrice}`
+                              : "Not set"}
+                          </span>
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
+                            <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex hover:bg-gray-100 transition-colors">
                               <Link to={`/teacher/courses/${course._id}`}>
                                 <Edit className="h-4 w-4 mr-1" /> Manage
                               </Link>
                             </Button>
-                            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+                            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex hover:bg-gray-50 transition-colors">
                               <Link to={`/teacher/courses/${course._id}/lecture/create`}>
                                 <Plus className="h-4 w-4 mr-1" /> Add Lecture
                               </Link>
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon" className="h-8 w-8">
+                                <Button variant="outline" size="icon" className="h-8 w-8 hover:bg-gray-100 transition-colors">
                                   <Ellipsis className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
@@ -254,9 +268,11 @@ const Dashboard = () => {
             </div>
           )}
           <div className="flex justify-center mt-6">
-            {courses.length > 0 && (
-              <Button variant="outline" asChild>
-                <Link to="/teacher/courses">View All Courses</Link>
+            {courses.length > 0 && !(isLoading || isFetching) && (
+              <Button variant="outline" asChild className="hover:bg-gray-100 transition-colors shadow-sm hover:shadow-md">
+                <Link to="/teacher/courses" className="flex items-center">
+                  <Eye className="mr-2 h-4 w-4" /> View All Courses
+                </Link>
               </Button>
             )}
           </div>
@@ -266,9 +282,68 @@ const Dashboard = () => {
   );
 };
 
+const CourseTableSkeleton = () => {
+  return (
+    <div className="overflow-x-auto -mx-4 sm:mx-0 animate-in fade-in duration-300">
+      <div className="inline-block min-w-full align-middle">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-3 px-4 font-medium text-gray-500">
+                <Skeleton className="h-4 w-16" />
+              </th>
+              <th className="text-left py-3 px-4 font-medium text-gray-500 hidden sm:table-cell">
+                <Skeleton className="h-4 w-16" />
+              </th>
+              <th className="text-right py-3 px-4 font-medium text-gray-500 hidden md:table-cell">
+                <Skeleton className="h-4 w-16 ml-auto" />
+              </th>
+              <th className="text-right py-3 px-4 font-medium text-gray-500 hidden md:table-cell">
+                <Skeleton className="h-4 w-16 ml-auto" />
+              </th>
+              <th className="text-right py-3 px-4 font-medium text-gray-500">
+                <Skeleton className="h-4 w-16 ml-auto" />
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {[1, 2, 3, 4, 5].map((index) => (
+              <tr key={index} className="border-b border-gray-100">
+                <td className="py-3 px-4">
+                  <Skeleton className="h-5 w-full max-w-[200px] mb-1" />
+                  <Skeleton className="h-4 w-3/4 hidden sm:block" />
+                </td>
+                <td className="py-3 px-4 hidden sm:table-cell">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </td>
+                <td className="py-3 px-4 text-right hidden md:table-cell">
+                  <Skeleton className="h-5 w-8 ml-auto" />
+                </td>
+                <td className="py-3 px-4 text-right hidden md:table-cell">
+                  <Skeleton className="h-5 w-16 ml-auto" />
+                </td>
+                <td className="py-3 px-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <Skeleton className="h-8 w-20 hidden sm:block" />
+                    <Skeleton className="h-8 w-20 hidden sm:block" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex justify-center mt-6">
+        <Skeleton className="h-10 w-36" />
+      </div>
+    </div>
+  );
+};
+
 const DashboardSkeleton = () => {
   return (
-    <main className="space-y-6 px-4 sm:px-6 lg:px-8 py-6">
+    <main className="space-y-6 px-4 sm:px-6 lg:px-8 py-6 animate-in fade-in duration-300">
       {/* Header Skeleton */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Skeleton className="h-8 w-64" />
@@ -298,60 +373,7 @@ const DashboardSkeleton = () => {
           <Skeleton className="h-9 w-36" />
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="inline-block min-w-full align-middle">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">
-                      <Skeleton className="h-4 w-16" />
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 hidden sm:table-cell">
-                      <Skeleton className="h-4 w-16" />
-                    </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 hidden md:table-cell">
-                      <Skeleton className="h-4 w-16 ml-auto" />
-                    </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500 hidden md:table-cell">
-                      <Skeleton className="h-4 w-16 ml-auto" />
-                    </th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-500">
-                      <Skeleton className="h-4 w-16 ml-auto" />
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[1, 2, 3, 4, 5].map((index) => (
-                    <tr key={index} className="border-b border-gray-100">
-                      <td className="py-3 px-4">
-                        <Skeleton className="h-5 w-full max-w-[200px] mb-1" />
-                        <Skeleton className="h-4 w-3/4 hidden sm:block" />
-                      </td>
-                      <td className="py-3 px-4 hidden sm:table-cell">
-                        <Skeleton className="h-6 w-20 rounded-full" />
-                      </td>
-                      <td className="py-3 px-4 text-right hidden md:table-cell">
-                        <Skeleton className="h-5 w-8 ml-auto" />
-                      </td>
-                      <td className="py-3 px-4 text-right hidden md:table-cell">
-                        <Skeleton className="h-5 w-16 ml-auto" />
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Skeleton className="h-8 w-20 hidden sm:block" />
-                          <Skeleton className="h-8 w-20 hidden sm:block" />
-                          <Skeleton className="h-8 w-8" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="flex justify-center mt-6">
-            <Skeleton className="h-10 w-36" />
-          </div>
+          <CourseTableSkeleton />
         </CardContent>
       </Card>
     </main>

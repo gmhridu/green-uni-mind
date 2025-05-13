@@ -37,8 +37,6 @@ const UserProfile = ({
 
   const student = data?.data;
 
-  console.log(student);
-
   if (!user) {
     return null; // Don't render anything if user is null
   }
@@ -48,7 +46,7 @@ const UserProfile = ({
       user.name?.lastName || ""
     }`.trim() || "User";
 
-  const photoUrl: string | undefined = user.photoUrl || user.profileImg;
+  const photoUrl: string | undefined = user?.photoUrl || user?.profileImg;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
@@ -121,7 +119,7 @@ const UserProfile = ({
         {user &&
           user.role === USER_ROLE.STUDENT &&
           student &&
-          student.enrolledCourses.length > 0 && (
+          student?.enrolledCourses?.length > 0 && (
             <DropdownMenuItem asChild>
               <Link to={"/student/dashboard"}>Dashboard</Link>
             </DropdownMenuItem>

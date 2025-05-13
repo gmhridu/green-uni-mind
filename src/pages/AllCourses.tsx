@@ -153,7 +153,7 @@ const AllCourses = () => {
   }
 
   return (
-    <div className="bg-[#f9fafb] min-h-screen">
+    <div className="bg-[#f9fafb] min-h-screen mt-5">
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 overflow-hidden">
         {/* Background Elements */}

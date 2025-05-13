@@ -70,6 +70,7 @@ import {
 import { toast } from "sonner";
 import { useConnectStripeAccountMutation } from "@/redux/features/payment/payment.api";
 import StepIndicator from "@/components/StepIndicator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const courseSchema = z
   .object({
@@ -134,9 +135,25 @@ const CourseCreate = () => {
     };
   }, []);
 
+  // Check multiple fields to determine if Stripe is connected
+  const hasStripeConnected = data?.data?.stripeVerified ||
+                            data?.data?.stripeOnboardingComplete ||
+                            (data?.data?.stripeAccountId && data?.data?.stripeAccountId.length > 0);
+                            
+  // Log Stripe connection status for debugging
+  useEffect(() => {
+    if (data?.data) {
+      console.log("Teacher Stripe status:", {
+        stripeVerified: data.data.stripeVerified,
+        stripeOnboardingComplete: data.data.stripeOnboardingComplete,
+        stripeAccountId: data.data.stripeAccountId,
+        hasStripeConnected
+      });
+    }
+  }, [data?.data, hasStripeConnected]);
+
   const navigate = useNavigate();
   const teacherId = data?.data?._id;
-  const hasStripeConnected = data?.data?.stripeVerified;
 
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
@@ -162,7 +179,7 @@ const CourseCreate = () => {
       }
     }
     setFormInitialized(true);
-  }, []);
+  }, [form]);
 
   // Save form data to localStorage
   useEffect(() => {
@@ -177,7 +194,7 @@ const CourseCreate = () => {
 
     const subscription = form.watch(saveFormData);
     return () => subscription.unsubscribe();
-  }, [form.watch]);
+  }, [form]);
 
   const goToNextStep = useCallback(() => {
     setCompletedSteps((prev) => [...prev, currentStep]);
@@ -197,6 +214,15 @@ const CourseCreate = () => {
         return;
       }
 
+      // Check if Stripe is already connected
+      if (hasStripeConnected) {
+        console.log("Stripe is already connected");
+        toast.success("Your Stripe account is already connected!");
+        setShowStripeModal(false);
+        navigate("/teacher/courses");
+        return;
+      }
+
       console.log("Connecting Stripe with teacherId:", teacherId);
       console.log("Current auth state:", { token: data?.data?.accessToken });
 
@@ -204,16 +230,26 @@ const CourseCreate = () => {
       const result = await connectStripeAccount(teacherId).unwrap();
       console.log("Stripe connection result:", result);
 
+      // Check for different response formats
       if (result?.data?.url) {
-        // Open Stripe onboarding in a new tab
+        // Format 1: data.url
+        console.log("Opening Stripe URL (format 1):", result.data.url);
         window.open(result.data.url, "_blank");
         toast.info("Completing your Stripe setup in a new tab. Please complete all steps.");
         setShowStripeModal(false);
+      } else if (result?.url) {
+        // Format 2: direct url property
+        console.log("Opening Stripe URL (format 2):", result.url);
+        window.open(result.url, "_blank");
+        toast.info("Completing your Stripe setup in a new tab. Please complete all steps.");
+        setShowStripeModal(false);
       } else if (result?.status === "complete") {
+        // Already complete
         toast.success("Your Stripe account is already set up and verified!");
         setShowStripeModal(false);
       } else {
-        console.warn("Unexpected result format:", result);
+        // Log the unexpected format for debugging
+        console.warn("Unexpected result format:", JSON.stringify(result, null, 2));
         toast.warning("Received an unexpected response. Please try again.");
       }
     } catch (error: unknown) {
@@ -292,10 +328,24 @@ const CourseCreate = () => {
       dispatch(setCourse(res.data));
       localStorage.removeItem("courseForm");
 
-      // Check if teacher has connected Stripe
+      // Double-check if teacher has connected Stripe
+      // First check our local state
       if (!hasStripeConnected) {
-        setShowStripeModal(true);
+        // If not connected according to local state, do an additional check
+        // by looking at the response data which might have updated information
+        const stripeConnected = res?.data?.teacher?.stripeVerified ||
+                               res?.data?.teacher?.stripeOnboardingComplete ||
+                               (res?.data?.teacher?.stripeAccountId && res?.data?.teacher?.stripeAccountId.length > 0);
+
+        if (stripeConnected) {
+          // If connected according to response, navigate to courses
+          navigate("/teacher/courses");
+        } else {
+          // If still not connected, show the modal
+          setShowStripeModal(true);
+        }
       } else {
+        // If already connected according to local state, navigate to courses
         navigate("/teacher/courses");
       }
     } catch (error: unknown) {
@@ -305,12 +355,95 @@ const CourseCreate = () => {
     }
   }, [form, createCourse, teacherId, dispatch, navigate, hasStripeConnected]);
 
-  if (!formInitialized) {
+  // CourseCreateSkeleton component for loading state
+  const CourseCreateSkeleton = () => {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader className="animate-spin" />
+      <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 animate-in fade-in duration-500">
+        <div className="mb-6 sm:mb-8">
+          <Skeleton className="h-8 sm:h-10 w-64 sm:w-80 mb-4" />
+
+          {/* Step indicators skeleton */}
+          <div className="mb-6 sm:mb-10">
+            <div className="hidden md:block lg:hidden">
+              <div className="relative flex items-center justify-between px-6 py-3">
+                <div className="absolute top-1/2 left-[40px] right-[40px] h-1 bg-gray-200 z-0 transform -translate-y-1/2" />
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="relative z-10 flex flex-col items-center">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <Skeleton className="mt-2 h-4 w-20" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="md:hidden">
+              <div className="relative flex items-center justify-between min-w-max py-2 mx-auto w-full max-w-[320px]">
+                <div className="absolute top-1/2 left-6 right-6 h-0.5 bg-gray-200 z-0 transform -translate-y-1/2" />
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex flex-col items-center space-y-2 relative z-10 px-2">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <div className="relative flex items-center justify-between px-10 py-4">
+                <div className="absolute top-1/2 left-[60px] right-[60px] h-1 bg-gray-200 z-0 transform -translate-y-1/2" />
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="relative z-10 flex flex-col items-center">
+                    <Skeleton className="w-16 h-16 rounded-full" />
+                    <Skeleton className="mt-3 h-5 w-24" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Form card skeleton */}
+        <Card className="form-card mb-6 w-full border border-gray-200 shadow-sm">
+          <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+            <div className="space-y-4 sm:space-y-6">
+              {/* Form fields skeleton */}
+              <div className="space-y-4">
+                <div>
+                  <Skeleton className="h-5 w-32 mb-2" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div>
+                  <Skeleton className="h-5 w-36 mb-2" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div>
+                  <Skeleton className="h-5 w-40 mb-2" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div>
+                    <Skeleton className="h-5 w-24 mb-2" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div>
+                    <Skeleton className="h-5 w-32 mb-2" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Buttons skeleton */}
+              <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
+                <Skeleton className="h-10 w-full sm:w-32 order-2 sm:order-1" />
+                <Skeleton className="h-10 w-full sm:w-32 order-1 sm:order-2" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
+  };
+
+  if (!formInitialized) {
+    return <CourseCreateSkeleton />;
   }
   return (
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -801,13 +934,9 @@ const CourseCreate = () => {
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader className="animate-spin w-4 h-4" />
-                        <span className="text-sm sm:text-base">
-                          {form.watch("status") === "published"
-                            ? "Publishing..."
-                            : "Saving to Draft..."}
-                        </span>
+                      <div className="flex items-center gap-2 px-2">
+                        <Skeleton className="w-4 h-4 rounded-full animate-pulse" />
+                        <Skeleton className="h-5 w-24 sm:w-32 animate-pulse" />
                       </div>
                     ) : (
                       <span className="text-sm sm:text-base">
@@ -848,10 +977,10 @@ const CourseCreate = () => {
                 className="flex items-center justify-center gap-2 w-full text-xs"
               >
                 {isConnectingStripe ? (
-                  <>
-                    <Loader className="h-3 w-3 animate-spin" />
-                    <span>Connecting...</span>
-                  </>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-3 w-3 rounded-full animate-pulse" />
+                    <Skeleton className="h-4 w-20 animate-pulse" />
+                  </div>
                 ) : (
                   <>
                     <ExternalLink className="h-3 w-3" />
@@ -908,10 +1037,10 @@ const CourseCreate = () => {
                 className="flex items-center justify-center gap-2 w-auto text-sm"
               >
                 {isConnectingStripe ? (
-                  <>
-                    <Loader className="h-4 w-4 animate-spin" />
-                    <span>Connecting...</span>
-                  </>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full animate-pulse" />
+                    <Skeleton className="h-5 w-24 animate-pulse" />
+                  </div>
                 ) : (
                   <>
                     <ExternalLink className="h-4 w-4" />

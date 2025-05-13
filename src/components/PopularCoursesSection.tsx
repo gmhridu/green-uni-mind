@@ -111,9 +111,6 @@ const PopularCoursesSection = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { data: userData } = useGetMeQuery(undefined);
-
-  console.log(courses);
-
   if (isError) {
     return (
       <section className="py-16 bg-green-50">

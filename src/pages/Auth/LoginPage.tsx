@@ -21,16 +21,15 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
-import {
-  setIsLoading,
-  setUser,
-  TUser,
-} from "@/redux/features/auth/authSlice";
+import { setIsLoading, setUser, TUser } from "@/redux/features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import { Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { InputPassWord } from "@/components/ui/input-password";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 
 export type TLoginForm = {
   email: string;
@@ -41,6 +40,11 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [login] = useLoginMutation();
+
+  // Responsive design hooks
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  const isTablet = useMediaQuery("(min-width: 641px) and (max-width: 1024px)");
+
   const form = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -89,27 +93,34 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <Card className="">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 py-8">
+      <Card
+        className={cn(
+          "w-full transition-all duration-300",
+          isMobile ? "max-w-[95%]" : isTablet ? "max-w-[80%]" : "max-w-[550px]"
+        )}
+      >
+        <CardHeader className="space-y-2 sm:space-y-4">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-center">
             Login Here
           </CardTitle>
-          <CardDescription className="text-center text-muted-foreground">
+          <CardDescription className="text-center text-sm sm:text-base text-muted-foreground">
             Fill out the form to login your account to GreenUniMind
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4 sm:pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="space-y-4">
-                <div className="flex flex-col gap-2">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col gap-3 sm:gap-4">
                   <FormField
                     control={form.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="">Email</FormLabel>
+                        <FormLabel className="text-sm sm:text-base">
+                          Email
+                        </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -127,13 +138,10 @@ const LoginPage = () => {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="">Password</FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            className="w-full"
-                            type="password"
-                            placeholder="Your Password"
+                          <InputPassWord
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -143,12 +151,12 @@ const LoginPage = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full my-3 cursor-pointer"
+                  className="w-full my-3 sm:my-4 cursor-pointer"
                   disabled={isLoading || isSubmitting}
                 >
                   {isLoading || isSubmitting ? (
-                    <div className="flex items-center">
-                      <Loader2 className="mr-2 animate-spin" />
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       <span>Logging...</span>
                     </div>
                   ) : (
@@ -160,7 +168,7 @@ const LoginPage = () => {
           </Form>
         </CardContent>
         <CardFooter className="flex items-center justify-center">
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm sm:text-base text-muted-foreground">
             Don't have an account?{" "}
             <Link to="/sign-up" className="text-blue-500 hover:underline">
               Sign Up

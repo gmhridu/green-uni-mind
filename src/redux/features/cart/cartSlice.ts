@@ -16,15 +16,24 @@ const getCartKey = (userId: string) => `cart_${userId}`;
 
 // Helper function to load cart from localStorage
 const loadCartFromStorage = (userId: string): ICourse[] => {
-  const cartKey = getCartKey(userId);
-  const storedCart = localStorage.getItem(cartKey);
-  return storedCart ? JSON.parse(storedCart) : [];
+  try {
+    const cartKey = getCartKey(userId);
+    const storedCart = localStorage.getItem(cartKey);
+    return storedCart ? JSON.parse(storedCart) : [];
+  } catch (error) {
+    console.error('Error loading cart from localStorage:', error);
+    return [];
+  }
 };
 
 // Helper function to save cart to localStorage
 const saveCartToStorage = (userId: string, items: ICourse[]) => {
-  const cartKey = getCartKey(userId);
-  localStorage.setItem(cartKey, JSON.stringify(items));
+  try {
+    const cartKey = getCartKey(userId);
+    localStorage.setItem(cartKey, JSON.stringify(items));
+  } catch (error) {
+    console.error('Error saving cart to localStorage:', error);
+  }
 };
 
 const cartSlice = createSlice({
@@ -33,7 +42,7 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (state, action: PayloadAction<{ course: ICourse; userId: string }>) => {
       const { course, userId } = action.payload;
-      
+
       // Prevent duplicate courses in cart
       if (!state.items.find(item => item._id === course._id)) {
         state.items.push(course);
@@ -51,7 +60,18 @@ const cartSlice = createSlice({
       const { userId } = action.payload;
       state.items = [];
       state.userId = userId;
-      saveCartToStorage(userId, []);
+      try {
+        saveCartToStorage(userId, []);
+        console.log('Cart cleared successfully for user:', userId);
+      } catch (error) {
+        console.error('Error clearing cart from localStorage:', error);
+        // Fallback: try to clear directly
+        try {
+          localStorage.removeItem(`cart_${userId}`);
+        } catch (e) {
+          console.error('Fallback cart clearing also failed:', e);
+        }
+      }
     },
     setCart: (state, action: PayloadAction<{ items: ICourse[]; userId: string }>) => {
       const { items, userId } = action.payload;

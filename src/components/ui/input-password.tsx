@@ -50,8 +50,11 @@ type InputPasswordProps = {
 };
 
 export function InputPassWord({ value, onChange }: InputPasswordProps) {
-  const [password, setPassword] = useState("");
+  // Use the external value directly for internal state
   const [isVisible, setIsVisible] = useState<boolean>(false);
+
+  // Use the actual value or empty string to prevent undefined
+  const safeValue = value || "";
 
   const toggleVisibility = () => setIsVisible((prevState) => !prevState);
 
@@ -70,7 +73,7 @@ export function InputPassWord({ value, onChange }: InputPasswordProps) {
     }));
   };
 
-  const strength = checkStrength(password);
+  const strength = checkStrength(safeValue);
 
   const strengthScore = useMemo(() => {
     return strength.filter((req) => req.met).length;
@@ -102,10 +105,9 @@ export function InputPassWord({ value, onChange }: InputPasswordProps) {
             className="pe-9"
             placeholder="Password"
             type={isVisible ? "text" : "password"}
-            value={value}
+            value={safeValue}
             onChange={(e) => {
               onChange?.(e);
-              setPassword(e.target.value);
             }}
             aria-invalid={strengthScore < 4}
             aria-describedby="password-strength"

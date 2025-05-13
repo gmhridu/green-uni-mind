@@ -29,7 +29,7 @@ const PaymentSuccess = () => {
   }, [dispatch, userData?.data?._id]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] p-4">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 mt-10">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
         

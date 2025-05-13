@@ -8,6 +8,7 @@ import { useGetCourseByIdQuery } from "@/redux/features/course/course.api";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IEnrolledCourse } from "@/types";
+import BuyNowButton from "@/components/Course/BuyNowButton";
 
 const CourseDetails = () => {
   const { courseId } = useParams();
@@ -63,24 +64,7 @@ const CourseDetails = () => {
     toast.success("Course added to cart");
   };
 
-  // const handleCheckout = async () => {
-  //   if (!userData?.data?._id) {
-  //     toast.error("Please login to continue");
-  //     navigate("/login");
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await createCheckoutSession({
-  //       courseId: course._id,
-  //       amount: course.coursePrice || 0,
-  //     }).unwrap();
-
-  //     window.location.href = response.url;
-  //   } catch (error: any) {
-  //     toast.error(error.message || "Payment failed. Please try again.");
-  //   }
-  // };
+  // Checkout is now handled by the BuyNowButton component
 
   return (
     <div className="container mx-auto py-12 mt-20">
@@ -113,16 +97,24 @@ const CourseDetails = () => {
             <span className="font-semibold">Students:</span>
             <span>{course.enrolledStudents?.length || 0} enrolled</span>
           </div>
-          <div className="pt-4">
+          <div className="pt-4 space-y-2">
             {isEnrolled ? (
               <Button className="w-full" disabled>
                 Already Enrolled
               </Button>
             ) : (
-              <Button className="w-full" onClick={handleEnroll}>
-                <ShoppingBag className="mr-2 h-4 w-4" />
-                Enroll Now
-              </Button>
+              <>
+                <Button className="w-full" onClick={handleEnroll}>
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  Add to Cart
+                </Button>
+                <BuyNowButton
+                  courseId={courseId || ''}
+                  isEnrolled={isEnrolled}
+                  className="w-full"
+                  variant="outline"
+                />
+              </>
             )}
           </div>
         </div>

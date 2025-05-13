@@ -29,7 +29,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="bg-white">
+    <div className="bg-white mt-10">
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-green-50 to-blue-50 opacity-50"></div>

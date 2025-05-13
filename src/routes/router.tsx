@@ -17,6 +17,8 @@ import Dashboard from "@/pages/Teacher/Dashboard";
 import Courses from "@/pages/Teacher/Courses";
 import CourseCreate from "@/pages/Teacher/CourseCreate";
 import Earnings from "@/pages/Teacher/Earnings";
+import EarningsReport from "@/pages/Teacher/EarningsReport";
+import TransactionAnalyticsPage from "@/pages/Teacher/TransactionAnalyticsPage";
 import Settings from "@/pages/Teacher/Settings";
 import Students from "@/pages/Teacher/Students";
 import LectureCreate from "@/pages/Teacher/LectureCreate";
@@ -28,8 +30,9 @@ import CoursePage from "@/pages/Student/CoursePage";
 import LecturePage from "@/pages/Student/LecturePage";
 import PublicRoute from "@/components/layouts/PublicRoutes";
 import CourseDetails from "@/pages/CourseDetails";
-import PaymentSuccess from "@/pages/payment/success";
-import PaymentCancel from "@/pages/payment/cancel";
+import CheckoutPage from "@/pages/payment/CheckoutPage";
+import PaymentSuccess from "@/pages/Payment/PaymentSuccess";
+import CancelPage from "@/pages/payment/CancelPage";
 import EditCourse from "@/pages/Teacher/EditCourse";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
@@ -89,6 +92,14 @@ const router = createBrowserRouter([
       //   element: <CreateLecture />,
       // },
       {
+        path: "/payment/checkout/:courseId",
+        element: (
+          <ProtectedRoute role={USER_ROLE.STUDENT}>
+            <CheckoutPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/payment/success",
         element: (
           <ProtectedRoute role={USER_ROLE.STUDENT}>
@@ -100,7 +111,7 @@ const router = createBrowserRouter([
         path: "/payment/cancel",
         element: (
           <ProtectedRoute role={USER_ROLE.STUDENT}>
-            <PaymentCancel />
+            <CancelPage />
           </ProtectedRoute>
         ),
       },
@@ -149,6 +160,14 @@ const router = createBrowserRouter([
       {
         path: "earnings",
         element: <Earnings />,
+      },
+      {
+        path: "earnings/report",
+        element: <EarningsReport />,
+      },
+      {
+        path: "earnings/analytics",
+        element: <TransactionAnalyticsPage />,
       },
       {
         path: "students",
