@@ -138,6 +138,17 @@ const LoginPage = () => {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
+                        <div className="flex items-center justify-end">
+                          {/* <FormLabel className="text-sm sm:text-base">
+                            Password
+                          </FormLabel> */}
+                          <Link
+                            to="/forgot-password"
+                            className="text-xs sm:text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+                          >
+                            Forgot password?
+                          </Link>
+                        </div>
                         <FormControl>
                           <InputPassWord
                             value={field.value}

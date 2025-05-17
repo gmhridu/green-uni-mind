@@ -102,6 +102,29 @@ export const authApi = baseApi.injectEndpoints({
         data: response.data,
       }),
     }),
+    // Password management endpoints
+    changePassword: builder.mutation({
+      query: (passwordData) => ({
+        url: "/auth/change-password",
+        method: "POST",
+        body: passwordData,
+      }),
+    }),
+    forgotPassword: builder.mutation({
+      query: (email) => ({
+        url: "/auth/forget-password",
+        method: "POST",
+        body: { email },
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (data) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body: data,
+        headers: data.token ? { Authorization: data.token } : {},
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -113,4 +136,8 @@ export const {
   useGetMeQuery,
   useUpdateUserProfileMutation,
   useLogoutMutation,
+  // Password management hooks
+  useChangePasswordMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
 } = authApi;

@@ -2,9 +2,11 @@ import ProtectedRoute from "@/components/layouts/ProtectedRoutes";
 import UserProfileContainer from "@/components/UserProfileContainer";
 import LoginPage from "@/pages/Auth/LoginPage";
 import SignUpPage from "@/pages/Auth/SignUpPage";
+import ForgotPasswordPage from "@/pages/Auth/ForgotPasswordPage";
 import CreatorCourses from "@/pages/Course/CreatorCourses";
 import EditUserPhoto from "@/pages/EditUserProfile/EditUserPhoto";
 import EditUserProfile from "@/pages/EditUserProfile/EditUserProfile";
+import PasswordSecurityPage from "@/pages/EditUserProfile/PasswordSecurityPage";
 import Home from "@/pages/Home";
 import Index from "@/pages/Index";
 // import CreateLecture from "@/pages/Lecture/CreateLecture";
@@ -72,6 +74,10 @@ const router = createBrowserRouter([
           {
             path: "edit-photo",
             element: <EditUserPhoto />,
+          },
+          {
+            path: "password-security",
+            element: <PasswordSecurityPage />,
           },
         ],
       },
@@ -218,6 +224,14 @@ const router = createBrowserRouter([
     element: (
       <PublicRoute>
         <LoginPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "forgot-password",
+    element: (
+      <PublicRoute>
+        <ForgotPasswordPage />
       </PublicRoute>
     ),
   },
