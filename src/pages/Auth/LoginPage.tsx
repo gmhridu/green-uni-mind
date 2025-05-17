@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { InputPassWord } from "@/components/ui/input-password";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 export type TLoginForm = {
   email: string;
@@ -174,6 +175,9 @@ const LoginPage = () => {
                     "Login"
                   )}
                 </Button>
+
+                {/* Social Login Buttons */}
+                <SocialLoginButtons />
               </div>
             </form>
           </Form>

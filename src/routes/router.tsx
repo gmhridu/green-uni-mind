@@ -3,6 +3,7 @@ import UserProfileContainer from "@/components/UserProfileContainer";
 import LoginPage from "@/pages/Auth/LoginPage";
 import SignUpPage from "@/pages/Auth/SignUpPage";
 import ForgotPasswordPage from "@/pages/Auth/ForgotPasswordPage";
+import OAuthCallback from "@/pages/Auth/OAuthCallback";
 import CreatorCourses from "@/pages/Course/CreatorCourses";
 import EditUserPhoto from "@/pages/EditUserProfile/EditUserPhoto";
 import EditUserProfile from "@/pages/EditUserProfile/EditUserProfile";
@@ -234,6 +235,10 @@ const router = createBrowserRouter([
         <ForgotPasswordPage />
       </PublicRoute>
     ),
+  },
+  {
+    path: "oauth/callback",
+    element: <OAuthCallback />,
   },
   {
     path: "*",

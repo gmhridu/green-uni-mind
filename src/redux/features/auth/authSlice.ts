@@ -4,6 +4,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { clearCart } from "../cart/cartSlice";
 
 export type TUser = {
+  _id?: string;
   email: string;
   name: {
     firstName: string;
@@ -17,6 +18,20 @@ export type TUser = {
   isVerified?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  // OAuth provider fields
+  googleId?: string;
+  facebookId?: string;
+  appleId?: string;
+  // OAuth connection status
+  connectedAccounts?: {
+    google?: boolean;
+    facebook?: boolean;
+    apple?: boolean;
+  };
+  // Password status
+  hasPassword?: boolean;
+  // Two-factor authentication fields
+  twoFactorEnabled?: boolean;
 };
 
 const initialState = {

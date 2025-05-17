@@ -37,10 +37,9 @@ const baseQueryWithRefreshToken: BaseQueryFn<
 > = async (args, api, extraOptions): Promise<any> => {
   const token = (api.getState() as RootState).auth?.token;
 
-
   if (token) {
     try {
-      const tokenData = JSON.parse(atob(token.split('.')[1]));
+      const tokenData = JSON.parse(atob(token.split(".")[1]));
       const expirationTime = tokenData.exp * 1000;
       const currentTime = Date.now();
 
@@ -66,11 +65,13 @@ const baseQueryWithRefreshToken: BaseQueryFn<
           );
         } else {
           api.dispatch(logout());
-          return { error: { status: 401, data: { message: 'Session expired' } } };
+          return {
+            error: { status: 401, data: { message: "Session expired" } },
+          };
         }
       }
     } catch (error) {
-      console.error('Error checking token expiration:', error);
+      console.error("Error checking token expiration:", error);
     }
   }
 
@@ -105,7 +106,7 @@ const baseQueryWithRefreshToken: BaseQueryFn<
       }
     } catch (error) {
       // If refresh API crashed
-      console.error('Error during token refresh:', error);
+      console.error("Error during token refresh:", error);
       api.dispatch(logout());
     }
   }
@@ -136,11 +137,12 @@ export const baseApi = createApi({
     "enrolledStudents",
     "courseProgress",
     "bookmarks",
+    "UpcomingPayout",
     "questions",
     "notes",
     "Payouts",
     "PayoutPreferences",
-    "Payout"
+    "Payout",
   ],
   baseQuery: baseQueryWithRefreshToken,
   endpoints: () => ({}),

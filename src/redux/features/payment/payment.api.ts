@@ -33,7 +33,9 @@ const paymentApi = baseApi.injectEndpoints({
         url: `/payments/payouts/details/${payoutId}`,
         method: "GET",
       }),
-      providesTags: (result, error, payoutId) => [{ type: "Payout", id: payoutId }],
+      providesTags: (result, error, payoutId) => [
+        { type: "Payout", id: payoutId },
+      ],
     }),
 
     // Mutation for requesting a payout
@@ -68,14 +70,20 @@ const paymentApi = baseApi.injectEndpoints({
     }),
 
     saveStripeAccountDetails: builder.mutation({
-      query: ({ teacherId, stripeAccountId, stripeEmail, stripeVerified, stripeOnboardingComplete }) => ({
+      query: ({
+        teacherId,
+        stripeAccountId,
+        stripeEmail,
+        stripeVerified,
+        stripeOnboardingComplete,
+      }) => ({
         url: `/payments/save-stripe-details/${teacherId}`,
         method: "POST",
         body: {
           stripeAccountId,
           stripeEmail,
           stripeVerified,
-          stripeOnboardingComplete
+          stripeOnboardingComplete,
         },
       }),
     }),
@@ -97,7 +105,9 @@ const paymentApi = baseApi.injectEndpoints({
 
     getPayoutInfo: builder.query({
       query: ({ teacherId, period }) => ({
-        url: `/payments/payout-info/${teacherId}${period ? `?period=${period}` : ''}`,
+        url: `/payments/payout-info/${teacherId}${
+          period ? `?period=${period}` : ""
+        }`,
         method: "GET",
       }),
     }),
@@ -132,7 +142,7 @@ const paymentApi = baseApi.injectEndpoints({
     }),
 
     getTransactionAnalytics: builder.query({
-      query: ({ teacherId, startDate, endDate, groupBy = 'day' }) => ({
+      query: ({ teacherId, startDate, endDate, groupBy = "day" }) => ({
         url: `/payments/analytics/${teacherId}?startDate=${startDate}&endDate=${endDate}&groupBy=${groupBy}`,
         method: "GET",
       }),

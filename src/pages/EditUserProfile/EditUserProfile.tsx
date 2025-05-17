@@ -16,14 +16,18 @@ import {
   useGetMeQuery,
   useUpdateUserProfileMutation,
 } from "@/redux/features/auth/authApi";
-import { setUser, selectCurrentToken } from "@/redux/features/auth/authSlice";
+import { setUser, selectCurrentToken, selectCurrentUser } from "@/redux/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, User, Mail, Save, CheckCircle } from "lucide-react";
+import { Loader2, User, Mail, Save, CheckCircle, Shield, Link as LinkIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import AccountConnections from "@/components/auth/AccountConnections";
+import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
+import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
+import VerifyEmailModal from "@/components/auth/VerifyEmailModal";
 
 const formSchema = z.object({
   name: z.object({
@@ -43,12 +47,14 @@ const formSchema = z.object({
 const EditUserProfile = () => {
   const dispatch = useAppDispatch();
   const token = useAppSelector(selectCurrentToken);
+  const currentUser = useAppSelector(selectCurrentUser);
   const { data, isLoading, isFetching } = useGetMeQuery(undefined, {
     skip: !token,
   });
   const [updateUserProfile, { isLoading: isUpdating }] =
     useUpdateUserProfileMutation();
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [verifyEmailModalOpen, setVerifyEmailModalOpen] = useState(false);
 
   // Accessing the user data with name as user.name.firstName, user.name.middleName, etc.
   const user = data?.data;
@@ -166,9 +172,12 @@ const EditUserProfile = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold">Public Profile</h2>
-        <p className="text-gray-600 mt-1">Manage your personal information</p>
+        <h2 className="text-2xl font-semibold">Account Settings</h2>
+        <p className="text-gray-600 mt-1">Manage your profile, security, and connected accounts</p>
       </div>
+
+      {/* Email Verification Banner */}
+      <EmailVerificationBanner />
 
       <Separator className="my-6" />
 
@@ -306,6 +315,18 @@ const EditUserProfile = () => {
           </Form>
         </CardContent>
       </Card>
+
+      {/* Account Connections Section */}
+      <AccountConnections />
+
+      {/* Two-Factor Authentication Section */}
+      <TwoFactorSetup />
+
+      {/* Email Verification Modal */}
+      <VerifyEmailModal
+        open={verifyEmailModalOpen}
+        onOpenChange={setVerifyEmailModalOpen}
+      />
     </div>
   );
 };

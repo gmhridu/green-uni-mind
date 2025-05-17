@@ -125,6 +125,72 @@ export const authApi = baseApi.injectEndpoints({
         headers: data.token ? { Authorization: data.token } : {},
       }),
     }),
+
+    // OAuth account management
+    linkOAuthAccount: builder.mutation({
+      query: (data) => ({
+        url: "/oauth/link",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["getMe"],
+    }),
+    unlinkOAuthAccount: builder.mutation({
+      query: (data) => ({
+        url: "/oauth/unlink",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["getMe"],
+    }),
+
+    // Email verification
+    verifyEmail: builder.mutation({
+      query: (data) => ({
+        url: "/auth/verify-email",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["getMe"],
+    }),
+    resendVerificationEmail: builder.mutation({
+      query: (data) => ({
+        url: "/auth/resend-verification",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    // Two-factor authentication
+    setupTwoFactor: builder.mutation({
+      query: (userId) => ({
+        url: `/auth/2fa/setup/${userId}`,
+        method: "GET",
+      }),
+    }),
+    verifyTwoFactor: builder.mutation({
+      query: (data) => ({
+        url: "/auth/2fa/verify",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["getMe"],
+    }),
+    verifyLoginTwoFactor: builder.mutation({
+      query: (data) => ({
+        url: "/auth/2fa/login-verify",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    disableTwoFactor: builder.mutation({
+      query: (data) => ({
+        url: "/auth/2fa/disable",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["getMe"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -140,4 +206,15 @@ export const {
   useChangePasswordMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  // OAuth account management hooks
+  useLinkOAuthAccountMutation,
+  useUnlinkOAuthAccountMutation,
+  // Email verification hooks
+  useVerifyEmailMutation,
+  useResendVerificationEmailMutation,
+  // Two-factor authentication hooks
+  useSetupTwoFactorMutation,
+  useVerifyTwoFactorMutation,
+  useVerifyLoginTwoFactorMutation,
+  useDisableTwoFactorMutation,
 } = authApi;

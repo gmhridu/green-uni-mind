@@ -5,7 +5,7 @@ import { setUser } from "@/redux/features/auth/authSlice";
 import { useLinkOAuthAccountMutation, useGetMeQuery } from "@/redux/features/auth/authApi";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import config from "@/config";
+import { isValidObjectId } from "@/utils/getUserId";
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();
@@ -83,7 +83,9 @@ const OAuthCallbackPage = () => {
               return;
             }
 
-            const verifyResponse = await fetch(`${config.apiBaseUrl}/users/${storedUserId}`, {
+            // Use the correct API base URL from environment variables
+            const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
+            const verifyResponse = await fetch(`${apiBaseUrl}/users/${storedUserId}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -117,6 +119,15 @@ const OAuthCallbackPage = () => {
             });
 
             // Link the account using the stored user ID
+            // Make sure we're using a valid MongoDB ObjectId
+            if (!storedUserId || !isValidObjectId(storedUserId)) {
+              console.error("Invalid user ID format:", storedUserId);
+              setError(`Invalid user ID format. Please try again.`);
+              return;
+            }
+
+            console.log("Linking account with validated user ID:", storedUserId);
+
             const result = await linkOAuthAccount({
               userId: storedUserId,
               provider: provider as "google" | "facebook" | "apple",
@@ -143,11 +154,30 @@ const OAuthCallbackPage = () => {
 
             // Try to extract more detailed error information
             let errorMessage = `Failed to link your ${provider} account.`;
-            if (error.data?.message) {
+
+            if (error.status === 404) {
+              errorMessage = `User not found. Please try logging in again.`;
+            } else if (error.status === 401) {
+              errorMessage = `Authentication failed. Please try logging in again.`;
+            } else if (error.status === 400) {
+              errorMessage = `Invalid request. Please check your information and try again.`;
+            } else if (error.data?.message) {
               errorMessage += ` ${error.data.message}`;
             }
 
+            // Log detailed error information for debugging
+            console.error("Error details:", {
+              status: error.status,
+              message: error.data?.message || error.message,
+              userId: storedUserId
+            });
+
             setError(errorMessage);
+
+            // Clear stored OAuth data to prevent future errors
+            localStorage.removeItem("oauthLinkUserId");
+            localStorage.removeItem("oauthLinkUserEmail");
+            localStorage.removeItem("oauthLinkAccessToken");
           }
         } else if (token) {
           // This is a regular OAuth login flow with a token

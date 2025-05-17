@@ -52,6 +52,7 @@ import { useState, useCallback, useEffect } from "react";
 import StepIndicator from "@/components/StepIndicator";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 export type TRegisterForm = {
   firstName: string;
@@ -576,7 +577,12 @@ const SignUpPage = () => {
           </Form>
         </CardContent>
 
-        <CardFooter className="flex items-center justify-center pb-6">
+        <CardFooter className="flex flex-col items-center justify-center pb-6 space-y-4">
+          {/* Only show social login buttons on the first step */}
+          {currentStep === 0 && (
+            <SocialLoginButtons isSignUp={true} role={becomeTeacher ? "teacher" : "student"} />
+          )}
+
           <p className="text-sm sm:text-base text-gray-500">
             Already have an account?{" "}
             <Link to="/login" className="text-blue-500 hover:underline">
