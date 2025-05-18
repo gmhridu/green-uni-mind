@@ -36,10 +36,8 @@ const baseQuery = fetchBaseQuery({
       console.log("No token available for authorization header");
     }
 
-    // Add CORS headers for production
-    if (config.node_env === 'production') {
-      headers.set('X-Requested-With', 'XMLHttpRequest');
-    }
+    // Don't add custom headers that might cause CORS issues
+    // The Authorization header is sufficient for authentication
 
     return headers;
   },
