@@ -7,7 +7,6 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { AlertCircle, Check, Loader2, RefreshCw, ExternalLink, AlertTriangle } from "lucide-react";
 import GoogleIcon from "@/components/icons/GoogleIcon";
-import config from "@/config";
 import {
   Alert,
   AlertDescription,
@@ -19,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { config } from "@/config";
 
 const OAuthLinking = () => {
   const dispatch = useAppDispatch();
@@ -228,17 +228,21 @@ const OAuthLinking = () => {
         return;
       }
 
+      // Get the user's role - this is critical to preserve during account linking
+      const userRole = user?.role;
+
       // Log the user data being stored
       console.log("Storing OAuth linking data:", {
         userId: userId,
         email: user.email,
         studentId: user._id || null,
-        role: user.role || "unknown"
+        role: userRole
       });
 
       // Store user ID in localStorage for the OAuth callback
       localStorage.setItem("oauthLinkUserId", userId);
       localStorage.setItem("oauthLinkUserEmail", user.email);
+      localStorage.setItem("oauthLinkUserRole", userRole);
 
       // Also store the access token for verification in the callback
       const accessToken = localStorage.getItem("accessToken");
@@ -253,9 +257,9 @@ const OAuthLinking = () => {
       setIsGoogleAuthInProgress(true);
 
       // Redirect to Google OAuth endpoint with linking=true parameter
-      // Include the role in the state parameter
-      const role = user.role || "student";
-      const url = `${config.oauth.google.redirectUrl}?linking=true&role=${role}`;
+      // Include the role in the state parameter - this ensures the role is preserved
+      // Use the backend URL directly to avoid frontend URL showing in the callback
+      const url = `${config.apiBaseUrl}/oauth/google?linking=true&role=${userRole}&token=${token}`;
       console.log("Redirecting to OAuth URL:", url);
       window.location.href = url;
     } catch (error) {
@@ -333,7 +337,7 @@ const OAuthLinking = () => {
         )}
 
         {connectionStatus === "success" && (
-          <Alert variant="success" className="mb-4">
+          <Alert className="mb-4">
             <Check className="h-4 w-4" />
             <AlertTitle>Connection Successful</AlertTitle>
             <AlertDescription>
@@ -452,36 +456,6 @@ const OAuthLinking = () => {
               <ExternalLink className="w-4 h-4 mr-2" />
               Google Account Help
             </Button>
-
-            {/* Debug information - can be removed in production
-            {import.meta.env.DEV && (
-              <div className="mt-4 p-3 bg-gray-100 rounded-md text-xs font-mono">
-                <details>
-                  <summary className="cursor-pointer font-medium">Debug Information</summary>
-                  <div className="mt-2 overflow-auto max-h-40">
-                    <p>User ID (_id): {user?._id || "Not found"}</p>
-                    <p>Explicit User ID: {user?.userId || "Not found"}</p>
-                    <p>Student ID: {user?.studentId || "Not found"}</p>
-                    <p>Nested User ID: {user?.user?._id || "Not found"}</p>
-                    <p>Email: {user?.email || "Not found"}</p>
-                    <p>Google ID: {user?.googleId || user?.user?.googleId || "Not connected"}</p>
-                    <p>Is Google Linked: {isGoogleLinked ? "Yes" : "No"}</p>
-                    <p>Role: {user?.role || "Not found"}</p>
-                    <p>Fetched User ID: {actualUserId || "Not fetched yet"}</p>
-                    <p>Loading User ID: {isLoadingUserId ? "Yes" : "No"}</p>
-                    <p className="font-bold text-green-600">
-                      Actual ID used for linking: {actualUserId || "Will be fetched when needed"}
-                    </p>
-                    <button
-                      onClick={() => fetchActualUserId()}
-                      className="mt-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"
-                    >
-                      Fetch User ID Now
-                    </button>
-                  </div>
-                </details>
-              </div>
-            )} */}
           </div>
         </div>
       </CardContent>

@@ -23,7 +23,19 @@ const ProtectedRoute = ({ children, role }: TProtectedRouteProps) => {
 
   const dispatch = useAppDispatch();
 
-  if (role !== undefined && role !== (user && (user as TUser).role)) {
+  // Check all possible locations for the role
+  const userRole = (user && ((user as TUser).role || (user as TUser).user?.role)) || localStorage.getItem("userRole");
+
+  // Log the role being used for debugging
+  console.log("ProtectedRoute checking role:", {
+    requiredRole: role,
+    userRole: userRole,
+    fromToken: user && (user as TUser).role,
+    fromLocalStorage: localStorage.getItem("userRole")
+  });
+
+  if (role !== undefined && role !== userRole) {
+    console.log("Role mismatch, logging out user");
     dispatch(logout());
     return <Navigate to={"/login"} replace={true} />;
   }

@@ -116,20 +116,25 @@ const UserProfile = ({
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-200" />
 
-        {user &&
-          user.role === USER_ROLE.STUDENT &&
-          student &&
-          student?.enrolledCourses?.length > 0 && (
+        {/* Student Dashboard Link */}
+        {user && student && student?.enrolledCourses?.length > 0 &&
+          (user.role === USER_ROLE.STUDENT ||
+           user?.user?.role === USER_ROLE.STUDENT ||
+           localStorage.getItem("userRole") === USER_ROLE.STUDENT) && (
             <DropdownMenuItem asChild>
               <Link to={"/student/dashboard"}>Dashboard</Link>
             </DropdownMenuItem>
           )}
 
-        {user && user.role === USER_ROLE.TEACHER && (
-          <DropdownMenuItem asChild>
-            <Link to={"/teacher/dashboard"}>Dashboard</Link>
-          </DropdownMenuItem>
-        )}
+        {/* Teacher Dashboard Link */}
+        {user &&
+          (user.role === USER_ROLE.TEACHER ||
+           user?.user?.role === USER_ROLE.TEACHER ||
+           localStorage.getItem("userRole") === USER_ROLE.TEACHER) && (
+            <DropdownMenuItem asChild>
+              <Link to={"/teacher/dashboard"}>Dashboard</Link>
+            </DropdownMenuItem>
+          )}
         <DropdownMenuItem asChild>
           <Link to={"/user/edit-profile"}>Edit Profile</Link>
         </DropdownMenuItem>

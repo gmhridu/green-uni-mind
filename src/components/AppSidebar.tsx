@@ -39,7 +39,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   let sidebarItems: TDashboardNavMenu = { navMain: [] };
 
-  switch (user?.role) {
+  // Check all possible locations for the role
+  const userRole = user?.role || user?.user?.role || localStorage.getItem("userRole");
+
+  switch (userRole) {
     case USER_ROLE.TEACHER:
       sidebarItems = teacherMenu;
       break;
@@ -47,6 +50,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       sidebarItems = studentMenu;
       break;
   }
+
+  // Log the role being used for debugging
+  console.log("AppSidebar using role:", userRole);
 
   const renderItems = (
     items: TDashboardNavMenuItem[],

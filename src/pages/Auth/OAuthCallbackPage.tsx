@@ -59,10 +59,13 @@ const OAuthCallbackPage = () => {
           // This is an account linking flow from the OAuth provider
           const storedUserId = localStorage.getItem("oauthLinkUserId");
           const storedEmail = localStorage.getItem("oauthLinkUserEmail");
+          // Get the role from URL params or use the stored role
+          const roleParam = params.get("role");
 
           console.log("OAuth linking data from localStorage:", {
             storedUserId,
             storedEmail: storedEmail ? `${storedEmail.substring(0, 3)}...${storedEmail.substring(storedEmail.indexOf('@'))}` : "null",
+            role: roleParam || "from localStorage"
           });
 
           if (!storedUserId) {
@@ -111,11 +114,17 @@ const OAuthCallbackPage = () => {
             console.log("User verification successful:", userData.success);
 
             // Log the data we're using for linking
+            // Get the role from URL params or localStorage
+            const roleParam = params.get("role");
+            const storedRole = localStorage.getItem("oauthLinkUserRole");
+            const userRole = roleParam || storedRole || "student";
+
             console.log("Attempting to link OAuth account:", {
               userId: storedUserId,
               provider,
               providerId: providerId ? providerId.substring(0, 8) + "..." : "null",
-              email: email ? `${email.substring(0, 3)}...${email.substring(email.indexOf('@'))}` : "null"
+              email: email ? `${email.substring(0, 3)}...${email.substring(email.indexOf('@'))}` : "null",
+              role: userRole
             });
 
             // Link the account using the stored user ID
@@ -133,6 +142,7 @@ const OAuthCallbackPage = () => {
               provider: provider as "google" | "facebook" | "apple",
               providerId,
               email,
+              role: userRole
             }).unwrap();
 
             console.log("Account linking result:", result);
@@ -146,6 +156,7 @@ const OAuthCallbackPage = () => {
             localStorage.removeItem("oauthLinkUserId");
             localStorage.removeItem("oauthLinkUserEmail");
             localStorage.removeItem("oauthLinkAccessToken");
+            localStorage.removeItem("oauthLinkUserRole");
 
             // Navigate to the user profile page
             navigate("/user/edit-profile?tab=connections&linked=true");
@@ -178,6 +189,7 @@ const OAuthCallbackPage = () => {
             localStorage.removeItem("oauthLinkUserId");
             localStorage.removeItem("oauthLinkUserEmail");
             localStorage.removeItem("oauthLinkAccessToken");
+            localStorage.removeItem("oauthLinkUserRole");
           }
         } else if (token) {
           // This is a regular OAuth login flow with a token

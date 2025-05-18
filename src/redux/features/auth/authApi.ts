@@ -10,33 +10,70 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body: userInfo,
       }),
-      transformResponse: (response) => ({
-        user: {
+      transformResponse: (response) => {
+        // Store tokens in localStorage as a fallback mechanism
+        // This is used only if cookies don't work in production
+        if (response.data.refreshToken) {
+          localStorage.setItem("refreshToken", response.data.refreshToken);
+        }
+
+        // Also store the access token for OAuth linking
+        if (response.data.accessToken) {
+          localStorage.setItem("accessToken", response.data.accessToken);
+        }
+
+        // Ensure the user role is preserved
+        const user = {
           ...response.data.user,
           photoUrl: response.data.user.profileImg ?? null,
-        },
-        token: response.data.accessToken,
-      }),
-      // async onQueryStarted(_, { dispatch, queryFulfilled }) {
-      //   try {
-      //     const { data } = await queryFulfilled;
-      //     if (data?.user) {
-      //       dispatch(
-      //         authApi.endpoints.getMe.initiate(undefined, {
-      //           forceRefetch: true,
-      //         })
-      //       );
-      //     }
-      //   } catch (error) {
-      //     // ignore
-      //   }
-      // },
+          // Explicitly set the role from the backend response
+          role: response.data.user.role,
+        };
+
+        // Log the user role for debugging
+        console.log("User role from login response:", user.role);
+
+        // Store the user role in localStorage for verification
+        // Check all possible locations for the role
+        const userRole = user.role || user.user?.role;
+        if (userRole) {
+          localStorage.setItem("userRole", userRole);
+          console.log("Stored user role in localStorage from login:", userRole);
+        }
+
+        return {
+          user,
+          token: response.data.accessToken,
+        };
+      },
+      async onQueryStarted(_, { queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          console.log("Login successful, token obtained");
+        } catch (error) {
+          console.error("Login error:", error);
+        }
+      },
     }),
     logout: builder.mutation({
       query: () => ({
         url: "/auth/logout",
         method: "POST",
       }),
+      async onQueryStarted(_, { queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          // Clear tokens from localStorage
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("accessToken");
+          console.log("Logout successful, tokens cleared");
+        } catch (error) {
+          console.error("Logout error:", error);
+          // Still remove tokens from localStorage even if the API call fails
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("accessToken");
+        }
+      },
     }),
     register: builder.mutation({
       query: (userInfo) => ({
@@ -87,9 +124,26 @@ export const authApi = baseApi.injectEndpoints({
       }),
 
       providesTags: ["getMe"],
-      transformResponse: (response: TResponseRedux<any>) => ({
-        data: response.data,
-      }),
+      transformResponse: (response: TResponseRedux<any>) => {
+        // Ensure the user role is preserved
+        if (response.data) {
+          // Check all possible locations for the role
+          const userRole = response.data.role || response.data.user?.role;
+
+          if (userRole) {
+            // Log the user role for debugging
+            console.log("User role from getMe response:", userRole);
+
+            // Store the user role in localStorage for verification
+            localStorage.setItem("userRole", userRole);
+            console.log("Stored user role in localStorage from getMe:", userRole);
+          }
+        }
+
+        return {
+          data: response.data,
+        };
+      },
     }),
     updateUserProfile: builder.mutation({
       query: (args) => ({

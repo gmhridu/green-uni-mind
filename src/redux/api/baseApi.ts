@@ -44,11 +44,20 @@ const baseQueryWithRefreshToken: BaseQueryFn<
       const currentTime = Date.now();
 
       if (expirationTime - currentTime < 30000) {
+        // Try to refresh the token with both cookie and body approach
         const refreshResult = await fetch(
           `${config.apiBaseUrl}/auth/refresh-token`,
           {
             method: "POST",
             credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Refresh-Token": "true", // Add a custom header for debugging
+            },
+            // Also send the token in the body as a fallback
+            body: JSON.stringify({
+              refreshToken: localStorage.getItem("refreshToken") || undefined,
+            }),
           }
         );
 
@@ -78,11 +87,20 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   let result = await baseQuery(args, api, extraOptions);
   if (result.error?.status === 401) {
     try {
+      // Try to refresh the token with both cookie and body approach
       const refreshResult = await fetch(
         `${config.apiBaseUrl}/auth/refresh-token`,
         {
           method: "POST",
           credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Refresh-Token": "true", // Add a custom header for debugging
+          },
+          // Also send the token in the body as a fallback
+          body: JSON.stringify({
+            refreshToken: localStorage.getItem("refreshToken") || undefined,
+          }),
         }
       );
 

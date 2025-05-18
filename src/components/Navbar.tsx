@@ -53,6 +53,8 @@ const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  console.log(user);
+
   // Skip the query if searchTerm is empty
   const { data: searchResults } = useSearchCoursesQuery(searchTerm, {
     skip: !searchTerm,
@@ -127,10 +129,16 @@ const Navbar = () => {
             {navbarMenu
               .filter((item) => {
                 // Filter out "Create Course" if user is not a teacher
+                // Check all possible locations for the role
+                const isTeacher =
+                  user?.role === USER_ROLE.TEACHER ||
+                  user?.user?.role === USER_ROLE.TEACHER ||
+                  localStorage.getItem("userRole") === USER_ROLE.TEACHER;
+
                 if (
                   typeof item.path === "string" &&
                   item.path === "/teacher/courses/create" &&
-                  user?.role !== USER_ROLE.TEACHER
+                  !isTeacher
                 ) {
                   return false;
                 }
@@ -247,10 +255,16 @@ const Navbar = () => {
               {navbarMenu
                 .filter((item) => {
                   // Filter out "Create Course" if user is not a teacher
+                  // Check all possible locations for the role
+                  const isTeacher =
+                    user?.role === USER_ROLE.TEACHER ||
+                    user?.user?.role === USER_ROLE.TEACHER ||
+                    localStorage.getItem("userRole") === USER_ROLE.TEACHER;
+
                   if (
                     typeof item.path === "string" &&
                     item.path === "/teacher/courses/create" &&
-                    user?.role !== USER_ROLE.TEACHER
+                    !isTeacher
                   ) {
                     return false;
                   }

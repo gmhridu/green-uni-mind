@@ -1,9 +1,9 @@
 import { baseApi } from "@/redux/api/baseApi";
 import { RootState } from "@/redux/store";
 import { createSlice } from "@reduxjs/toolkit";
-import { clearCart } from "../cart/cartSlice";
 
 export type TUser = {
+  user?: any;
   _id?: string;
   email: string;
   name: {
@@ -45,9 +45,28 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setUser: (state, action) => {
-      state.user = action.payload.user;
+      // Ensure the user role is preserved
+      const user = action.payload.user;
+
+      // Log the user role for debugging
+      console.log("Setting user in Redux store with role:", user?.role);
+
+      state.user = user;
       state.token = action.payload.token;
       state.isLoading = false;
+
+      // Store token in localStorage for OAuth linking
+      if (action.payload.token) {
+        localStorage.setItem("accessToken", action.payload.token);
+      }
+
+      // Store the user role in localStorage for verification
+      // Check all possible locations for the role
+      const userRole = user?.role || user?.user?.role;
+      if (userRole) {
+        localStorage.setItem("userRole", userRole);
+        console.log("Stored user role in localStorage:", userRole);
+      }
     },
     setIsLoading: (state, action) => {
       state.isLoading = action.payload;
@@ -56,13 +75,19 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isLoading = false;
+
+      // Clear tokens and user data from localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("oauthRequestedRole");
     },
   },
   extraReducers: (builder) => {
     builder.addCase(
       // Reset API on logout if needed
       baseApi.util.resetApiState,
-      (state) => {}
+      (_state) => {}
     );
   },
 });

@@ -102,8 +102,14 @@ const SidebarNav = () => {
     },
   ];
 
+  // Check all possible locations for the role
+  const userRole = user?.role || user?.user?.role || localStorage.getItem("userRole");
+
+  // Log the role being used for debugging
+  console.log("SidebarNav using role:", userRole);
+
   const filteredNavItems = navItems.filter((item) =>
-    user?.role ? item.roles.includes(user.role) : false
+    userRole ? item.roles.includes(userRole as string) : false
   );
 
   return (

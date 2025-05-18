@@ -19,22 +19,30 @@ const SocialLoginButtons = ({
 }: SocialLoginButtonsProps) => {
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 640px)");
-  
+
   // Get the current URL to determine if we're on login or signup page
   const isLoginPage = location.pathname.includes("login");
   const isSignUpPage = location.pathname.includes("sign-up");
-  
+
   // Base URL for OAuth endpoints
   const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
-  
+
   // Function to handle OAuth login
   const handleOAuthLogin = (provider: string) => {
     // Determine if this is for account linking
     const isLinking = false;
-    
+
+    // Store the requested role in localStorage to verify it after login
+    localStorage.setItem("oauthRequestedRole", role);
+
+    // Log the role being used
+    console.log(`OAuth login with ${provider} using role:`, role);
+
     // Construct the OAuth URL with appropriate query parameters
     const oauthUrl = `${baseUrl}/oauth/${provider}?role=${role}&linking=${isLinking}`;
-    
+
+    console.log("Redirecting to OAuth URL:", oauthUrl);
+
     // Redirect to the OAuth provider
     window.location.href = oauthUrl;
   };
@@ -46,7 +54,7 @@ const SocialLoginButtons = ({
         <span className="text-xs text-muted-foreground">OR</span>
         <Separator className="flex-1" />
       </div>
-      
+
       <div className="grid grid-cols-1 gap-3">
         <Button
           type="button"
@@ -57,7 +65,7 @@ const SocialLoginButtons = ({
           <FcGoogle className="h-5 w-5" />
           <span>{isSignUp ? "Sign up" : "Continue"} with Google</span>
         </Button>
-        
+
         <Button
           type="button"
           variant="outline"
@@ -67,7 +75,7 @@ const SocialLoginButtons = ({
           <FaFacebook className="h-5 w-5 text-blue-600" />
           <span>{isSignUp ? "Sign up" : "Continue"} with Facebook</span>
         </Button>
-        
+
         {!isMobile && (
           <Button
             type="button"

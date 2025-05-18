@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Link as LinkIcon, ExternalLink, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import { useAppSelector } from "@/redux/hooks";
-import { selectCurrentUser } from "@/redux/features/auth/authSlice";
+import { selectCurrentUser, selectCurrentToken } from "@/redux/features/auth/authSlice";
 import { useUnlinkOAuthAccountMutation, useGetMeQuery } from "@/redux/features/auth/authApi";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
@@ -28,7 +28,7 @@ import { getUserId, isValidObjectId } from "@/utils/getUserId";
 
 const AccountConnections = () => {
   const user = useAppSelector(selectCurrentUser);
-  const { data: userData, isLoading: isUserLoading } = useGetMeQuery(undefined);
+  const { data: userData } = useGetMeQuery(undefined);
   const [unlinkOAuthAccount, { isLoading: isUnlinking }] = useUnlinkOAuthAccountMutation();
 
   const [unlinkProvider, setUnlinkProvider] = useState<string | null>(null);
@@ -87,6 +87,9 @@ const AccountConnections = () => {
     isAppleConnected,
   ].filter(Boolean).length;
 
+  // Get the token from Redux store at component level
+  const reduxToken = useAppSelector(selectCurrentToken);
+
   // Function to handle OAuth account linking
   const handleLinkAccount = (provider: string) => {
     if (!effectiveUser) {
@@ -124,10 +127,13 @@ const AccountConnections = () => {
     localStorage.setItem("oauthLinkUserId", userId);
     localStorage.setItem("oauthLinkUserEmail", userEmail);
 
-    // Also store the access token for verification in the callback
-    const accessToken = localStorage.getItem("accessToken");
+    // Store the access token for verification in the callback
+    // Try to get it from multiple sources to ensure we have it
+    const accessToken = reduxToken || localStorage.getItem("accessToken");
     if (accessToken) {
       localStorage.setItem("oauthLinkAccessToken", accessToken);
+      // Also set it as a cookie that will be sent with the request
+      document.cookie = `authToken=${accessToken}; path=/; max-age=3600; SameSite=Lax`;
     }
 
     // Log the stored data for debugging
@@ -135,7 +141,8 @@ const AccountConnections = () => {
       userId,
       email: userEmail,
       role: effectiveUser.role || "unknown",
-      source: userData ? "API data" : "Redux store"
+      source: userData ? "API data" : "Redux store",
+      tokenAvailable: !!accessToken
     });
 
     // Show toast to indicate the process is starting
@@ -146,7 +153,8 @@ const AccountConnections = () => {
       (effectiveUser.user && typeof effectiveUser.user === 'object' ? effectiveUser.user.role : 'student');
 
     // Construct the OAuth URL with the correct path
-    const oauthUrl = `${baseUrl}/api/v1/oauth/${provider}?role=${userRole}&linking=true`;
+    // Add the token as a query parameter for the backend to use
+    const oauthUrl = `${baseUrl}/api/v1/oauth/${provider}?role=${userRole}&linking=true${accessToken ? `&token=${accessToken}` : ''}`;
 
     console.log("Redirecting to OAuth URL:", oauthUrl);
 

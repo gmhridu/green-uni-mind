@@ -24,13 +24,14 @@ import { useLoginMutation } from "@/redux/features/auth/authApi";
 import { setIsLoading, setUser, TUser } from "@/redux/features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import { Loader2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { InputPassWord } from "@/components/ui/input-password";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
+import { useEffect } from "react";
 
 export type TLoginForm = {
   email: string;
@@ -41,6 +42,11 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [login] = useLoginMutation();
+  const [searchParams] = useSearchParams();
+
+  // Get provider and email from URL if they exist
+  const provider = searchParams.get("provider");
+  const email = searchParams.get("email");
 
   // Responsive design hooks
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -55,6 +61,20 @@ const LoginPage = () => {
   });
   const { formState } = form;
   const { isLoading, isSubmitting } = formState;
+
+  // Handle the case where a user is redirected from OAuth callback
+  useEffect(() => {
+    if (provider && email) {
+      // Pre-fill the email field
+      form.setValue("email", email);
+
+      // Show a message to the user
+      toast.info(
+        `This ${provider} account is already linked to an existing account. Please log in with your password to access it.`,
+        { duration: 6000 }
+      );
+    }
+  }, [provider, email, form]);
 
   const onSubmit = async (formData: FieldValues) => {
     const toastId = toast.loading("Logging...");
