@@ -1,6 +1,7 @@
 import { baseApi } from "@/redux/api/baseApi";
 import { TResponseRedux } from "@/types/global";
 import { setUser } from "@/redux/features/auth/authSlice";
+import { RootState } from "@/redux/store";
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -11,15 +12,21 @@ export const authApi = baseApi.injectEndpoints({
         body: userInfo,
       }),
       transformResponse: (response) => {
-        // Store tokens in localStorage as a fallback mechanism
-        // This is used only if cookies don't work in production
+        console.log("Login response received:", response);
+
+        // Always store tokens in localStorage for production
         if (response.data.refreshToken) {
           localStorage.setItem("refreshToken", response.data.refreshToken);
+          console.log("Refresh token stored in localStorage");
+        } else {
+          console.warn("No refresh token in login response");
         }
 
-        // Also store the access token for OAuth linking
         if (response.data.accessToken) {
           localStorage.setItem("accessToken", response.data.accessToken);
+          console.log("Access token stored in localStorage");
+        } else {
+          console.warn("No access token in login response");
         }
 
         // Ensure the user role is preserved
@@ -41,15 +48,26 @@ export const authApi = baseApi.injectEndpoints({
           console.log("Stored user role in localStorage from login:", userRole);
         }
 
+        // Store the entire user object in localStorage as a fallback
+        localStorage.setItem("userData", JSON.stringify(user));
+        console.log("User data stored in localStorage");
+
         return {
           user,
           token: response.data.accessToken,
         };
       },
-      async onQueryStarted(_, { queryFulfilled }) {
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
-          await queryFulfilled;
+          const { data } = await queryFulfilled;
           console.log("Login successful, token obtained");
+
+          // Immediately fetch user data to ensure it's up to date
+          if (data.token) {
+            setTimeout(() => {
+              dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
+            }, 500);
+          }
         } catch (error) {
           console.error("Login error:", error);
         }
@@ -63,15 +81,22 @@ export const authApi = baseApi.injectEndpoints({
       async onQueryStarted(_, { queryFulfilled }) {
         try {
           await queryFulfilled;
-          // Clear tokens from localStorage
+          // Clear all auth-related data from localStorage
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("accessToken");
-          console.log("Logout successful, tokens cleared");
+          localStorage.removeItem("userRole");
+          localStorage.removeItem("userData");
+          localStorage.removeItem("oauthRequestedRole");
+          console.log("Logout successful, all auth data cleared from localStorage");
         } catch (error) {
           console.error("Logout error:", error);
-          // Still remove tokens from localStorage even if the API call fails
+          // Still remove all auth-related data from localStorage even if the API call fails
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("accessToken");
+          localStorage.removeItem("userRole");
+          localStorage.removeItem("userData");
+          localStorage.removeItem("oauthRequestedRole");
+          console.log("Cleared auth data from localStorage despite API error");
         }
       },
     }),
@@ -125,6 +150,8 @@ export const authApi = baseApi.injectEndpoints({
 
       providesTags: ["getMe"],
       transformResponse: (response: TResponseRedux<any>) => {
+        console.log("GetMe response received:", response);
+
         // Ensure the user role is preserved
         if (response.data) {
           // Check all possible locations for the role
@@ -137,12 +164,68 @@ export const authApi = baseApi.injectEndpoints({
             // Store the user role in localStorage for verification
             localStorage.setItem("userRole", userRole);
             console.log("Stored user role in localStorage from getMe:", userRole);
+
+            // Store the entire user object in localStorage as a fallback
+            localStorage.setItem("userData", JSON.stringify(response.data));
+            console.log("User data stored in localStorage from getMe");
+          }
+        } else {
+          console.warn("No user data in getMe response");
+
+          // Try to use stored user data if available
+          const storedUserData = localStorage.getItem("userData");
+          if (storedUserData) {
+            try {
+              const userData = JSON.parse(storedUserData);
+              console.log("Using stored user data from localStorage:", userData);
+              return {
+                data: userData,
+              };
+            } catch (error) {
+              console.error("Error parsing stored user data:", error);
+            }
           }
         }
 
         return {
           data: response.data,
         };
+      },
+      async onQueryStarted(_, { dispatch, getState, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+
+          // If we have user data but no token in Redux, update the token from localStorage
+          if (data?.data && !(getState() as RootState).auth.token) {
+            const storedToken = localStorage.getItem("accessToken");
+            if (storedToken) {
+              console.log("Updating Redux store with token from localStorage");
+              dispatch(setUser({
+                user: data.data,
+                token: storedToken
+              }));
+            }
+          }
+        } catch (error) {
+          console.error("GetMe error:", error);
+
+          // If getMe fails but we have stored user data and token, use those
+          const storedUserData = localStorage.getItem("userData");
+          const storedToken = localStorage.getItem("accessToken");
+
+          if (storedUserData && storedToken) {
+            try {
+              const userData = JSON.parse(storedUserData);
+              console.log("Using stored user data after getMe failure:", userData);
+              dispatch(setUser({
+                user: userData,
+                token: storedToken
+              }));
+            } catch (e) {
+              console.error("Error using stored user data:", e);
+            }
+          }
+        }
       },
     }),
     updateUserProfile: builder.mutation({
