@@ -469,10 +469,8 @@ const OAuthCallback = () => {
             return;
           }
 
-          // Only show error if we don't have user data
-          setError("Authentication parameters not found. Redirecting to login page.");
-          toast.error("Authentication parameters not found");
-          setTimeout(() => navigate("/login"), 3000);
+          // Redirect to login page without showing error toast
+          navigate("/login");
         }
       } finally {
         setIsProcessing(false);

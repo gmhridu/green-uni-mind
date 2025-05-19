@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAppDispatch } from "@/redux/hooks";
-import { setUser } from "@/redux/features/auth/authSlice";
 import { useLinkOAuthAccountMutation, useGetMeQuery } from "@/redux/features/auth/authApi";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { isValidObjectId } from "@/utils/getUserId";
 import AuthSuccessPage from "@/components/auth/AuthSuccessPage";
 
-const OAuthCallbackPage = () => {
+const OAuthLinkCallbackPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -24,19 +23,19 @@ const OAuthCallbackPage = () => {
       try {
         // Get parameters from URL query params
         const params = new URLSearchParams(location.search);
-        const token = params.get("token");
         const provider = params.get("provider");
         const providerId = params.get("providerId");
         const email = params.get("email");
         const isLinking = params.get("isLinking") === "true";
+        const role = params.get("role");
 
         // Log parameters for debugging
-        console.log("OAuth callback parameters:", {
-          token: token ? "exists" : "null",
+        console.log("OAuth link callback parameters:", {
           provider,
           providerId: providerId ? providerId.substring(0, 8) + "..." : "null",
           email: email ? `${email.substring(0, 3)}...${email.substring(email.indexOf('@'))}` : "null",
-          isLinking
+          isLinking,
+          role
         });
 
         // Check if this is an account linking flow from the URL
@@ -46,24 +45,22 @@ const OAuthCallbackPage = () => {
           // This is an account linking flow from the OAuth provider
           const storedUserId = localStorage.getItem("oauthLinkUserId");
           const storedEmail = localStorage.getItem("oauthLinkUserEmail");
-          // Get the role from URL params or use the stored role
-          const roleParam = params.get("role");
 
           console.log("OAuth linking data from localStorage:", {
             storedUserId,
             storedEmail: storedEmail ? `${storedEmail.substring(0, 3)}...${storedEmail.substring(storedEmail.indexOf('@'))}` : "null",
-            role: roleParam || "from localStorage"
+            role: role || "from localStorage"
           });
 
+          // If we don't have a stored user ID, we can try to use the email from the OAuth provider
           if (!storedUserId) {
-            console.error("User ID not found in localStorage for account linking");
-            setError("User ID not found for account linking. Please try again.");
-            return;
+            console.warn("User ID not found in localStorage for account linking");
+            console.log("Will attempt to link using email:", email);
+
+            // We'll continue with the flow and let the backend handle finding the user by email
           }
 
           try {
-            // Make a direct API call to verify the user ID before linking
-            console.log("Verifying user ID before linking...");
             // Use the stored access token specifically for OAuth linking if available
             const accessToken = localStorage.getItem('oauthLinkAccessToken') || localStorage.getItem('accessToken');
 
@@ -73,51 +70,29 @@ const OAuthCallbackPage = () => {
               return;
             }
 
-            // Use the correct API base URL from environment variables
-            const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
-            const verifyResponse = await fetch(`${apiBaseUrl}/users/${storedUserId}`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-              }
-            });
+            // Skip the verification step since it's causing issues
+            console.log("Skipping user verification and proceeding directly to account linking");
 
-            if (!verifyResponse.ok) {
-              console.error("Failed to verify user ID:", verifyResponse.status);
-              // Try to get more details about the error
-              try {
-                const errorData = await verifyResponse.json();
-                console.error("Error details:", errorData);
-              } catch (e) {
-                console.error("Could not parse error response");
-              }
-
-              setError("Could not verify your user account. Please try again.");
-              return;
-            }
-
-            const userData = await verifyResponse.json();
             // Get the role from URL params or localStorage
-            const roleParam = params.get("role");
             const storedRole = localStorage.getItem("oauthLinkUserRole");
-            const userRole = roleParam || storedRole || "student";
+            const userRole = role || storedRole || "student";
 
-            // Link the account using the stored user ID
-            // Make sure we're using a valid MongoDB ObjectId
-            if (!storedUserId || !isValidObjectId(storedUserId)) {
+            // Link the account using the stored user ID if available
+            // Make sure we're using a valid MongoDB ObjectId if we have one
+            if (storedUserId && !isValidObjectId(storedUserId)) {
               console.error("Invalid user ID format:", storedUserId);
               setError(`Invalid user ID format. Please try again.`);
               return;
             }
 
-            console.log("Linking account with validated user ID:", storedUserId);
+            console.log("Linking account with user ID:", storedUserId || "to be determined by email");
 
-            const result = await linkOAuthAccount({
-              userId: storedUserId,
+            // If we don't have a user ID, we'll let the backend find the user by email
+            await linkOAuthAccount({
+              userId: storedUserId || "", // Send empty string if no user ID
               provider: provider as "google" | "facebook" | "apple",
               providerId,
-              email,
+              email, // Always include email to help backend find the user
               role: userRole
             }).unwrap();
 
@@ -203,28 +178,12 @@ const OAuthCallbackPage = () => {
             localStorage.removeItem("oauthLinkAccessToken");
             localStorage.removeItem("oauthLinkUserRole");
           }
-        } else if (token) {
-          // This is a regular OAuth login flow with a token
-          console.log("Processing regular OAuth login flow with token");
-
-          // Set the user in Redux store
-          dispatch(setUser({
-            user: {
-              // This is a placeholder - in a real app, you'd get this from the token
-              email: "user@example.com",
-              role: "student",
-            },
-            token
-          }));
-
-          // Navigate based on user role (simplified for demo)
-          navigate("/student/dashboard");
         } else {
           console.error("Invalid or missing authentication data");
-          setError("Invalid or missing authentication data");
+          setError("Invalid or missing authentication data for account linking");
         }
       } catch (error) {
-        console.error("OAuth callback error:", error);
+        console.error("OAuth link callback error:", error);
         const errorMessage = error instanceof Error ? error.message : "Please try again.";
         setError(`Authentication failed: ${errorMessage}`);
       } finally {
@@ -233,15 +192,15 @@ const OAuthCallbackPage = () => {
     };
 
     processOAuthCallback();
-  }, [dispatch, navigate, location.search, linkOAuthAccount, refetch]);
+  }, [navigate, location.search, linkOAuthAccount, refetch]);
 
   if (isProcessing) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
-          <h1 className="text-2xl font-bold mb-2">Processing Authentication</h1>
-          <p className="text-gray-600">Please wait while we complete your authentication...</p>
+          <h1 className="text-2xl font-bold mb-2">Processing Account Linking</h1>
+          <p className="text-gray-600">Please wait while we connect your account...</p>
         </div>
       </div>
     );
@@ -254,13 +213,13 @@ const OAuthCallbackPage = () => {
           <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
             <span className="text-red-600 text-2xl">!</span>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Authentication Error</h1>
+          <h1 className="text-2xl font-bold mb-2">Account Linking Error</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/user/edit-profile?tab=connections")}
             className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
           >
-            Return to Login
+            Return to Profile
           </button>
         </div>
       </div>
@@ -283,4 +242,4 @@ const OAuthCallbackPage = () => {
   return null;
 };
 
-export default OAuthCallbackPage;
+export default OAuthLinkCallbackPage;

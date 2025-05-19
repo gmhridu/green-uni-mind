@@ -111,7 +111,9 @@ const PopularCoursesSection = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { data: userData } = useGetMeQuery(undefined);
+  // Handle error state
   if (isError) {
+    console.error("Error in PopularCoursesSection:", isError);
     return (
       <section className="py-16 bg-green-50">
         <div className="container mx-auto px-4">
@@ -120,6 +122,22 @@ const PopularCoursesSection = () => {
           </h2>
           <div className="text-center text-red-500">
             Error loading courses. Please try again later.
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Handle empty courses
+  if (!isLoading && (!courses || !courses.data || courses.data.length === 0)) {
+    return (
+      <section className="py-16 bg-green-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-display font-semibold text-center mb-12">
+            Popular Courses
+          </h2>
+          <div className="text-center text-gray-500">
+            No courses available at the moment. Check back later!
           </div>
         </div>
       </section>

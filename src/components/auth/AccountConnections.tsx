@@ -92,6 +92,8 @@ const AccountConnections = () => {
 
   // Function to handle OAuth account linking
   const handleLinkAccount = (provider: string) => {
+    const toastId = toast.loading("Connecting...");
+
     if (!effectiveUser) {
       toast.error("User data not found. Please try again later.");
       return;
@@ -103,13 +105,13 @@ const AccountConnections = () => {
     if (!userId) {
       // Log detailed information about the user object for debugging
       console.error("Failed to extract user ID. User object:", JSON.stringify(effectiveUser, null, 2));
-      toast.error("User ID not found. Please try again later.");
+      toast.error("User ID not found. Please try again later.", { id: toastId });
       return;
     }
 
     // Validate that the ID is a valid MongoDB ObjectId
     if (!isValidObjectId(userId)) {
-      toast.error("Invalid user ID format. Please try again later.");
+      toast.error("Invalid user ID format. Please try again later.", { id: toastId });
       console.error("Invalid user ID format:", userId);
       return;
     }
@@ -119,7 +121,7 @@ const AccountConnections = () => {
       (effectiveUser.user && typeof effectiveUser.user === 'object' ? effectiveUser.user.email : '');
 
     if (!userEmail) {
-      toast.error("User email not found. Please try again later.");
+      toast.error("User email not found. Please try again later.", { id: toastId });
       return;
     }
 
@@ -146,7 +148,7 @@ const AccountConnections = () => {
     });
 
     // Show toast to indicate the process is starting
-    toast.success(`Connecting to ${provider}...`);
+    toast.success(`Connecting to ${provider}...`, { id: toastId });
 
     // Construct the OAuth URL with linking=true
     const userRole = effectiveUser.role ||

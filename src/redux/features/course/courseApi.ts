@@ -42,11 +42,26 @@ export const courseApi = baseApi.injectEndpoints({
       }),
       providesTags: ["courses"],
       transformResponse: (response: TResponseRedux<any>) => {
+        // Handle potential errors or empty responses
+        if (!response || !response.data) {
+          console.error("Invalid response from published courses API:", response);
+          return { data: [], meta: {} };
+        }
+
         // The backend returns the courses directly in the data field
         return {
           data: response.data,
           meta: response.meta,
         };
+      },
+      // Add error handling
+      onQueryStarted: async (_, { queryFulfilled }) => {
+        try {
+          await queryFulfilled;
+        } catch (error) {
+          console.error("Error fetching published courses:", error);
+          // Don't dispatch logout for public endpoint errors
+        }
       },
     }),
     getCourseById: builder.query({

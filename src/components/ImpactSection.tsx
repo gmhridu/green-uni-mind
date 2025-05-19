@@ -42,9 +42,9 @@ const DashedConnector = () => (
     <path
       d="M1.164 14.2479C38.578 -0.621807 61.1547 -5.6243 96.138 14.2479C177.202 60.2959 200.226 14.2479 239.079 10.4105"
       stroke="#3EB3E3"
-      stroke-width="1.91867"
-      stroke-linecap="round"
-      stroke-dasharray="5.76 5.76"
+      strokeWidth="1.91867"
+      strokeLinecap="round"
+      strokeDasharray="5.76 5.76"
     />
   </svg>
 );

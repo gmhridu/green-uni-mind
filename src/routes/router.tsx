@@ -4,6 +4,8 @@ import LoginPage from "@/pages/Auth/LoginPage";
 import SignUpPage from "@/pages/Auth/SignUpPage";
 import ForgotPasswordPage from "@/pages/Auth/ForgotPasswordPage";
 import OAuthCallback from "@/pages/Auth/OAuthCallback";
+import OAuthSuccessPage from "@/pages/Auth/OAuthSuccessPage";
+import OAuthLinkCallbackPage from "@/pages/Auth/OAuthLinkCallbackPage";
 import CreatorCourses from "@/pages/Course/CreatorCourses";
 import EditUserPhoto from "@/pages/EditUserProfile/EditUserPhoto";
 import EditUserProfile from "@/pages/EditUserProfile/EditUserProfile";
@@ -239,6 +241,14 @@ const router = createBrowserRouter([
   {
     path: "oauth/callback",
     element: <OAuthCallback />,
+  },
+  {
+    path: "oauth/success",
+    element: <OAuthSuccessPage />,
+  },
+  {
+    path: "oauth/link/callback",
+    element: <OAuthLinkCallbackPage />,
   },
   {
     path: "*",
