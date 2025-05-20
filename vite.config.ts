@@ -17,10 +17,13 @@ export default defineConfig({
     },
   },
   worker: {
-    format: 'es', // Use ES modules for workers
+    format: 'es', 
   },
   optimizeDeps: {
-    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'], // Exclude FFmpeg from optimization
+    exclude: [
+      '@ffmpeg/ffmpeg',
+      '@ffmpeg/util',
+    ],
     include: [
       'react-player/lazy',
       'react-player/file',
