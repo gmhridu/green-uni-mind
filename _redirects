@@ -14,8 +14,8 @@
 /my-courses   /index.html   200
 /checkout/*   /index.html   200
 
-# Catch-all rule for any other routes
-/*    /index.html   200
+# API proxy to prevent CORS issues and improve performance
+/api/*  https://green-uni-mind-backend-oxpo.onrender.com/api/:splat  200
 
-# API proxy to prevent CORS issues (optional - you can also handle CORS on backend)
-# /api/*  https://your-backend-domain.com/api/:splat  200
+# Catch-all rule for any other routes (must be last)
+/*    /index.html   200
