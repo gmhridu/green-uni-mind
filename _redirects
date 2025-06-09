@@ -1,0 +1,5 @@
+# SPA routing - redirect all routes to index.html for client-side routing
+/*    /index.html   200
+
+# API proxy to prevent CORS issues (optional - you can also handle CORS on backend)
+# /api/*  https://your-backend-domain.com/api/:splat  200

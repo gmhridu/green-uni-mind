@@ -1,0 +1,33 @@
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9b87f5;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8a74f0;
+}
+
+/* Fix for mobile overflow */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Add smooth transition for hover effects */
+a, button {
+  transition: all 0.3s ease;
+}
