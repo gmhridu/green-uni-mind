@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "build:pages": "vite build && cp _headers _redirects dist/",
+    "build:pages": "vite build && cp _headers _redirects dist/ && cp public/_redirects dist/_redirects",
     "lint": "eslint .",
     "preview": "vite preview",
     "pages:dev": "wrangler pages dev dist --compatibility-date=2024-01-15",
