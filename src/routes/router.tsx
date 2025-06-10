@@ -43,6 +43,9 @@ import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import AllCourses from "@/pages/AllCourses";
 // import CloudinaryPlayerDemo from "@/pages/CloudinaryPlayerDemo";
+import Certifications from "@/pages/Certifications";
+import Blog from "@/pages/Blog";
+import Impact from "@/pages/Impact";
 
 const router = createBrowserRouter([
   {
@@ -64,6 +67,18 @@ const router = createBrowserRouter([
       {
         path: "courses",
         element: <AllCourses />,
+      },
+      {
+        path: "certifications",
+        element: <Certifications />,
+      },
+      {
+        path: "blog",
+        element: <Blog />,
+      },
+      {
+        path: "impact",
+        element: <Impact />,
       },
       {
         path: "user",
