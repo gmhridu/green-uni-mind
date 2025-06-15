@@ -1,146 +1,321 @@
-import { Phone, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Leaf,
+  Globe,
+  Users,
+  Award,
+  ArrowRight,
+  Linkedin,
+  Twitter,
+  Instagram,
+  Facebook
+} from "lucide-react";
+import { useState } from "react";
 
 const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubscribing(true);
+
+    // Simulate newsletter signup
+    setTimeout(() => {
+      setIsSubscribing(false);
+      setEmail("");
+      // You can add actual newsletter signup logic here
+    }, 1000);
+  };
+
   return (
-    <footer className="bg-[#B7CAB7] py-6 md:py-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Logo and Brand Section */}
-        <div className="px-4 sm:px-6 lg:px-8 mb-4 md:mb-6">
-          <div className="flex items-center gap-3">
-            <img
-              src="/images/logo.png"
-              alt="GreenUniMind Logo"
-              className="h-10 w-10 md:h-12 md:w-12 rounded-full object-cover"
-            />
-            <span className="font-display font-semibold text-white text-lg md:text-xl">
-              GreenUniMind AI.
-            </span>
-          </div>
-        </div>
+    <footer className="bg-gradient-to-b from-green-800 to-green-900 text-white">
+      {/* Main Footer Content */}
+      <div className="responsive-container py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
 
-        {/* Horizontal separator */}
-        <div className="w-full h-px bg-white/40"></div>
+          {/* Brand & Mission Section */}
+          <div className="lg:col-span-1">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="space-y-6"
+            >
+              {/* Logo and Brand */}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img
+                    src="/images/logo.png"
+                    alt="Green Uni Mind Logo"
+                    className="h-12 w-12 rounded-full object-cover ring-2 ring-green-400/30"
+                  />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full flex items-center justify-center">
+                    <Leaf className="w-2 h-2 text-green-900" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-xl text-white">
+                    Green Uni Mind
+                  </h3>
+                  <p className="text-green-200 text-sm font-medium">
+                    Learn Green. Live Better.
+                  </p>
+                </div>
+              </div>
 
-        {/* Main Footer Content */}
-        <div className="px-4 sm:px-6 lg:px-8 pt-6 md:pt-8">
-          <div className="flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap gap-8 md:gap-10 lg:gap-16">
-            {/* Left Column - Description */}
-            <div className="w-full md:w-5/12 lg:w-5/12">
-              <p className="text-white text-sm leading-relaxed max-w-md">
-                Unlock limitless opportunities by learning directly from globally
-                acclaimed experts, and take your skills, knowledge, and career to
-                extraordinary new heights with our premium online courses.
+              {/* Mission Statement */}
+              <p className="text-green-100 text-sm leading-relaxed">
+                Empowering sustainable thinkers through action-driven learning.
+                Join our global community creating real environmental impact through education.
               </p>
 
-              {/* Social Media Icons */}
-              <div className="flex gap-5 mt-5">
-                <a
-                  href="#"
-                  aria-label="Facebook"
-                  className="text-white hover:opacity-80 transition-opacity"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                  </svg>
-                </a>
+              {/* Trust Signals */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-green-200 text-sm">
+                  <Users className="w-4 h-4 text-green-400" />
+                  <span>Join 500k+ learners worldwide</span>
+                </div>
+                <div className="flex items-center gap-2 text-green-200 text-sm">
+                  <Award className="w-4 h-4 text-green-400" />
+                  <span>ISO Certified Curriculum</span>
+                </div>
+                <div className="flex items-center gap-2 text-green-200 text-sm">
+                  <Globe className="w-4 h-4 text-green-400" />
+                  <span>Backed by Environmental Educators</span>
+                </div>
+              </div>
+
+              {/* Social Media Links */}
+              <div className="flex gap-4">
                 <a
                   href="#"
                   aria-label="LinkedIn"
-                  className="text-white hover:opacity-80 transition-opacity"
+                  className="w-10 h-10 bg-green-700/50 rounded-full flex items-center justify-center hover:bg-green-600 transition-colors duration-300 group"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                    <rect x="2" y="9" width="4" height="12"></rect>
-                    <circle cx="4" cy="4" r="2"></circle>
-                  </svg>
+                  <Linkedin className="w-5 h-5 text-green-200 group-hover:text-white" />
                 </a>
                 <a
                   href="#"
                   aria-label="Twitter"
-                  className="text-white hover:opacity-80 transition-opacity"
+                  className="w-10 h-10 bg-green-700/50 rounded-full flex items-center justify-center hover:bg-green-600 transition-colors duration-300 group"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-                  </svg>
+                  <Twitter className="w-5 h-5 text-green-200 group-hover:text-white" />
                 </a>
+                <a
+                  href="#"
+                  aria-label="Instagram"
+                  className="w-10 h-10 bg-green-700/50 rounded-full flex items-center justify-center hover:bg-green-600 transition-colors duration-300 group"
+                >
+                  <Instagram className="w-5 h-5 text-green-200 group-hover:text-white" />
+                </a>
+                <a
+                  href="#"
+                  aria-label="Facebook"
+                  className="w-10 h-10 bg-green-700/50 rounded-full flex items-center justify-center hover:bg-green-600 transition-colors duration-300 group"
+                >
+                  <Facebook className="w-5 h-5 text-green-200 group-hover:text-white" />
+                </a>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Learn Section */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <h4 className="font-semibold text-lg mb-6 text-white">Learn</h4>
+              <ul className="space-y-3">
+                {[
+                  "Courses",
+                  "Certifications",
+                  "Categories",
+                  "Free Resources"
+                ].map((item, index) => (
+                  <li key={index}>
+                    <a
+                      href="#"
+                      className="text-green-200 hover:text-white text-sm transition-colors duration-300 hover:translate-x-1 inline-block"
+                    >
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
+
+          {/* Company Section */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <h4 className="font-semibold text-lg mb-6 text-white">Company</h4>
+              <ul className="space-y-3">
+                {[
+                  "About",
+                  "Blog",
+                  "Impact",
+                  "Careers",
+                  "Become a Teacher"
+                ].map((item, index) => (
+                  <li key={index}>
+                    <a
+                      href="#"
+                      className="text-green-200 hover:text-white text-sm transition-colors duration-300 hover:translate-x-1 inline-block"
+                    >
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
+
+          {/* Support & Newsletter Section */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="space-y-8"
+            >
+              {/* Support Links */}
+              <div>
+                <h4 className="font-semibold text-lg mb-6 text-white">Support</h4>
+                <ul className="space-y-3">
+                  {[
+                    "Help Center",
+                    "Contact",
+                    "Community",
+                    "FAQ"
+                  ].map((item, index) => (
+                    <li key={index}>
+                      <a
+                        href="#"
+                        className="text-green-200 hover:text-white text-sm transition-colors duration-300 hover:translate-x-1 inline-block"
+                      >
+                        {item}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Newsletter Signup */}
+              <div>
+                <h4 className="font-semibold text-lg mb-4 text-white">Stay Updated</h4>
+                <p className="text-green-200 text-sm mb-4">
+                  Get the latest sustainability learning insights and course updates.
+                </p>
+                <form onSubmit={handleNewsletterSubmit} className="space-y-3">
+                  <div className="relative">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      required
+                      className="w-full px-4 py-3 bg-green-700/30 border border-green-600/50 rounded-lg text-white placeholder-green-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all duration-300"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isSubscribing}
+                    className="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-3 rounded-lg transition-all duration-300 disabled:opacity-50"
+                  >
+                    {isSubscribing ? (
+                      "Subscribing..."
+                    ) : (
+                      <>
+                        Subscribe
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Information Bar */}
+      <div className="border-t border-green-700/50 bg-green-900/50">
+        <div className="responsive-container py-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+              <div className="flex items-center gap-2 text-green-200 text-sm">
+                <Mail className="w-4 h-4 text-green-400" />
+                <a
+                  href="mailto:hello@greenunimind.org"
+                  className="hover:text-white transition-colors duration-300"
+                >
+                  hello@greenunimind.org
+                </a>
+              </div>
+              <div className="flex items-center gap-2 text-green-200 text-sm">
+                <MapPin className="w-4 h-4 text-green-400" />
+                <span>Vancouver, BC</span>
+              </div>
+              <div className="flex items-center gap-2 text-green-200 text-sm">
+                <Clock className="w-4 h-4 text-green-400" />
+                <span>Mon–Fri 9am–6pm PST</span>
               </div>
             </div>
 
-            {/* Middle Column - Service Links */}
-            <div className="w-full md:w-3/12 lg:w-3/12">
-              <h3 className="text-white font-medium text-lg mb-4">Service</h3>
-              <ul className="space-y-3">
-                <li>
-                  <a href="#" className="text-white hover:opacity-80 text-sm transition-opacity">
-                    HOME
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-white hover:opacity-80 text-sm transition-opacity">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-white hover:opacity-80 text-sm transition-opacity">
-                    Courses
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-white hover:opacity-80 text-sm transition-opacity">
-                    Contact Us
-                  </a>
-                </li>
-              </ul>
+            {/* Partner Logos */}
+            <div className="flex items-center gap-4">
+              <span className="text-green-300 text-xs">Featured by:</span>
+              <div className="flex items-center gap-3 opacity-60">
+                <div className="text-green-200 text-xs font-medium">TechCrunch</div>
+                <div className="w-px h-4 bg-green-600"></div>
+                <div className="text-green-200 text-xs font-medium">EdTech Hub</div>
+              </div>
             </div>
+          </motion.div>
+        </div>
+      </div>
 
-            {/* Right Column - Contact Information */}
-            <div className="w-full md:w-4/12 lg:w-4/12">
-              <h3 className="text-white font-medium text-lg mb-4">Contact</h3>
-              <ul className="space-y-3">
-                <li>
-                  <span className="text-white text-sm">takshadweek</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-white" />
-                  <a href="tel:+4560032367843" className="text-white text-sm hover:opacity-80 transition-opacity">4560032367843</a>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-white" />
-                  <a href="mailto:gmcfffd@gmail.com" className="text-white text-sm hover:opacity-80 transition-opacity">gmcfffd@gmail.com</a>
-                </li>
-              </ul>
+      {/* Bottom Copyright Bar */}
+      <div className="border-t border-green-700/30 bg-green-900">
+        <div className="responsive-container py-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left"
+          >
+            <p className="text-green-300 text-sm">
+              © 2024 Green Uni Mind. All rights reserved.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 text-sm">
+              <a href="#" className="text-green-300 hover:text-white transition-colors duration-300">
+                Privacy Policy
+              </a>
+              <a href="#" className="text-green-300 hover:text-white transition-colors duration-300">
+                Terms of Service
+              </a>
+              <a href="#" className="text-green-300 hover:text-white transition-colors duration-300">
+                Cookie Policy
+              </a>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </footer>

@@ -693,13 +693,13 @@ const Dashboard = () => {
                           "name" in course.creator && (
                             <Badge variant="outline" className="bg-gray-50 flex items-center gap-1 text-xs">
                               <GraduationCap className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
-                              <span className="whitespace-nowrap">{`${
-                                (course.creator as unknown as ICreator).name
-                                  .firstName
-                              } ${
-                                (course.creator as unknown as ICreator).name
-                                  .lastName
-                              }`}</span>
+                              <span className="whitespace-nowrap">
+                                {`${
+                                  (course.creator as unknown as ICreator).name?.firstName || ''
+                                } ${
+                                  (course.creator as unknown as ICreator).name?.lastName || ''
+                                }`.trim() || 'Instructor'}
+                              </span>
                             </Badge>
                           )}
 

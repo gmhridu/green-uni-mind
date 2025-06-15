@@ -4,29 +4,47 @@ import { Button } from "./ui/button";
 
 interface TeacherCardProps {
   name: string;
-  expertise: string;
+  specialization: string;
   rating: number;
+  totalStudents: number;
+  totalCourses: number;
+  totalHours: number;
   imageSrc: string;
 }
 
 const TeacherCard = ({
   name,
-  expertise,
+  specialization,
   rating,
+  totalStudents,
+  totalCourses,
+  totalHours,
   imageSrc,
 }: TeacherCardProps) => (
-  <Card className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 bg-white p-3 border border-[#D0D0D0] rounded-xl shadow-sm hover:shadow-md transition-shadow">
-    <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 mb-3 sm:mb-0">
-      <img
-        src={imageSrc}
-        alt={name}
-        className="w-full h-full object-cover rounded-lg"
-      />
+  <Card className="bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group cursor-pointer">
+    {/* Teacher Photo - Full image display like Udemy */}
+    <div className="p-2">
+      <div className="relative aspect-[3/2] overflow-hidden rounded-md bg-gray-50">
+        <img
+          src={imageSrc}
+          alt={name}
+          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      </div>
     </div>
-    <div className="flex flex-col justify-between w-full text-center sm:text-left">
-      <h3 className="font-semibold text-base sm:text-lg text-gray-900">{name}</h3>
-      <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2 sm:line-clamp-3">{expertise}</p>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+
+    {/* Card Content - Compact and clean */}
+    <div className="p-4">
+      {/* Teacher Name */}
+      <h3 className="font-bold text-lg text-gray-900 mb-1 line-clamp-1">{name}</h3>
+
+      {/* Specialization */}
+      <p className="text-sm text-gray-600 mb-3 font-medium">{specialization}</p>
+
+      {/* Rating Section - Compact */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="font-bold text-base text-gray-900">{rating.toFixed(1)}</span>
         <div className="flex items-center">
           {[...Array(5)].map((_, i) => (
             <Star
@@ -34,23 +52,31 @@ const TeacherCard = ({
               size={14}
               className={
                 i < Math.floor(rating)
-                  ? "text-yellow-400 fill-yellow-400"
+                  ? "text-amber-400 fill-amber-400"
                   : "text-gray-300"
               }
             />
           ))}
-          <span className="ml-1 text-xs sm:text-sm text-gray-600 text-nowrap inline-flex gap-x-0.5 items-center">
-            {rating.toFixed(1)}
-            <span className="text-xs hidden sm:inline">(357,914)</span>
-          </span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-xs sm:text-sm font-medium text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition w-full sm:w-auto"
-        >
-          View Profile
-        </Button>
+        <span className="text-sm text-gray-500 ml-1">
+          ({totalStudents.toLocaleString()})
+        </span>
+      </div>
+
+      {/* Stats - Compact horizontal layout */}
+      <div className="flex items-center justify-between text-sm">
+        <div className="text-center">
+          <div className="font-bold text-gray-900">{totalStudents.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Students</div>
+        </div>
+        <div className="text-center">
+          <div className="font-bold text-gray-900">{totalCourses}</div>
+          <div className="text-xs text-gray-500">Courses</div>
+        </div>
+        <div className="text-center">
+          <div className="font-bold text-gray-900">{totalHours}</div>
+          <div className="text-xs text-gray-500">Hours</div>
+        </div>
       </div>
     </div>
   </Card>
@@ -59,51 +85,75 @@ const TeacherCard = ({
 const TopTeachersSection = () => {
   const teachers = [
     {
-      name: "John Smith",
-      expertise:
-        "Expert mathematics tutor helping students simplify tough concepts, improve problem-solving, and excel in exams with clear, personalized coaching.",
-      rating: 5,
+      name: "Dr. Sarah Johnson",
+      specialization: "Climate Science & Policy",
+      rating: 4.9,
+      totalStudents: 45230,
+      totalCourses: 12,
+      totalHours: 48.5,
       imageSrc: "/images/teacher1.png",
     },
     {
-      name: "John Smith",
-      expertise:
-        "Fluent English trainer specializing in spoken and written communication, helping learners build confidence and achieve language mastery.",
+      name: "Michael Chen",
+      specialization: "Renewable Energy Systems",
       rating: 4.8,
+      totalStudents: 38750,
+      totalCourses: 8,
+      totalHours: 32.0,
       imageSrc: "/images/teacher2.png",
     },
     {
-      name: "John Smith",
-      expertise:
-        "Science educator making physics, chemistry, and biology easy to grasp with real-world examples and interactive learning sessions.",
-      rating: 5,
+      name: "Dr. Emily Rodriguez",
+      specialization: "Sustainable Agriculture",
+      rating: 4.9,
+      totalStudents: 52100,
+      totalCourses: 15,
+      totalHours: 67.5,
       imageSrc: "/images/teacher3.png",
-    },
-    {
-      name: "John Smith",
-      expertise:
-        "Programming mentor guiding beginners through coding basics to advanced skills with practical projects and clear, hands-on support.",
-      rating: 4.7,
-      imageSrc: "/images/teacher4.png",
     },
   ];
 
   return (
-    <section className="py-10 sm:py-12 md:py-16 bg-white">
+    <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-green-50 to-white">
       <div className="responsive-container">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-semibold text-center mb-6 sm:mb-8 md:mb-12">
-          Top-Rated Teachers
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {/* Section Header */}
+        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+          <div className="inline-block px-4 py-2 bg-green-100 text-green-600 text-sm font-semibold rounded-full mb-4">
+            Expert Sustainability Educators
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-gray-900 mb-4">
+            Top-Rated Environmental Teachers
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Learn from leading environmental experts and sustainability educators who are passionate about creating positive change
+          </p>
+        </div>
+
+        {/* Teachers Grid - Better spacing */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {teachers.map((teacher, index) => (
             <TeacherCard
               key={index}
               name={teacher.name}
-              expertise={teacher.expertise}
+              specialization={teacher.specialization}
               rating={teacher.rating}
+              totalStudents={teacher.totalStudents}
+              totalCourses={teacher.totalCourses}
+              totalHours={teacher.totalHours}
               imageSrc={teacher.imageSrc}
             />
           ))}
+        </div>
+
+        {/* View All Teachers Button */}
+        <div className="text-center mt-8 sm:mt-10 md:mt-12">
+          <Button
+            variant="outline"
+            size="lg"
+            className="px-8 py-3 text-base font-semibold border-2 border-green-500 text-green-500 hover:bg-green-500 hover:text-white transition-all duration-300 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+          >
+            View All Educators
+          </Button>
         </div>
       </div>
     </section>

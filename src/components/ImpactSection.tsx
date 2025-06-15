@@ -1,102 +1,89 @@
+import { LucideIcon, BookOpen, Globe, MessageCircle } from "lucide-react";
+
 interface ImpactStatProps {
-  id: number;
-  imageUrl: string;
-  imageClassName: string;
+  icon: LucideIcon;
   value: string;
   label: string;
+  description: string;
 }
 
 const ImpactStat = ({
+  icon: Icon,
   value,
   label,
-  id,
-  imageUrl,
-  imageClassName,
+  description,
 }: ImpactStatProps) => (
-  <div className="flex flex-col items-center">
-    <div className="size-20 sm:size-24 md:size-28 relative">
-      <div
-        className="absolute bg-[#2E3192] rounded-full left-[1.8rem] sm:left-[2.2rem] md:left-[2.5rem] -top-[0.8rem] sm:-top-[0.9rem] md:-top-[1rem]
-        w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 z-20 flex items-center justify-center"
-      >
-        <p className="text-[10px] sm:text-xs text-white">{id}</p>
+  <div className="bg-white rounded-xl border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 p-6 text-center">
+    {/* Icon */}
+    <div className="mb-6">
+      <div className="w-16 h-16 mx-auto bg-green-50 rounded-full flex items-center justify-center">
+        <Icon className="w-8 h-8 text-green-600" />
       </div>
-
-      <div className="absolute inset-0 rounded-full border-3 sm:border-4 border-[#53AC8F] flex items-center justify-center" />
-      <img src={imageUrl} alt={label} className={imageClassName} />
     </div>
-    <h2 className="text-xs sm:text-sm font-semibold mt-1 sm:mt-2">{label}</h2>
-    <p className="text-lg sm:text-xl text-[#333] font-semibold capitalize">{value}</p>
-  </div>
-);
 
-const DashedConnector = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="241"
-    height="36"
-    viewBox="0 0 241 36"
-    fill="none"
-    className="hidden md:block "
-  >
-    <path
-      d="M1.164 14.2479C38.578 -0.621807 61.1547 -5.6243 96.138 14.2479C177.202 60.2959 200.226 14.2479 239.079 10.4105"
-      stroke="#3EB3E3"
-      strokeWidth="1.91867"
-      strokeLinecap="round"
-      strokeDasharray="5.76 5.76"
-    />
-  </svg>
+    {/* Content */}
+    <div className="space-y-3">
+      <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
+        {value}
+      </h3>
+      <h4 className="text-lg font-semibold text-gray-800 leading-tight">
+        {label}
+      </h4>
+      <p className="text-sm text-gray-600 leading-relaxed">
+        {description}
+      </p>
+    </div>
+  </div>
 );
 
 const ImpactSection = () => {
   const stats = [
     {
-      id: 1,
-      imageUrl: "/images/impact1.png",
-      imageClassName: "absolute bottom-[4px] -left-[1px]",
-      label: "Wait two hours",
-      value: "10k",
-    },
-    {
-      id: 2,
-      imageUrl: "/images/impact2.png",
-      imageClassName: "absolute top-[4px]",
-      label: "Teachers",
+      icon: BookOpen,
       value: "500k",
+      label: "Green Educators Reached",
+      description: "Teachers engaged in eco-friendly learning worldwide",
     },
     {
-      id: 3,
-      imageUrl: "/images/impact3.png",
-      imageClassName: "absolute bottom-[4px] -right-[1px]",
-      label: "Projects",
+      icon: Globe,
       value: "300k",
+      label: "Eco Projects Launched",
+      description: "Sustainability projects initiated this month",
+    },
+    {
+      icon: MessageCircle,
+      value: "< 2h",
+      label: "Avg Support Response",
+      description: "Average response time for learner support",
     },
   ];
 
   return (
     <section className="py-10 sm:py-12 md:py-16 bg-white">
       <div className="responsive-container">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-1 sm:mb-2">
-          Our Monthly Impact
-        </h2>
-        <p className="text-center text-gray-500 text-sm sm:text-base mb-8 sm:mb-10 md:mb-12">
-          Real-time results from a global community of learners and
-          changemakers.
-        </p>
+        {/* Header */}
+        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+          <div className="inline-flex items-center gap-2 mb-4">
+            <span className="text-2xl">🌱</span>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900">
+              Our Impact This Month
+            </h2>
+          </div>
+          <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+            Real change begins with one learner, one project, one planet at a time.
+          </p>
+        </div>
 
-        <div className="flex flex-col gap-6 sm:gap-8 items-center md:flex-row md:justify-center md:gap-0">
+        {/* Stats Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
           {stats.map((stat, index) => (
-            <div key={index} className="flex items-center justify-around">
-              <ImpactStat
-                imageUrl={stat.imageUrl}
-                imageClassName={stat.imageClassName}
-                id={stat.id}
-                value={stat.value}
-                label={stat.label}
-              />
-              {index < stats.length - 1 && <DashedConnector />}
-            </div>
+            <ImpactStat
+              key={index}
+              icon={stat.icon}
+              value={stat.value}
+              label={stat.label}
+              description={stat.description}
+            />
           ))}
         </div>
       </div>

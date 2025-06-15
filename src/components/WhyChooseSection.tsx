@@ -7,21 +7,23 @@ interface FeatureCardProps {
 }
 
 const FeatureCard = ({ imageSrc, title, description }: FeatureCardProps) => (
-  <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow hover-scale cursor-pointer">
+  <Card className="overflow-hidden border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
     <div className="h-40 sm:h-44 md:h-48 lg:h-52 overflow-hidden p-2">
       <img
         src={imageSrc}
         alt={title}
-        className="w-full h-full object-cover transition-transform duration-300 rounded-md"
+        className="w-full h-full object-cover transition-transform duration-300 rounded-md group-hover:scale-105"
       />
     </div>
-    <CardContent className="pl-2 pt-2 pb-4">
-      <h3 className="text-[#050B20] text-lg sm:text-xl font-semibold not-italic mb-2">
+    <CardContent className="p-6">
+      <h3 className="text-gray-900 text-lg sm:text-xl font-display font-semibold mb-3">
         {title}
       </h3>
-      <p className="text-[#0000008C] font-figtree font-normal text-sm sm:text-base md:text-[17.279px]">
+      <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
         {description}
       </p>
+      {/* Green accent */}
+      <div className="mt-4 w-12 h-1 bg-green-500 rounded-full"></div>
     </CardContent>
   </Card>
 );
@@ -30,31 +32,40 @@ const WhyChooseSection = () => {
   const features = [
     {
       imageSrc: "/images/image2.png",
-      title: "Personalized Lessons",
+      title: "Personalized Eco Learning",
       description:
-        "Get tailor-made lessons designed around your unique learning pace, goals, and interests – because no two learners are the same.",
+        "Get tailor-made sustainability lessons designed around your unique learning pace, environmental interests, and green career goals.",
     },
     {
       imageSrc: "/images/image3.png",
-      title: "Real-Time Feedback",
+      title: "Expert Green Feedback",
       description:
-        "Receive instant, actionable feedback from expert instructors to improve quickly and stay on the right track every step of the way.",
+        "Receive instant, actionable feedback from environmental experts to improve quickly and stay on track with your sustainability journey.",
     },
     {
       imageSrc: "/images/image4.png",
-      title: "Trackable Progress",
+      title: "Impact Progress Tracking",
       description:
-        "Monitor your learning journey with clear, visual progress indicators that keep you motivated and focused on your goals.",
+        "Monitor your environmental learning journey with clear progress indicators that show your growing impact on the planet.",
     },
   ];
 
   return (
-    <section className="py-10 sm:py-12 md:py-16 bg-white">
+    <section className="py-12 sm:py-16 md:py-20 bg-white">
       <div className="responsive-container">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 sm:mb-8 md:mb-12 text-[#333333]">
-          Why Choose AI-Powered Learning?
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+        {/* Section Header */}
+        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+          <div className="inline-block px-4 py-2 bg-green-100 text-green-600 text-sm font-semibold rounded-full mb-4">
+            Why Choose Green Learning
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center mb-4 text-gray-900">
+            AI-Powered Sustainability Education
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Experience personalized environmental education that adapts to your learning style and sustainability goals.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {features.map((feature, index) => (
             <FeatureCard
               key={index}

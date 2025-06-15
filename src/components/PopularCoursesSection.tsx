@@ -1,143 +1,59 @@
-import { Button } from "@/components/ui/button";
-import { useGetPublishedCoursesQuery } from "@/redux/features/course/courseApi";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAppDispatch } from "@/redux/hooks";
-import { addToCart } from "@/redux/features/cart/cartSlice";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { useGetMeQuery } from "@/redux/features/auth/authApi";
-import { IEnrolledCourse } from "@/types";
-import { Card, CardContent } from "./ui/card";
-import { ICourse } from "@/types/course";
-
-interface CourseCardProps {
-  title: string;
-  description: string;
-  imageSrc: string;
-  course: any;
-}
-
-const CourseCard = ({
-  title,
-  description,
-  imageSrc,
-  course,
-}: CourseCardProps) => {
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const { data: userData } = useGetMeQuery(undefined);
-
-  const handleEnroll = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!userData?.data?._id) {
-      toast.error("Please login to enroll in this course");
-      navigate("/login");
-      return;
-    }
-
-    // Check if student is already enrolled in this course
-    const isAlreadyEnrolled = userData?.data?.enrolledCourses?.some(
-      (enrolledCourse: IEnrolledCourse) =>
-        enrolledCourse.courseId === course._id
-    );
-
-    if (isAlreadyEnrolled) {
-      toast.error("You are already enrolled in this course");
-      return;
-    }
-
-    dispatch(addToCart({ course, userId: userData.data._id }));
-    toast.success("Course added to cart");
-  };
-
-  const handleCardClick = () => {
-    navigate(`/courses/${course._id}`);
-  };
-
-  return (
-    <div
-      className="rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow hover-scale border border-[#B9CAD0] cursor-pointer"
-      onClick={handleCardClick}
-    >
-      <div className="relative h-40 sm:h-44 md:h-48 overflow-hidden p-2">
-        <img
-          src={imageSrc}
-          alt={title}
-          className="w-full h-full object-cover transition-transform duration-300 rounded-lg"
-        />
-      </div>
-      <div className="p-2 sm:p-3">
-        <h3 className="font-semibold text-base sm:text-lg mb-1 line-clamp-1">
-          {title}
-        </h3>
-        <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
-          {description}
-        </p>
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            className="bg-green-500 hover:bg-green-600 text-white text-xs sm:text-sm"
-            onClick={handleEnroll}
-          >
-            Enroll Now
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const CourseCardSkeleton = () => (
-  <div className="rounded-lg overflow-hidden shadow-sm border border-[#B9CAD0]">
-    <div className="relative h-48 overflow-hidden p-2">
-      <Skeleton className="w-full h-full rounded-lg" />
-    </div>
-    <div className="p-2">
-      <Skeleton className="h-6 w-3/4 mb-1" />
-      <Skeleton className="h-4 w-full mb-3" />
-      <div className="flex justify-end">
-        <Skeleton className="h-8 w-24" />
-      </div>
-    </div>
-  </div>
-);
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { useGetPopularCoursesQuery } from '@/redux/features/course/courseApi';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import CourseCard from '@/components/CourseCard';
+import { ICourse } from '@/types/course';
+import {
+  TrendingUp,
+  Sparkles,
+  BookOpen,
+  Users,
+  Star,
+  ChevronRight,
+} from 'lucide-react';
 
 const PopularCoursesSection = () => {
-  const {
-    data: courses,
-    isLoading,
-    isError,
-  } = useGetPublishedCoursesQuery(undefined);
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const { data: userData } = useGetMeQuery(undefined);
-  // Handle error state
-  if (isError) {
-    console.error("Error in PopularCoursesSection:", isError);
-    return (
-      <section className="py-16 bg-green-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-display font-semibold text-center mb-12">
-            Popular Courses
-          </h2>
-          <div className="text-center text-red-500">
-            Error loading courses. Please try again later.
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const { data: popularCourses, isLoading, isError } = useGetPopularCoursesQuery(8);
 
-  // Handle empty courses
-  if (!isLoading && (!courses || !courses.data || courses.data.length === 0)) {
+  // Animation variants
+
+  const headerVariants = {
+    hidden: { opacity: 0, y: -20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+      },
+    },
+  };
+
+  if (isError) {
     return (
-      <section className="py-16 bg-green-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-display font-semibold text-center mb-12">
-            Popular Courses
-          </h2>
-          <div className="text-center text-gray-500">
-            No courses available at the moment. Check back later!
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-green-50 to-white">
+        <div className="responsive-container">
+          <div className="text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-gray-900 mb-4">
+              Popular Courses
+            </h2>
+            <p className="text-gray-600 mb-8">
+              Unable to load popular courses at the moment. Please try again later.
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-green-500 hover:bg-green-600"
+            >
+              Retry
+            </Button>
           </div>
         </div>
       </section>
@@ -145,133 +61,190 @@ const PopularCoursesSection = () => {
   }
 
   return (
-    <section className="w-full py-10 sm:py-16 md:py-20 bg-[#f1f8e9]">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <h2 className="text-center text-2xl sm:text-3xl md:text-[38px] font-bold [font-family:'DM_Sans',Helvetica] text-[#333333] mb-6 sm:mb-8 md:mb-12">
-          Popular Courses
-        </h2>
+    <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-green-50 to-white relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-green-100 rounded-full opacity-20 -translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-green-200 rounded-full opacity-20 translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-green-50 rounded-full opacity-30 -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-          {isLoading
-            ? // Show skeleton loading state
-              Array(4)
-                .fill(0)
-                .map((_, index) => (
-                  <Card
-                    key={index}
-                    className="overflow-hidden border-[1.01px] border-solid border-[#b8cad0] rounded-xl bg-[#f1f8e9] flex flex-col h-full transition-transform duration-300 hover:shadow-lg"
-                  >
-                    <CardContent className="p-0 flex flex-col h-full">
-                      <div className="p-3 sm:p-4 md:p-5 flex flex-col h-full">
-                        <Skeleton className="w-full h-[160px] sm:h-[180px] md:h-[220px] rounded-[10px] mb-3 sm:mb-4 md:mb-5" />
-                        <Skeleton className="h-6 sm:h-7 md:h-8 w-3/4 mb-2 sm:mb-3" />
-                        <Skeleton className="h-16 sm:h-18 md:h-20 w-full mb-2 sm:mb-3" />
-                        <div className="flex justify-end mt-auto pt-2 sm:pt-3">
-                          <Skeleton className="h-9 sm:h-10 md:h-11 w-24 sm:w-28 md:w-32" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-            : courses?.data?.map((course: ICourse) => (
-                <Card
-                  key={course._id}
-                  className="overflow-hidden border-[1.01px] border-solid border-[#b8cad0] rounded-xl bg-[#f1f8e9] cursor-pointer flex flex-col h-full transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg"
-                  onClick={() => navigate(`/courses/${course._id}`)}
-                >
-                  <CardContent className="p-0 flex flex-col h-full">
-                    <div className="p-3 sm:p-4 md:p-5 flex flex-col h-full">
-                      <div
-                        className="w-full h-[160px] sm:h-[180px] md:h-[220px] rounded-[10px] mb-3 sm:mb-4 md:mb-5 bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url(${
-                            course.courseThumbnail ||
-                            "/images/default-course.jpg"
-                          })`,
-                        }}
-                      />
+      <div className="responsive-container relative z-10">
+        {/* Section Header */}
+        <motion.div
+          className="text-center mb-8 sm:mb-10 md:mb-12"
+          variants={headerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <div className="inline-block px-4 py-2 bg-green-100 text-green-600 rounded-full text-sm font-medium mb-4">
+            <div className="flex items-center">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              <span>Most Popular</span>
+            </div>
+          </div>
 
-                      <h3 className="[font-family:'DM_Sans',Helvetica] font-bold text-[#333333] text-lg sm:text-xl md:text-[25px] mb-2 sm:mb-3 line-clamp-1">
-                        {course.title}
-                      </h3>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-gray-900 mb-4">
+            Popular <span className="text-green-500 relative">
+              Sustainability Courses
+              <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 5.5C50 -0.5 150 -0.5 299 5.5" stroke="#5CBA47" strokeWidth="4" strokeLinecap="round"/>
+              </svg>
+            </span>
+          </h2>
 
-                      <p className="[font-family:'Open_Sans',Helvetica] font-normal text-[#0000008c] text-xs sm:text-sm leading-[20px] sm:leading-[23px] mb-2 sm:mb-3 line-clamp-3 flex-grow">
-                        {course.description || "No description available"}
-                      </p>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Discover the most sought-after environmental courses chosen by thousands of eco-conscious learners worldwide.
+            Start your green learning journey with our top-rated sustainability content.
+          </p>
+        </motion.div>
 
-                      <div className="flex justify-end mt-auto pt-2 sm:pt-3">
-                        <Button
-                          className="bg-[#90ee90] text-black hover:bg-[#7dcc7d] h-9 sm:h-10 md:h-11 px-3 sm:px-4 md:px-5 text-sm sm:text-base"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!userData?.data?._id) {
-                              toast.error(
-                                "Please login to enroll in this course"
-                              );
-                              navigate("/login");
-                              return;
-                            }
+        {/* Stats Bar */}
+        <motion.div
+          className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-8 sm:mb-10 md:mb-12"
+          variants={headerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <div className="flex items-center bg-white rounded-xl shadow-sm px-4 sm:px-6 py-4 border border-gray-100">
+            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-green-100 flex items-center justify-center mr-3 sm:mr-4">
+              <BookOpen className="w-5 sm:w-6 h-5 sm:h-6 text-green-500" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{popularCourses?.data?.length || 0}+</p>
+              <p className="text-xs sm:text-sm text-gray-600">Eco Courses</p>
+            </div>
+          </div>
 
-                            // Check if student is already enrolled in this course
-                            const isAlreadyEnrolled =
-                              userData?.data?.enrolledCourses?.some(
-                                (enrolledCourse: IEnrolledCourse) =>
-                                  enrolledCourse.courseId === course._id
-                              );
+          <div className="flex items-center bg-white rounded-xl shadow-sm px-4 sm:px-6 py-4 border border-gray-100">
+            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-green-100 flex items-center justify-center mr-3 sm:mr-4">
+              <Users className="w-5 sm:w-6 h-5 sm:h-6 text-green-500" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">50K+</p>
+              <p className="text-xs sm:text-sm text-gray-600">Green Learners</p>
+            </div>
+          </div>
 
-                            if (isAlreadyEnrolled) {
-                              toast.error(
-                                "You are already enrolled in this course"
-                              );
-                              return;
-                            }
+          <div className="flex items-center bg-white rounded-xl shadow-sm px-4 sm:px-6 py-4 border border-gray-100">
+            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-green-100 flex items-center justify-center mr-3 sm:mr-4">
+              <Star className="w-5 sm:w-6 h-5 sm:h-6 text-green-500" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">4.8</p>
+              <p className="text-xs sm:text-sm text-gray-600">Impact Rating</p>
+            </div>
+          </div>
+        </motion.div>
 
-                            dispatch(
-                              addToCart({ course, userId: userData.data._id })
-                            );
-                            toast.success("Course added to cart");
-                          }}
-                        >
-                          Enroll Now
-                        </Button>
-                      </div>
+        {/* Courses Carousel */}
+        {isLoading ? (
+          <div className="mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array(4).fill(0).map((_, index) => (
+                <div key={index} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <Skeleton className="w-full h-48" />
+                  <div className="p-4 space-y-3">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-3 w-full" />
+                    <div className="flex justify-between items-center pt-2">
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-8 w-20 rounded" />
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
-        </div>
+            </div>
+          </div>
+        ) : popularCourses?.data && popularCourses.data.length > 0 ? (
+          <motion.div
+            className="mb-12 relative"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+                skipSnaps: false,
+                dragFree: true,
+              }}
+              className="w-full max-w-full"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {popularCourses.data.map((course: ICourse, index: number) => (
+                  <CarouselItem
+                    key={course._id}
+                    className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 min-w-0"
+                  >
+                    <motion.div
+                      className="h-full"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <CourseCard
+                        course={course}
+                        showPrice={true}
+                        className="h-full"
+                      />
+                    </motion.div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden lg:flex -left-12 bg-white border-2 border-gray-200 hover:bg-gray-50 hover:border-green-300 text-gray-700 hover:text-green-600 shadow-lg" />
+              <CarouselNext className="hidden lg:flex -right-12 bg-white border-2 border-gray-200 hover:bg-gray-50 hover:border-green-300 text-gray-700 hover:text-green-600 shadow-lg" />
+            </Carousel>
+
+            {/* Mobile Navigation Hint */}
+            <div className="lg:hidden text-center mt-4">
+              <p className="text-sm text-gray-500">
+                Swipe left or right to see more courses
+              </p>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            className="text-center py-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-6 mx-auto">
+              <BookOpen className="text-gray-400" size={32} />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-3">No Popular Courses Yet</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              We're working on curating the best courses for you. Check back soon!
+            </p>
+          </motion.div>
+        )}
+
+        {/* View All Button */}
+        {popularCourses?.data && popularCourses.data.length > 0 && (
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+          >
+            <Link to="/courses">
+              <Button className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl text-lg font-medium flex items-center gap-2 mx-auto group">
+                <Sparkles className="w-5 h-5" />
+                View All Sustainability Courses
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </motion.div>
+        )}
       </div>
     </section>
-    // <section className="py-10 sm:py-12 md:py-16 bg-green-50">
-    //   <div className="responsive-container">
-    //     <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-semibold text-center mb-6 sm:mb-8 md:mb-12">
-    //       Popular Courses
-    //     </h2>
-    //     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-    //       {isLoading ? (
-    //         // Show skeleton loading state
-    //         Array(4).fill(0).map((_, index) => (
-    //           <CourseCardSkeleton key={index} />
-    //         ))
-    //       ) : courses && courses.length > 0 ? (
-    //         // Show actual courses
-    //         courses.map((course: any) => (
-    //           <CourseCard
-    //             key={course._id}
-    //             title={course.title}
-    //             description={course.description || "No description available"}
-    //             imageSrc={course.courseThumbnail || "/images/default-course.jpg"}
-    //             course={course}
-    //           />
-    //         ))
-    //       ) : (
-    //         <div className="col-span-full text-center text-gray-500">
-    //           No published courses available at the moment.
-    //         </div>
-    //       )}
-    //     </div>
-    //   </div>
-    // </section>
   );
 };
 

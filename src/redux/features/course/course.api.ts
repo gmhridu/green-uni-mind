@@ -15,6 +15,12 @@ const courseApi = baseApi.injectEndpoints({
         method: "GET",
       }),
     }),
+    getPopularCourses: builder.query<{ data: ICourse[] }, number>({
+      query: (limit = 8) => ({
+        url: `/courses/popular-courses?limit=${limit}`,
+        method: "GET",
+      }),
+    }),
     searchCourses: builder.query<{ data: ICourse[] }, string>({
       query: (searchTerm) => ({
         url: `/courses/search?searchTerm=${searchTerm}`,
@@ -27,5 +33,6 @@ const courseApi = baseApi.injectEndpoints({
 export const {
   useGetCourseByIdQuery,
   useGetPublishedCoursesQuery,
+  useGetPopularCoursesQuery,
   useSearchCoursesQuery,
-} = courseApi; 
+} = courseApi;

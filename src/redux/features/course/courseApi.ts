@@ -64,6 +64,33 @@ export const courseApi = baseApi.injectEndpoints({
         }
       },
     }),
+    getPopularCourses: builder.query({
+      query: (limit?: number) => ({
+        url: `/courses/popular-courses${limit ? `?limit=${limit}` : ''}`,
+        method: "GET",
+      }),
+      providesTags: ["courses"],
+      transformResponse: (response: TResponseRedux<any>) => {
+        // Handle potential errors or empty responses
+        if (!response || !response.data) {
+          console.error("Invalid response from popular courses API:", response);
+          return { data: [] };
+        }
+
+        return {
+          data: response.data,
+        };
+      },
+      // Add error handling
+      onQueryStarted: async (_, { queryFulfilled }) => {
+        try {
+          await queryFulfilled;
+        } catch (error) {
+          console.error("Error fetching popular courses:", error);
+          // Don't dispatch logout for public endpoint errors
+        }
+      },
+    }),
     getCourseById: builder.query({
       query: (id) => {
         console.log("getCourseById query function called with ID:", id);
@@ -168,6 +195,7 @@ export const {
   useCreateCourseMutation,
   useGetCreatorCourseQuery,
   useGetPublishedCoursesQuery,
+  useGetPopularCoursesQuery,
   useGetCourseByIdQuery,
   useEditCourseMutation,
   useDeleteCourseMutation,

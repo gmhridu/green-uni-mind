@@ -170,7 +170,9 @@ const CheckoutPage = () => {
               <div>
                 <h3 className="font-medium text-lg">{course.title}</h3>
                 <p className="text-muted-foreground text-sm">
-                  By {course.creator?.name?.firstName} {course.creator?.name?.lastName}
+                  By {typeof course.creator === 'object' && course.creator?.name
+                    ? `${course.creator.name.firstName || ''} ${course.creator.name.lastName || ''}`.trim() || 'Instructor'
+                    : 'Instructor'}
                 </p>
                 <div className="mt-2 text-xl font-bold">
                   {formatPrice(course.coursePrice || 0)}

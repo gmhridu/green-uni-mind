@@ -46,6 +46,8 @@ import AllCourses from "@/pages/AllCourses";
 import Certifications from "@/pages/Certifications";
 import Blog from "@/pages/Blog";
 import Impact from "@/pages/Impact";
+import Categories from "@/pages/Categories";
+import CategoryBrowse from "@/pages/CategoryBrowse";
 
 const router = createBrowserRouter([
   {
@@ -79,6 +81,18 @@ const router = createBrowserRouter([
       {
         path: "impact",
         element: <Impact />,
+      },
+      {
+        path: "categories",
+        element: <Categories />,
+      },
+      {
+        path: "categories/:categorySlug",
+        element: <CategoryBrowse />,
+      },
+      {
+        path: "categories/:categorySlug/:subcategorySlug",
+        element: <CategoryBrowse />,
       },
       {
         path: "user",

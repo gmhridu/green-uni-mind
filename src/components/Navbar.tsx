@@ -28,6 +28,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const navbarMenu = [
+  { label: "Categories", path: "/categories" },
   { label: "Courses", path: "/courses" },
   { label: "Certifications", path: "/certifications" },
   { label: "Blog", path: "/blog" },

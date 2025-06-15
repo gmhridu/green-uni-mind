@@ -32,8 +32,9 @@ export interface ICourse {
   coursePrice?: number;
   courseThumbnail?: string;
   enrolledStudents?: string[];
+  totalEnrollment?: number;
   lectures?: ILecture[];
-  creator: string;
+  creator: string | { _id: string; name: string; profileImg?: string };
   isPublished: boolean;
   status: string;
   courseThumbnailPublicId?: string;

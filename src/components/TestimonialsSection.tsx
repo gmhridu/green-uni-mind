@@ -1,80 +1,88 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Leaf, ArrowRight } from "lucide-react";
 
 interface TestimonialProps {
   quote: string;
   name: string;
+  role: string;
+  course: string;
   avatarSrc: string;
 }
 
-const Testimonial = ({ quote, name, avatarSrc }: TestimonialProps) => (
+const Testimonial = ({ quote, name, role, course, avatarSrc }: TestimonialProps) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -20 }}
     transition={{ duration: 0.5 }}
-    className="bg-white p-6 rounded-lg shadow-md flex flex-col h-full"
+    className="bg-white rounded-xl border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 p-6 flex flex-col h-full"
   >
-    <p className="text-gray-700 mb-6 text-sm leading-relaxed flex-grow">
-      {quote}
-    </p>
-    <div className="flex items-center mt-auto">
-      <img
-        src={avatarSrc}
-        alt={name}
-        className="w-10 h-10 rounded-full mr-3 object-cover border-2 border-green-100"
-      />
-      <p className="font-medium text-sm">{name}</p>
+    {/* Quote */}
+    <div className="flex-grow mb-6">
+      <p className="text-gray-700 text-base leading-relaxed italic">
+        "{quote}"
+      </p>
+    </div>
+
+    {/* Student Info */}
+    <div className="flex items-center">
+      <div className="relative">
+        <img
+          src={avatarSrc}
+          alt={name}
+          className="w-12 h-12 rounded-full object-cover border-2 border-green-100"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = "/images/logo.png";
+          }}
+        />
+        {/* Leaf accent */}
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
+          <Leaf className="w-2.5 h-2.5 text-green-600" />
+        </div>
+      </div>
+      <div className="ml-3">
+        <p className="font-semibold text-gray-900 text-sm">{name}</p>
+        <p className="text-green-600 text-xs font-medium">{role}</p>
+        <p className="text-gray-500 text-xs">{course}</p>
+      </div>
     </div>
   </motion.div>
 );
 
 const TestimonialsSection = () => {
   const [currentPage, setCurrentPage] = useState(0);
-  const [width, setWidth] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
-
-  // Update width on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (carouselRef.current) {
-        setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
-      }
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
 
   const testimonials = [
     {
-      quote:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing. Nulla non mauris elit aliquam mi maecenas elit aliquot est sed consectetur. Vitae quis orci vitae praesent morbi adipiscing purus consectetur mi.",
-      name: "Helen Jimmy",
+      quote: "After this course, I started a sustainability club at work. My team reduced plastic waste by 40% in 3 months.",
+      name: "Maria P.",
+      role: "Certified Green Living Graduate",
+      course: "Sustainable Living Fundamentals",
       avatarSrc: "/images/teacher1.png",
     },
     {
-      quote:
-        "Ordo furiosa ornare gravem. Maleate vel duis non consequatur. Maleate vel duis non viverra sagittis ultricis nisi, nec tortor. Vestibulum, aliquet diam ex neque, hac ultricis nibh.",
-      name: "Ralph Edwards",
+      quote: "The AI-for-sustainability module helped me land my first job in climate tech.",
+      name: "Liam T.",
+      role: "Green Tech Developer",
+      course: "AI for Environmental Solutions",
       avatarSrc: "/images/teacher2.png",
     },
     {
-      quote:
-        "Sagittis nunc egestas leo et malesuada tincidunt. Morbi nunc et non viverra pharetra. Diam tellus, amet, hac imperdiet. Tellus mi volutpat tellus, congue malesuada sit nisi donec a.",
-      name: "Helena John",
+      quote: "I used to feel hopeless about climate change. Now I run workshops in my community.",
+      name: "Aisha R.",
+      role: "Climate Action Strategist",
+      course: "Community Climate Leadership",
       avatarSrc: "/images/teacher3.png",
     },
     {
-      quote:
-        "Sagittis nunc egestas leo et malesuada tincidunt. Morbi nunc et non viverra pharetra. Diam tellus, amet, hac imperdiet. Tellus mi volutpat tellus.",
-      name: "Michael Brown",
+      quote: "This certification opened doors to my dream job at a renewable energy company.",
+      name: "David K.",
+      role: "Renewable Energy Specialist",
+      course: "Clean Energy Systems",
       avatarSrc: "/images/teacher4.png",
     },
   ];
@@ -109,15 +117,26 @@ const TestimonialsSection = () => {
   );
 
   return (
-    <section
-      className="py-12 sm:py-16 md:py-20 relative overflow-hidden my-16"
-      style={{ backgroundColor: "#4A7A4A66" }}
-    >
+    <section className="py-12 sm:py-16 md:py-20 relative overflow-hidden bg-gradient-to-br from-green-500 to-green-600">
       <div className="responsive-container">
-        <div className="flex justify-between items-center mb-8 sm:mb-10 md:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl text-white font-display font-semibold">
-            What Students Say
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-8 sm:mb-10 md:mb-12"
+        >
+          <h2 className="text-2xl sm:text-3xl md:text-4xl text-white font-display font-bold mb-4">
+            Voices of Change
           </h2>
+          <p className="text-green-100 text-lg max-w-2xl mx-auto">
+            Hear from learners making real impact in their lives, communities, and careers.
+          </p>
+        </motion.div>
+
+        {/* Navigation Controls */}
+        <div className="flex justify-center items-center mb-8">
           <div className="flex gap-2">
             <Button
               onClick={prevPage}
@@ -156,12 +175,36 @@ const TestimonialsSection = () => {
                   key={`${currentPage}-${index}`}
                   quote={testimonial.quote}
                   name={testimonial.name}
+                  role={testimonial.role}
+                  course={testimonial.course}
                   avatarSrc={testimonial.avatarSrc}
                 />
               ))}
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* CTA Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          viewport={{ once: true }}
+          className="text-center mt-12"
+        >
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button
+              size="lg"
+              className="bg-white text-green-500 hover:bg-green-50 font-semibold px-8 py-4 h-auto rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              Join the Movement
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );

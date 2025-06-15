@@ -12,9 +12,9 @@ const HeroSection = () => {
       />
 
       {/* Text Content Positioned at Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-6 sm:pb-8 md:pb-10">
+      <div className="responsive-container absolute bottom-0 left-0 right-0 z-10 pb-6 sm:pb-8 md:pb-10">
         <div
-          className="max-w-[90%] sm:max-w-[85%] md:max-w-4xl mx-auto text-center px-4 sm:px-6 py-6 sm:py-8 md:py-10"
+          className="max-w-4xl mx-auto text-center px-4 sm:px-6 py-6 sm:py-8 md:py-10"
           style={{
             borderRadius: "18px",
             border: "2px solid rgba(255, 255, 255, 0.66)",
@@ -23,21 +23,21 @@ const HeroSection = () => {
             backdropFilter: "blur(1px)",
           }}
         >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-4 text-white leading-tight">
-            GreenUniMind AI.
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold mb-2 sm:mb-4 text-white leading-tight">
+            Green Uni Mind
             <br />
-            <span>Discover the Right Teacher for You</span>
+            <span>Discover Sustainable Learning</span>
           </h1>
-          <p className="text-white text-sm sm:text-base md:text-lg mt-2 sm:mt-4 max-w-3xl mx-auto">
+          <p className="text-white text-sm sm:text-base md:text-lg mt-2 sm:mt-4 max-w-3xl mx-auto leading-relaxed">
             Unlock limitless opportunities by learning directly from globally
-            acclaimed experts, and take your skills, knowledge, and career to
-            extraordinary new heights with our premium online courses.
+            acclaimed sustainability experts, and take your environmental knowledge and career to
+            extraordinary new heights with our premium eco-focused courses.
           </p>
-          {/* <div className="mt-6 sm:mt-8">
-            <Button className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 text-sm sm:text-base md:px-8 md:py-3">
-              Get Started
+          <div className="mt-6 sm:mt-8">
+            <Button className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 text-sm sm:text-base md:px-8 md:py-4 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+              Start Your Green Journey
             </Button>
-          </div> */}
+          </div>
         </div>
       </div>
     </section>
