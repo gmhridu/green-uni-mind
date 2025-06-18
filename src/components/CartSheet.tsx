@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCreateCheckoutSessionMutation } from "@/redux/features/payment/payment.api";
 import { toast } from "sonner";
+import { Logger, debugOnly } from "@/utils/logger";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { useEffect } from "react";
 import { loadUserCart } from "@/redux/features/cart/cartSlice";
@@ -85,7 +86,7 @@ const CartSheet = () => {
         return;
       }
 
-      console.log("Sending checkout request with data:", {
+      debugOnly.log("Sending checkout request with data:", {
         courseId: course._id,
         amount: course.coursePrice || 0
       });
@@ -95,19 +96,19 @@ const CartSheet = () => {
         amount: course.coursePrice || 0,
       }).unwrap();
 
-      console.log("Checkout response:", response);
+      debugOnly.log("Checkout response:", response);
 
       // The response from the server is nested inside a data property
       const checkoutUrl = response?.data?.url;
 
       if (!checkoutUrl) {
-        console.error("Invalid response from server:", response);
+        Logger.error("Invalid response from server", { response });
         toast.error("Failed to get checkout URL from server");
         return;
       }
       window.location.href = checkoutUrl;
     } catch (error) {
-      console.error("Checkout error:", error);
+      Logger.error("Checkout error", { error });
       // Handle error with proper type checking
       const errorMessage = error instanceof Error
         ? error.message

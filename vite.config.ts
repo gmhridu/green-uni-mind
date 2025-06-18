@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import removeConsole from "vite-plugin-remove-console";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -10,6 +11,11 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    // Remove console statements in production builds
+    process.env.NODE_ENV === 'production' && removeConsole({
+      // Remove most console methods but keep error for critical issues
+      includes: ['log', 'warn', 'info', 'debug']
+    }),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -35,7 +41,8 @@ export default defineConfig({
     target: 'esnext', // Use modern JavaScript features
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
+    // Only include sourcemaps in development
+    sourcemap: process.env.NODE_ENV !== 'production',
     rollupOptions: {
       output: {
         manualChunks: {

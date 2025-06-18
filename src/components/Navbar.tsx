@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Logger } from "@/utils/logger";
 
 const navbarMenu = [
   { label: "Categories", path: "/categories" },
@@ -75,7 +76,7 @@ const Navbar = () => {
       navigate("/login");
       toast.success("Logged out successfully");
     } catch (error) {
-      console.error("Logout failed", error);
+      Logger.error("Logout failed", { error });
       toast.error("Logout failed");
     }
   };

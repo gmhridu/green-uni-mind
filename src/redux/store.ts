@@ -21,7 +21,7 @@ import playerReducer from "@/redux/features/player/playerSlice";
 import noteReducer from "@/redux/features/note/noteSlice";
 import bookmarkReducer from "@/redux/features/bookmark/bookmarkSlice";
 import questionReducer from "@/redux/features/question/questionSlice";
-import { config } from "@/config";
+import { Environment } from "@/utils/environment";
 
 const persistConfig = {
   key: "auth",
@@ -111,12 +111,60 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }).concat(baseApi.middleware),
-  // 👇 This is all you need to hide DevTools in production
-  devTools: config.node_env === "development",
+  // Enhanced Redux DevTools configuration with security
+  devTools: Environment.isDevelopment() && {
+    // Only enable in development environment
+    name: 'Green Uni Mind Store',
+    trace: true,
+    traceLimit: 25,
+    // Sanitize sensitive data in Redux DevTools
+    actionSanitizer: (action: any) => {
+      // List of action types that might contain sensitive data
+      const sensitiveActionTypes = [
+        'auth/setUser',
+        'auth/login',
+        'auth/signup',
+        'auth/refreshToken',
+      ];
+
+      if (sensitiveActionTypes.some(type => action.type.includes(type))) {
+        return {
+          ...action,
+          payload: {
+            ...action.payload,
+            // Sanitize sensitive fields
+            token: action.payload?.token ? '[REDACTED]' : undefined,
+            password: action.payload?.password ? '[REDACTED]' : undefined,
+            refreshToken: action.payload?.refreshToken ? '[REDACTED]' : undefined,
+            user: action.payload?.user ? {
+              ...action.payload.user,
+              email: action.payload.user.email ? '[REDACTED]' : undefined,
+            } : undefined,
+          },
+        };
+      }
+      return action;
+    },
+    // Sanitize sensitive data in state
+    stateSanitizer: (state: any) => {
+      return {
+        ...state,
+        auth: state.auth ? {
+          ...state.auth,
+          token: state.auth.token ? '[REDACTED]' : null,
+          user: state.auth.user ? {
+            ...state.auth.user,
+            email: state.auth.user.email ? '[REDACTED]' : undefined,
+          } : null,
+        } : state.auth,
+      };
+    },
+  },
 });
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
-// Only enable persistStore in development
+// Enable persistStore for state persistence across sessions
+// Note: This works in all environments but Redux DevTools are disabled in production
 export const persistor = persistStore(store);

@@ -27,6 +27,7 @@ import {
   Tag,
   GraduationCap
 } from 'lucide-react';
+import { debugOnly } from '@/utils/logger';
 
 const AllCourses = () => {
   const location = useLocation();
@@ -211,7 +212,7 @@ const AllCourses = () => {
                     </div>
                     <Button
                       className="absolute right-2 bg-green-600 hover:bg-green-700 text-white rounded-lg py-2 px-4"
-                      onClick={() => console.log("Search for:", searchTerm)}
+                      onClick={() => debugOnly.log("Search for:", searchTerm)}
                     >
                       Search
                     </Button>
@@ -486,7 +487,7 @@ const AllCourses = () => {
                     className="bg-transparent border-none text-sm focus:outline-none focus:ring-0 text-gray-700"
                     onChange={(e) => {
                       // Sort logic would go here
-                      console.log(e.target.value);
+                      debugOnly.log(e.target.value);
                     }}
                   >
                     <option value="newest">Newest First</option>

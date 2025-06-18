@@ -21,6 +21,7 @@ import { ICourse, ILecture } from "@/types/course";
 import { useToast } from "@/hooks/use-toast";
 import { useAppSelector } from "@/redux/hooks";
 import { selectLastPosition } from "@/redux/features/player/playerSlice";
+import { debugOnly } from "@/utils/logger";
 
 interface CourseLayoutProps {
   onMarkComplete?: () => void;
@@ -335,14 +336,14 @@ const CourseLayout = ({
   };
 
   const handleVideoComplete = () => {
-    console.log('CourseLayout: handleVideoComplete called, isCompleted:', isCompleted);
+    debugOnly.log('CourseLayout: handleVideoComplete called, isCompleted:', isCompleted);
 
     if (onMarkComplete && !isCompleted) {
-      console.log('CourseLayout: Calling onMarkComplete');
+      debugOnly.log('CourseLayout: Calling onMarkComplete');
       // Call the onMarkComplete function which will handle navigation
       onMarkComplete();
     } else if (isCompleted && nextLectureId) {
-      console.log('CourseLayout: Lecture already completed, navigating to next lecture');
+      debugOnly.log('CourseLayout: Lecture already completed, navigating to next lecture');
       toast({
         title: "Moving to Next Lecture",
         description: "You've already completed this lecture. Moving to the next one...",
@@ -351,7 +352,7 @@ const CourseLayout = ({
       // Use React Router navigation for a smoother experience
       navigate(`/student/course/${courseId}/lecture/${nextLectureId}`);
     } else {
-      console.log('CourseLayout: No action taken on video completion');
+      debugOnly.log('CourseLayout: No action taken on video completion');
     }
   };
 
@@ -372,7 +373,7 @@ const CourseLayout = ({
         ? videoElement.currentTime / videoElement.duration
         : 0;
 
-      console.log("Current video progress:", currentProgress);
+      debugOnly.log("Current video progress:", currentProgress);
 
       if (currentProgress < 0.5) {
         toast({
@@ -393,7 +394,7 @@ const CourseLayout = ({
           onMarkComplete();
           return;
         } catch (error) {
-          console.error(
+          debugOnly.log(
             "Error in handleNavigate while marking complete:",
             error
           );
@@ -514,7 +515,7 @@ const CourseLayout = ({
                   className="w-full"
                   poster={currentLecture.thumbnailUrl}
                   videoId={currentLectureId}
-                  onReady={() => console.log('Cloudinary player ready')}
+                  onReady={() => debugOnly.log('Cloudinary player ready')}
                 />
 
                 {/* Video title overlay */}
