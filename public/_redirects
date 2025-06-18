@@ -6,6 +6,7 @@
 /student/*    /index.html   200
 /login        /index.html   200
 /sign-up      /index.html   200
+/verify-otp   /index.html   200
 /forgot-password    /index.html   200
 /oauth/*      /index.html   200
 /courses/*    /index.html   200

@@ -22,14 +22,14 @@ import {
   Clock,
   GraduationCap,
   Medal,
-  PlayCircle,
   Layers,
   Sparkles,
   Trophy,
   Activity,
   BookOpenCheck,
   Hourglass,
-  Zap
+  Zap,
+  PlayCircle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ICourse } from "@/types/course";

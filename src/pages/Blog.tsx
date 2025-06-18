@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Calendar, Clock, User, Search, ArrowRight, Leaf, Globe, Lightbulb } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useState } from "react";
 
 const Blog = () => {

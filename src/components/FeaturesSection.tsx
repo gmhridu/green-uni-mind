@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Leaf, BookOpen, Award, Users, Play, CheckCircle, Sparkles } from "lucide-react";

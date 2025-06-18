@@ -19,9 +19,9 @@ const mockCourses: ICourse[] = [
       }
     },
     lectures: [
-      { _id: '1', lectureTitle: 'Introduction to React' },
-      { _id: '2', lectureTitle: 'Components and JSX' },
-      { _id: '3', lectureTitle: 'State and Props' }
+      { _id: '1', lectureTitle: 'Introduction to React', courseId: '1', order: 1 },
+      { _id: '2', lectureTitle: 'Components and JSX', courseId: '1', order: 2 },
+      { _id: '3', lectureTitle: 'State and Props', courseId: '1', order: 3 }
     ],
     isPublished: true,
     status: 'published',
@@ -43,10 +43,10 @@ const mockCourses: ICourse[] = [
       }
     },
     lectures: [
-      { _id: '4', lectureTitle: 'Closures Deep Dive' },
-      { _id: '5', lectureTitle: 'Prototypal Inheritance' },
-      { _id: '6', lectureTitle: 'Async/Await Patterns' },
-      { _id: '7', lectureTitle: 'Event Loop' }
+      { _id: '4', lectureTitle: 'Closures Deep Dive', courseId: '2', order: 1 },
+      { _id: '5', lectureTitle: 'Prototypal Inheritance', courseId: '2', order: 2 },
+      { _id: '6', lectureTitle: 'Async/Await Patterns', courseId: '2', order: 3 },
+      { _id: '7', lectureTitle: 'Event Loop', courseId: '2', order: 4 }
     ],
     isPublished: true,
     status: 'published',
@@ -68,9 +68,9 @@ const mockCourses: ICourse[] = [
       }
     },
     lectures: [
-      { _id: '8', lectureTitle: 'Design Principles' },
-      { _id: '9', lectureTitle: 'Color Theory' },
-      { _id: '10', lectureTitle: 'Typography' }
+      { _id: '8', lectureTitle: 'Design Principles', courseId: '3', order: 1 },
+      { _id: '9', lectureTitle: 'Color Theory', courseId: '3', order: 2 },
+      { _id: '10', lectureTitle: 'Typography', courseId: '3', order: 3 }
     ],
     isPublished: true,
     status: 'published',
@@ -92,10 +92,10 @@ const mockCourses: ICourse[] = [
       }
     },
     lectures: [
-      { _id: '11', lectureTitle: 'Python Basics' },
-      { _id: '12', lectureTitle: 'NumPy and Pandas' },
-      { _id: '13', lectureTitle: 'Data Visualization' },
-      { _id: '14', lectureTitle: 'Machine Learning Intro' }
+      { _id: '11', lectureTitle: 'Python Basics', courseId: '4', order: 1 },
+      { _id: '12', lectureTitle: 'NumPy and Pandas', courseId: '4', order: 2 },
+      { _id: '13', lectureTitle: 'Data Visualization', courseId: '4', order: 3 },
+      { _id: '14', lectureTitle: 'Machine Learning Intro', courseId: '4', order: 4 }
     ],
     isPublished: true,
     status: 'published',
@@ -117,9 +117,9 @@ const mockCourses: ICourse[] = [
       }
     },
     lectures: [
-      { _id: '15', lectureTitle: 'Marketing Fundamentals' },
-      { _id: '16', lectureTitle: 'Social Media Strategy' },
-      { _id: '17', lectureTitle: 'Content Marketing' }
+      { _id: '15', lectureTitle: 'Marketing Fundamentals', courseId: '5', order: 1 },
+      { _id: '16', lectureTitle: 'Social Media Strategy', courseId: '5', order: 2 },
+      { _id: '17', lectureTitle: 'Content Marketing', courseId: '5', order: 3 }
     ],
     isPublished: true,
     status: 'published',
@@ -141,10 +141,10 @@ const mockCourses: ICourse[] = [
       }
     },
     lectures: [
-      { _id: '18', lectureTitle: 'Flutter Basics' },
-      { _id: '19', lectureTitle: 'Widgets and Layouts' },
-      { _id: '20', lectureTitle: 'State Management' },
-      { _id: '21', lectureTitle: 'API Integration' }
+      { _id: '18', lectureTitle: 'Flutter Basics', courseId: '6', order: 1 },
+      { _id: '19', lectureTitle: 'Widgets and Layouts', courseId: '6', order: 2 },
+      { _id: '20', lectureTitle: 'State Management', courseId: '6', order: 3 },
+      { _id: '21', lectureTitle: 'API Integration', courseId: '6', order: 4 }
     ],
     isPublished: true,
     status: 'published',

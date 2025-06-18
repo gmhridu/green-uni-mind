@@ -105,9 +105,25 @@ const LoginPage = () => {
       dispatch(setUser({ user, token }));
       toast.success("Login Successfully!", { id: toastId, duration: 2000 });
       navigate("/");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Something went wrong", { id: toastId, duration: 2000 });
+
+      // Handle unverified user error
+      if (err?.data?.message?.includes('Email not verified') || err?.data?.data?.requiresVerification) {
+        const email = err?.data?.data?.email || formData.email;
+        const otpExpiresAt = err?.data?.data?.otpExpiresAt;
+
+        toast.error(err?.data?.message || "Email not verified. Please check your email for verification code.", {
+          id: toastId,
+          duration: 4000
+        });
+
+        // Redirect to OTP verification page
+        navigate(`/verify-otp?email=${encodeURIComponent(email)}${otpExpiresAt ? `&otpExpiresAt=${encodeURIComponent(otpExpiresAt)}` : ''}`);
+        return;
+      }
+
+      toast.error(err?.data?.message || "Something went wrong", { id: toastId, duration: 2000 });
     } finally {
       dispatch(setIsLoading(false));
     }

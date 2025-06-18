@@ -2,6 +2,7 @@ import ProtectedRoute from "@/components/layouts/ProtectedRoutes";
 import UserProfileContainer from "@/components/UserProfileContainer";
 import LoginPage from "@/pages/Auth/LoginPage";
 import SignUpPage from "@/pages/Auth/SignUpPage";
+import OTPVerificationPage from "@/pages/Auth/OTPVerificationPage";
 import ForgotPasswordPage from "@/pages/Auth/ForgotPasswordPage";
 import OAuthCallback from "@/pages/Auth/OAuthCallback";
 import OAuthSuccessPage from "@/pages/Auth/OAuthSuccessPage";
@@ -14,7 +15,6 @@ import Home from "@/pages/Home";
 import Index from "@/pages/Index";
 // import CreateLecture from "@/pages/Lecture/CreateLecture";
 import NotFound from "@/pages/NotFound";
-import { createBrowserRouter } from "react-router-dom";
 import { USER_ROLE } from "@/constants/global";
 import CreateCourse from "@/pages/Course/CreateCourse";
 import Layout from "@/components/layouts/Layout";
@@ -48,6 +48,9 @@ import Blog from "@/pages/Blog";
 import Impact from "@/pages/Impact";
 import Categories from "@/pages/Categories";
 import CategoryBrowse from "@/pages/CategoryBrowse";
+import {
+  createBrowserRouter,
+} from "react-router-dom";
 
 const router = createBrowserRouter([
   {
@@ -248,6 +251,14 @@ const router = createBrowserRouter([
     element: (
       <PublicRoute>
         <SignUpPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "verify-otp",
+    element: (
+      <PublicRoute>
+        <OTPVerificationPage />
       </PublicRoute>
     ),
   },

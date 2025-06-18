@@ -1,3 +1,5 @@
+import React from "react";
+
 const AllInOneAppSection = () => {
   return (
     <section className="py-12 sm:py-16 md:py-20 bg-green-50 relative overflow-hidden">

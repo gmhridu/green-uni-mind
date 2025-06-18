@@ -13,7 +13,6 @@ import { Eye, EyeOff, Loader2, ShieldCheck, Mail, KeyRound } from "lucide-react"
 import { useChangePasswordMutation, useForgotPasswordMutation } from "@/redux/features/auth/authApi";
 import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser } from "@/redux/features/auth/authSlice";
-import { Link } from "react-router-dom";
 
 // Password validation schema
 const passwordSchema = z

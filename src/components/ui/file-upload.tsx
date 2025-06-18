@@ -4,13 +4,13 @@
 import { cn } from "@/lib/utils";
 import { Slot } from "@radix-ui/react-slot";
 import {
-  FileArchiveIcon,
-  FileAudioIcon,
-  FileCodeIcon,
-  FileCogIcon,
-  FileIcon,
-  FileTextIcon,
-  FileVideoIcon,
+  FileArchive,
+  FileAudio,
+  FileCode,
+  FileCog,
+  File,
+  FileText,
+  FileVideo,
 } from "lucide-react";
 import * as React from "react";
 
@@ -960,18 +960,18 @@ function getFileIcon(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
 
   if (type.startsWith("video/")) {
-    return <FileVideoIcon />;
+    return <FileVideo />;
   }
 
   if (type.startsWith("audio/")) {
-    return <FileAudioIcon />;
+    return <FileAudio />;
   }
 
   if (
     type.startsWith("text/") ||
     ["txt", "md", "rtf", "pdf"].includes(extension)
   ) {
-    return <FileTextIcon />;
+    return <FileText />;
   }
 
   if (
@@ -993,21 +993,21 @@ function getFileIcon(file: File) {
       "cs",
     ].includes(extension)
   ) {
-    return <FileCodeIcon />;
+    return <FileCode />;
   }
 
   if (["zip", "rar", "7z", "tar", "gz", "bz2"].includes(extension)) {
-    return <FileArchiveIcon />;
+    return <FileArchive />;
   }
 
   if (
     ["exe", "msi", "app", "apk", "deb", "rpm"].includes(extension) ||
     type.startsWith("application/")
   ) {
-    return <FileCogIcon />;
+    return <FileCog />;
   }
 
-  return <FileIcon />;
+  return <File />;
 }
 
 interface FileUploadItemPreviewProps

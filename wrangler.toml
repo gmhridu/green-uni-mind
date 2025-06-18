@@ -34,6 +34,11 @@ to = "/index.html"
 status = 200
 
 [[redirects]]
+from = "/verify-otp"
+to = "/index.html"
+status = 200
+
+[[redirects]]
 from = "/forgot-password"
 to = "/index.html"
 status = 200

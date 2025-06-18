@@ -23,7 +23,7 @@ import { registerSchema } from "@/types/authSchema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch } from "@/redux/hooks";
-import { setIsLoading, setUser, TUser } from "@/redux/features/auth/authSlice";
+import { setIsLoading } from "@/redux/features/auth/authSlice";
 import { Link, useNavigate } from "react-router-dom";
 import {
   useRegisterMutation,
@@ -195,31 +195,36 @@ const SignUpPage = () => {
         ? registerTeacher(formData).unwrap()
         : register(formData).unwrap());
 
-      const newUser = becomeTeacher
-        ? res.data.newTeacher[0]
-        : res.data.newStudent[0];
 
-      const user: TUser = {
-        email: newUser.email,
-        name: newUser.name,
-        photoUrl: newUser.profileImg,
-        role: newUser.role ?? (becomeTeacher ? "teacher" : "student"),
-        isDeleted: newUser.isDeleted,
-        isVerified: newUser.isVerified || false,
-        createdAt: newUser.createdAt,
-        updatedAt: newUser.updatedAt,
-      };
 
-      dispatch(setUser({ user, token: res.data.accessToken }));
-
-      toast.success("Registered successfully!", {
+      // Don't set user in Redux yet since they need to verify email first
+      toast.success("Registration successful! Please check your email for verification code.", {
         id: toastId,
-        duration: 2000,
+        duration: 4000,
       });
-      navigate("/");
-    } catch (err) {
+
+      // Redirect to OTP verification page with email and expiry time
+      const otpExpiresAt = res.data.otpExpiresAt || new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      navigate(`/verify-otp?email=${encodeURIComponent(data.email)}&otpExpiresAt=${encodeURIComponent(otpExpiresAt)}`);
+    } catch (err: any) {
       console.error(err);
-      toast.error("Something went wrong", { id: toastId, duration: 2000 });
+
+      // Handle existing unverified user error
+      if (err?.data?.message?.includes('already exists but is not verified') || err?.data?.data?.requiresVerification) {
+        const email = err?.data?.data?.email || data.email;
+        const otpExpiresAt = err?.data?.data?.otpExpiresAt;
+
+        toast.error(err?.data?.message || "Account exists but not verified. Please check your email for verification code.", {
+          id: toastId,
+          duration: 4000
+        });
+
+        // Redirect to OTP verification page
+        navigate(`/verify-otp?email=${encodeURIComponent(email)}${otpExpiresAt ? `&otpExpiresAt=${encodeURIComponent(otpExpiresAt)}` : ''}`);
+        return;
+      }
+
+      toast.error(err?.data?.message || "Something went wrong", { id: toastId, duration: 2000 });
     } finally {
       dispatch(setIsLoading(false));
     }

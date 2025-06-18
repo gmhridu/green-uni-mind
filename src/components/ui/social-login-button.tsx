@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
-import config from "@/config";
+import { config } from "@/config";
 import { ComponentType } from "react";
 
 interface SocialLoginButtonProps {

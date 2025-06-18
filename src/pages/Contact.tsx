@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -132,7 +132,7 @@ const Contact = () => {
                       type="submit"
                       className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg text-lg flex items-center justify-center gap-2"
                     >
-                      <Send className="h-5 w-5" />
+                      <ArrowRight className="h-5 w-5" />
                       Send Message
                     </Button>
                   </motion.div>

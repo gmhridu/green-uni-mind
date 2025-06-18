@@ -42,7 +42,7 @@ const EmailVerificationBanner = () => {
   };
   
   return (
-    <Alert variant="warning" className="mb-6 border-amber-300 bg-amber-50">
+    <Alert variant="destructive" className="mb-6 border-amber-300 bg-amber-50">
       <AlertCircle className="h-5 w-5 text-amber-600" />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
         <div>

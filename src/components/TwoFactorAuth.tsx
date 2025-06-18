@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser } from "@/redux/features/auth/authSlice";
-import { useSetupTwoFactorMutation, useVerifyTwoFactorSetupMutation } from "@/redux/features/auth/authApi";
+import { useSetupTwoFactorMutation, useVerifyTwoFactorMutation } from "@/redux/features/auth/authApi";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -42,7 +42,7 @@ import {
 const TwoFactorAuth = () => {
   const user = useAppSelector(selectCurrentUser);
   const [setupTwoFactor, { isLoading: isSettingUp }] = useSetupTwoFactorMutation();
-  const [verifyTwoFactorSetup, { isLoading: isVerifying }] = useVerifyTwoFactorSetupMutation();
+  const [verifyTwoFactor, { isLoading: isVerifying }] = useVerifyTwoFactorMutation();
 
   const [setupData, setSetupData] = useState<{
     qrCodeUrl?: string;
@@ -117,7 +117,7 @@ const TwoFactorAuth = () => {
     }
 
     try {
-      await verifyTwoFactorSetup({
+      await verifyTwoFactor({
         userId: user._id,
         token: verificationCode,
       }).unwrap();
