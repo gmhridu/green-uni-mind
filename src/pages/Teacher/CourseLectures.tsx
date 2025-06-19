@@ -24,24 +24,15 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDuration } from "@/utils/formatDuration";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+  DroppableProvided,
+  DraggableProvided,
+  DraggableStateSnapshot,
+  DraggableProvidedDragHandleProps
+} from "react-beautiful-dnd";
 import {
   useGetLectureByCourseIdQuery,
   useUpdateLectureOrderMutation,
@@ -155,15 +146,10 @@ const CourseLectures: React.FC = () => {
     }
   }, [isDragging, isTouch]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragStart = () => {
+  const handleDragStart = (start: { draggableId: string }) => {
     setIsDragging(true);
+    // Set the selected lecture for visual feedback
+    setSelectedLecture(start.draggableId);
 
     // On mobile, show a toast to indicate drag has started
     if (isMobile) {
@@ -174,18 +160,16 @@ const CourseLectures: React.FC = () => {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = async (result: DropResult) => {
     setIsDragging(false);
     setSelectedLecture(null);
 
-    const { active, over } = event;
+    if (!result.destination) return;
+    if (result.destination.index === result.source.index) return;
 
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = orderedLectures.findIndex((lecture) => lecture._id === active.id);
-    const newIndex = orderedLectures.findIndex((lecture) => lecture._id === over.id);
-
-    const items = arrayMove(orderedLectures, oldIndex, newIndex);
+    const items = Array.from(orderedLectures);
+    const [moved] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, moved);
 
     // Recalculate order
     const updated = items.map((lec, idx) => ({
@@ -244,38 +228,8 @@ const CourseLectures: React.FC = () => {
     setShowOrderConfirm(false);
   };
 
-  // Sortable item component
-  const SortableItem = ({ lecture, index }: { lecture: Lecture; index: number }) => {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      transition,
-      isDragging,
-    } = useSortable({ id: lecture._id, disabled: !isTeacher });
-
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0.5 : 1,
-    };
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className={`${
-          isDragging ? "bg-blue-50 z-10" : "bg-white"
-        } rounded-md transition touch-manipulation`}
-      >
-        {renderLectureItem(lecture, index, { ...attributes, ...listeners })}
-      </div>
-    );
-  };
-
   // Render helper for lecture items
-  const renderLectureItem = (lecture: Lecture, index: number, dragHandleProps: any = null) => (
+  const renderLectureItem = (lecture: Lecture, index: number, dragHandleProps: DraggableProvidedDragHandleProps | null = null) => (
     <div className={`flex items-center justify-between flex-wrap gap-2 py-4 px-2 md:px-4 border-b last:border-b-0 ${selectedLecture === lecture._id ? 'bg-blue-50' : ''}`}>
       <div className="flex items-center flex-1 min-w-0">
         {isTeacher && (
@@ -507,27 +461,49 @@ const CourseLectures: React.FC = () => {
               </Button>
             </div>
           ) : orderedLectures.length > 0 ? (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
+            <DragDropContext
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
+              enableDefaultSensors={true}
             >
-              <SortableContext
-                items={orderedLectures.map(lecture => lecture._id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="rounded-md overflow-hidden">
-                  {orderedLectures.map((lecture, index) => (
-                    <SortableItem
-                      key={lecture._id}
-                      lecture={lecture}
-                      index={index}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+              <Droppable droppableId="lectures">
+                {(provided: DroppableProvided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="rounded-md overflow-hidden"
+                  >
+                    {orderedLectures.map((lecture, index) => (
+                      <Draggable
+                        key={lecture._id}
+                        draggableId={lecture._id}
+                        index={index}
+                        isDragDisabled={!isTeacher}
+                      >
+                        {(prov: DraggableProvided, snapshot: DraggableStateSnapshot) => (
+                          <div
+                            ref={prov.innerRef}
+                            {...prov.draggableProps}
+                            style={{
+                              ...prov.draggableProps.style,
+                              boxShadow: snapshot.isDragging ? '0 5px 15px rgba(0, 0, 0, 0.1)' : 'none',
+                            }}
+                            className={`${
+                              snapshot.isDragging
+                                ? "bg-blue-50 z-10 opacity-90"
+                                : "bg-white"
+                            } rounded-md transition touch-manipulation`}
+                          >
+                            {renderLectureItem(lecture, index, prov.dragHandleProps)}
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           ) : (
             <div className="text-center py-8">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
