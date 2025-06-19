@@ -9,24 +9,36 @@ import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "./redux/store";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { initializeSecurity } from "@/config/security";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <Provider store={store}>
-    <QueryClientProvider client={queryClient}>
-      <PersistGate loading={null} persistor={persistor} />
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <NuqsAdapter>
-          <ErrorBoundary>
-            <RouterProvider router={router} />
-          </ErrorBoundary>
-        </NuqsAdapter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </Provider>
-);
+function App() {
+  // Initialize security measures on app startup
+  useEffect(() => {
+    initializeSecurity();
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <NuqsAdapter>
+                <RouterProvider router={router} />
+                <Toaster />
+                <Sonner />
+              </NuqsAdapter>
+            </TooltipProvider>
+          </QueryClientProvider>
+        </PersistGate>
+      </Provider>
+    </ErrorBoundary>
+  );
+}
+
+
 
 export default App;

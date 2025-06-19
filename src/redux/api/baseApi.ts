@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { logout, setUser } from "../features/auth/authSlice";
 import { config } from "@/config";
 import { Logger, debugOnly } from "@/utils/logger";
+import { encryptionService } from "@/services/encryption.service";
+import { SecurityConfig, logSecurityEvent } from "@/config/security";
 
 type ErrorResponse = {
   message: string;
@@ -50,6 +52,20 @@ const baseQuery = fetchBaseQuery({
           Logger.error("Error checking stored user data", { error });
         }
       }
+    }
+
+    // Add security headers for production
+    if (SecurityConfig.API_SECURITY.REQUEST_SIGNING) {
+      const timestamp = Date.now().toString();
+      const nonce = crypto.getRandomValues(new Uint8Array(16))
+        .reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+
+      headers.set('x-timestamp', timestamp);
+      headers.set('x-nonce', nonce);
+
+      // Add request signature (simplified version)
+      const payload = `${getState}${timestamp}${nonce}`;
+      headers.set('x-request-signature', btoa(payload));
     }
 
     // Don't add custom headers that might cause CORS issues

@@ -66,6 +66,11 @@ export const Environment = {
   current: (): Environment => getEnvironment(),
 
   /**
+   * Get current environment string (alias for current)
+   */
+  getEnvironment: (): Environment => getEnvironment(),
+
+  /**
    * Check if debugging should be enabled
    */
   isDebuggingEnabled: (): boolean => {

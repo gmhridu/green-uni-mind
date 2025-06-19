@@ -112,7 +112,7 @@ export const store = configureStore({
       },
     }).concat(baseApi.middleware),
   // Enhanced Redux DevTools configuration with security
-  devTools: Environment.isDevelopment() && {
+  devTools: Environment.isDevelopment() ? {
     // Only enable in development environment
     name: 'Green Uni Mind Store',
     trace: true,
@@ -125,6 +125,8 @@ export const store = configureStore({
         'auth/login',
         'auth/signup',
         'auth/refreshToken',
+        'baseApi/executeMutation',
+        'baseApi/executeQuery',
       ];
 
       if (sensitiveActionTypes.some(type => action.type.includes(type))) {
@@ -159,7 +161,7 @@ export const store = configureStore({
         } : state.auth,
       };
     },
-  },
+  } : false, // Completely disable in production
 });
 
 export type RootState = ReturnType<typeof store.getState>;
