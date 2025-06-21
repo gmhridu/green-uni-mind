@@ -27,7 +27,12 @@ function App() {
           <QueryClientProvider client={queryClient}>
             <TooltipProvider>
               <NuqsAdapter>
-                <RouterProvider router={router} />
+                <RouterProvider
+                  router={router}
+                  future={{
+                    v7_startTransition: true,
+                  }}
+                />
                 <Toaster />
                 <Sonner />
               </NuqsAdapter>

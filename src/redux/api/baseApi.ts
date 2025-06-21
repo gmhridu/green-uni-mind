@@ -54,18 +54,25 @@ const baseQuery = fetchBaseQuery({
       }
     }
 
-    // Add security headers for production
+    // Add security headers for production (only when enabled)
     if (SecurityConfig.API_SECURITY.REQUEST_SIGNING) {
-      const timestamp = Date.now().toString();
-      const nonce = crypto.getRandomValues(new Uint8Array(16))
-        .reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+      try {
+        const timestamp = Date.now().toString();
+        const nonce = crypto.getRandomValues(new Uint8Array(16))
+          .reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
-      headers.set('x-timestamp', timestamp);
-      headers.set('x-nonce', nonce);
+        headers.set('x-timestamp', timestamp);
+        headers.set('x-nonce', nonce);
 
-      // Add request signature (simplified version)
-      const payload = `${getState}${timestamp}${nonce}`;
-      headers.set('x-request-signature', btoa(payload));
+        // Add request signature (simplified version)
+        const payload = `${timestamp}${nonce}`;
+        headers.set('x-request-signature', btoa(payload));
+
+        debugOnly.log('Added security headers for request signing');
+      } catch (error) {
+        Logger.error('Error adding security headers', { error });
+        // Continue without security headers if there's an error
+      }
     }
 
     // Don't add custom headers that might cause CORS issues

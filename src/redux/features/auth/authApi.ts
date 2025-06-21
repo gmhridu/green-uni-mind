@@ -11,6 +11,7 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body: userInfo,
       }),
+      invalidatesTags: ["getMe"],
       transformResponse: (response) => {
         console.log("Login response received:", response);
 
@@ -78,6 +79,7 @@ export const authApi = baseApi.injectEndpoints({
         url: "/auth/logout",
         method: "POST",
       }),
+      invalidatesTags: ["getMe"],
       async onQueryStarted(_, { queryFulfilled }) {
         try {
           await queryFulfilled;

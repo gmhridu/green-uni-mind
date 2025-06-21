@@ -4,6 +4,50 @@
  */
 
 import { Environment } from '@/utils/environment';
+import { config } from '@/config';
+
+/**
+ * Get backend URLs for CSP configuration
+ */
+const getBackendUrls = (): string[] => {
+  const urls: string[] = [];
+
+  // Add configured API base URL
+  if (config.apiBaseUrl) {
+    // Extract base URL without /api/v1 path
+    const baseUrl = config.apiBaseUrl.replace(/\/api\/v1$/, '');
+    urls.push(baseUrl);
+  }
+
+  // Add keep-alive backend URL
+  const keepAliveUrl = import.meta.env.VITE_BACKEND_URL || 'https://green-uni-mind-backend-oxpo.onrender.com';
+  if (keepAliveUrl && !urls.includes(keepAliveUrl)) {
+    urls.push(keepAliveUrl);
+  }
+
+  // Add common development URLs
+  if (Environment.isDevelopment()) {
+    const devUrls = [
+      'http://localhost:5000',
+      'http://localhost:3000',
+      'http://127.0.0.1:5000',
+      'http://127.0.0.1:3000'
+    ];
+    devUrls.forEach(url => {
+      if (!urls.includes(url)) {
+        urls.push(url);
+      }
+    });
+  }
+
+  // Add production backend URL
+  const prodUrl = 'https://green-uni-mind-backend-oxpo.onrender.com';
+  if (!urls.includes(prodUrl)) {
+    urls.push(prodUrl);
+  }
+
+  return urls;
+};
 
 /**
  * Security configuration constants
@@ -22,7 +66,7 @@ export const SecurityConfig = {
     ENCRYPT_REQUESTS: Environment.isProduction(),
     ENCRYPT_RESPONSES: Environment.isProduction(),
     OBFUSCATE_ENDPOINTS: Environment.isProduction(),
-    REQUEST_SIGNING: Environment.isProduction(),
+    REQUEST_SIGNING: false, // Disable request signing to avoid CORS issues during development
   },
 
   // Cookie Security
@@ -52,13 +96,19 @@ export const SecurityConfig = {
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
       'img-src': ["'self'", 'data:', 'https:', 'blob:'],
-      'connect-src': ["'self'", 'https://api.stripe.com', 'wss:'],
+      'connect-src': [
+        "'self'",
+        'https://api.stripe.com',
+        'wss:',
+        'ws:',
+        ...getBackendUrls()
+      ],
       'media-src': ["'self'", 'blob:', 'https:'],
       'object-src': ["'none'"],
       'base-uri': ["'self'"],
       'form-action': ["'self'"],
-      'frame-ancestors': ["'none'"],
-      'upgrade-insecure-requests': [],
+      // Note: frame-ancestors is ignored in meta elements, handled via HTTP headers
+      'upgrade-insecure-requests': Environment.isProduction() ? [] : undefined,
     },
   },
 
@@ -91,7 +141,7 @@ export const SecurityConfig = {
   // API Endpoint Obfuscation
   ENDPOINT_OBFUSCATION: {
     ENABLED: Environment.isProduction(),
-    SALT: Environment.isProduction() ? process.env.VITE_API_SALT || 'default-salt' : '',
+    SALT: Environment.isProduction() ? import.meta.env.VITE_API_SALT || 'default-salt' : '',
     HASH_ALGORITHM: 'SHA-256',
   },
 };
@@ -151,7 +201,8 @@ export const obfuscateEndpoint = async (endpoint: string): Promise<string> => {
 };
 
 /**
- * Validate Content Security Policy
+ * Validate Content Security Policy for meta element
+ * Note: Some directives like frame-ancestors are ignored in meta elements
  */
 export const validateCSP = (): string => {
   if (!SecurityConfig.CSP.ENABLED) {
@@ -159,8 +210,36 @@ export const validateCSP = (): string => {
   }
 
   const directives = SecurityConfig.CSP.DIRECTIVES;
-  const cspString = Object.entries(directives)
+  const metaCompatibleDirectives: Record<string, string[]> = {};
+
+  // Filter out directives that don't work in meta elements
+  const ignoredInMeta = ['frame-ancestors', 'report-uri', 'sandbox'];
+
+  Object.entries(directives).forEach(([directive, sources]) => {
+    if (!ignoredInMeta.includes(directive) && sources && Array.isArray(sources)) {
+      metaCompatibleDirectives[directive] = sources;
+    }
+  });
+
+  const cspString = Object.entries(metaCompatibleDirectives)
     .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
+    .join('; ');
+
+  return cspString;
+};
+
+/**
+ * Get CSP directives for HTTP headers (includes all directives)
+ */
+export const getCSPForHeaders = (): string => {
+  if (!SecurityConfig.CSP.ENABLED) {
+    return '';
+  }
+
+  const directives = SecurityConfig.CSP.DIRECTIVES;
+  const cspString = Object.entries(directives)
+    .filter(([, sources]) => sources && Array.isArray(sources))
+    .map(([directive, sources]) => `${directive} ${sources!.join(' ')}`)
     .join('; ');
 
   return cspString;
@@ -196,21 +275,41 @@ export const isSecureEnvironment = (): boolean => {
  * Initialize security measures
  */
 export const initializeSecurity = () => {
-  // Set security headers if possible
-  if (SecurityConfig.CSP.ENABLED) {
+  // Only apply CSP in production via meta element (with limitations)
+  // In development, we rely on more permissive settings
+  if (SecurityConfig.CSP.ENABLED && Environment.isProduction()) {
     const csp = validateCSP();
     if (csp) {
-      const meta = document.createElement('meta');
-      meta.httpEquiv = 'Content-Security-Policy';
-      meta.content = csp;
-      document.head.appendChild(meta);
+      // Check if CSP meta element already exists
+      const existingMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+      if (!existingMeta) {
+        const meta = document.createElement('meta');
+        meta.httpEquiv = 'Content-Security-Policy';
+        meta.content = csp;
+        document.head.appendChild(meta);
+
+        // Log CSP application
+        logSecurityEvent('csp_applied_via_meta', {
+          csp: csp,
+          note: 'frame-ancestors and some other directives require HTTP headers'
+        });
+      }
     }
   }
+
+  // Validate backend URLs are accessible
+  const backendUrls = getBackendUrls();
+  logSecurityEvent('backend_urls_configured', {
+    urls: backendUrls,
+    environment: Environment.getEnvironment()
+  });
 
   // Log security initialization
   logSecurityEvent('security_initialized', {
     environment: Environment.getEnvironment(),
     secure: isSecureEnvironment(),
+    cspEnabled: SecurityConfig.CSP.ENABLED,
+    backendUrls: backendUrls,
     timestamp: new Date().toISOString(),
   });
 };

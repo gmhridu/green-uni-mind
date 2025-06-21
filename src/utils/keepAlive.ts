@@ -59,8 +59,21 @@ class FrontendKeepAlive {
 }
 
 // Create and export singleton instance
+// In development, use local backend; in production, use the production backend
+const getBackendUrl = () => {
+  const isDevelopment = import.meta.env.VITE_NODE_ENV === 'development' ||
+                       import.meta.env.DEV ||
+                       window.location.hostname === 'localhost';
+
+  if (isDevelopment) {
+    return 'http://localhost:5000'; // Local backend for development
+  }
+
+  return import.meta.env.VITE_BACKEND_URL || 'https://green-uni-mind-backend-oxpo.onrender.com';
+};
+
 const frontendKeepAlive = new FrontendKeepAlive(
-  import.meta.env.VITE_BACKEND_URL || 'https://green-uni-mind-backend-oxpo.onrender.com',
+  getBackendUrl(),
   10 // Ping every 10 minutes
 );
 

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Mail, Loader2, RefreshCw } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +15,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { CountdownTimer } from "@/components/ui/countdown-timer";
 import { useAppDispatch } from "@/redux/hooks";
 import { setUser, TUser } from "@/redux/features/auth/authSlice";
 import {
@@ -28,10 +29,8 @@ const OTPVerificationPage = () => {
   const dispatch = useAppDispatch();
   
   const email = searchParams.get("email");
-  const otpExpiresAt = searchParams.get("otpExpiresAt");
   const [otp, setOtp] = useState("");
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
-  const [canResend, setCanResend] = useState(false);
+  const [verificationAttempts, setVerificationAttempts] = useState(0);
 
   // Rate limiting state
   const [rateLimitStatus, setRateLimitStatus] = useState<{
@@ -75,30 +74,10 @@ const OTPVerificationPage = () => {
     }
   }, [email, navigate]);
 
-  // Initialize timer based on OTP expiry time or default to 5 minutes
-  useEffect(() => {
-    if (otpExpiresAt) {
-      const expiryTime = new Date(otpExpiresAt).getTime();
-      const currentTime = Date.now();
-      const remainingTime = Math.max(0, Math.floor((expiryTime - currentTime) / 1000));
-      setTimeLeft(remainingTime);
-    }
-  }, [otpExpiresAt]);
-
   // Fetch rate limiting status on component mount
   useEffect(() => {
     fetchRateLimitStatus();
   }, [email]);
-
-  // Countdown timer for OTP expiration
-  useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setCanResend(true);
-    }
-  }, [timeLeft]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -139,15 +118,23 @@ const OTPVerificationPage = () => {
       return;
     }
 
-    // Check if OTP has expired
-    if (timeLeft <= 0) {
-      toast.error("OTP has expired. Please request a new one.");
+
+
+    // Check if account is locked
+    if (rateLimitStatus?.isLocked) {
+      toast.error("Account is temporarily locked", {
+        description: "Too many failed attempts. Please wait before trying again.",
+        duration: 4000
+      });
       return;
     }
 
-    const toastId = toast.loading("Verifying...");
+    const toastId = toast.loading("Verifying your code...", {
+      description: "Please wait while we verify your code"
+    });
 
     try {
+      setVerificationAttempts(prev => prev + 1);
       const result = await verifyEmail({ email, code: otp }).unwrap();
       
       // Set user in Redux store after successful verification
@@ -179,66 +166,132 @@ const OTPVerificationPage = () => {
       }
     } catch (error: any) {
       console.error("OTP verification error:", error);
-      toast.error(error?.data?.message || "Verification failed. Please try again.", {
-        id: toastId,
-        duration: 3000,
-      });
+
+      // Handle specific error types
+      if (error?.status === 401) {
+        toast.error("Invalid verification code", {
+          id: toastId,
+          description: "Please check your code and try again. Codes are case-sensitive.",
+          duration: 4000,
+        });
+      } else if (error?.status === 410) {
+        toast.error("Verification code has expired", {
+          id: toastId,
+          description: "Please request a new code to continue.",
+          duration: 4000,
+        });
+
+      } else if (error?.status === 429) {
+        toast.error("Too many attempts", {
+          id: toastId,
+          description: "Account temporarily locked for security. Please wait before trying again.",
+          duration: 5000,
+        });
+        // Refresh rate limit status
+        await fetchRateLimitStatus();
+      } else {
+        toast.error(error?.data?.message || "Verification failed", {
+          id: toastId,
+          description: "Please check your code and try again.",
+          duration: 4000,
+        });
+      }
+
+      // Clear OTP on error for security
+      setOtp("");
     }
   };
 
-  const handleResendOTP = async () => {
+  const handleResendOTP = useCallback(async () => {
     if (!email) return;
 
     // Check if account is locked
     if (rateLimitStatus?.isLocked) {
       const timeRemaining = Math.ceil(lockTimeRemaining / 60);
-      toast.error(`Account is locked. Please try again in ${timeRemaining} minutes.`);
+      toast.error("Account is temporarily locked", {
+        description: `Please try again in ${timeRemaining} minutes.`,
+        duration: 4000
+      });
       return;
     }
 
     // Check resend cooldown
     if (resendCooldown > 0) {
-      toast.error(`Please wait ${resendCooldown} seconds before requesting a new code.`);
+      toast.error("Please wait before requesting a new code", {
+        description: `You can request a new code in ${resendCooldown} seconds.`,
+        duration: 3000
+      });
       return;
     }
 
-    const toastId = toast.loading("Sending new verification code...");
+    const toastId = toast.loading("Sending new verification code...", {
+      description: "Please wait while we send a new code to your email"
+    });
 
     try {
-      await resendVerification({ email }).unwrap();
+      const result = await resendVerification({ email }).unwrap();
 
-      toast.success("New verification code sent to your email!", {
+      toast.success("New verification code sent!", {
         id: toastId,
-        duration: 3000,
+        description: `Check your email for the new 6-digit code. Code expires in 5 minutes.`,
+        duration: 4000,
       });
 
-      // Reset timer to 5 minutes
-      setTimeLeft(300);
-      setCanResend(false);
+      // Clear current OTP and reset verification attempts
       setOtp("");
+      setVerificationAttempts(0);
 
-      // Refresh rate limit status and set resend cooldown
+      // Set resend cooldown from server response or default to 60 seconds
+      const cooldown = result?.data?.cooldownSeconds || 60;
+      setResendCooldown(cooldown);
+
+      // Refresh rate limit status
       await fetchRateLimitStatus();
-      setResendCooldown(60); // 1 minute cooldown
 
     } catch (error: any) {
       console.error("Resend OTP error:", error);
 
-      // Handle rate limiting errors
-      if (error?.data?.data?.isLocked) {
-        setLockTimeRemaining(error.data.data.timeRemaining * 60 || 1800);
-        toast.error(error?.data?.message || "Account temporarily locked due to too many requests.", { id: toastId });
-      } else if (error?.data?.data?.isResendCooldown) {
-        setResendCooldown(error.data.data.remainingTime || 60);
-        toast.error(error?.data?.message || "Please wait before requesting a new code.", { id: toastId });
+      // Handle specific error types
+      if (error?.status === 429) {
+        if (error?.data?.data?.isLocked) {
+          setLockTimeRemaining(error.data.data.timeRemaining * 60 || 1800);
+          toast.error("Account temporarily locked", {
+            id: toastId,
+            description: "Too many resend attempts. Please wait before trying again.",
+            duration: 5000
+          });
+        } else if (error?.data?.data?.isResendCooldown) {
+          setResendCooldown(error.data.data.remainingTime || 60);
+          toast.error("Please wait before requesting a new code", {
+            id: toastId,
+            description: `You can request a new code in ${error.data.data.remainingTime || 60} seconds.`,
+            duration: 4000
+          });
+        } else {
+          toast.error("Too many requests", {
+            id: toastId,
+            description: "Please wait before requesting another code.",
+            duration: 4000
+          });
+        }
+      } else if (error?.status === 404) {
+        toast.error("User not found", {
+          id: toastId,
+          description: "Please check your email address and try again.",
+          duration: 4000
+        });
       } else {
-        toast.error(error?.data?.message || "Failed to resend verification code.", { id: toastId });
+        toast.error("Failed to send verification code", {
+          id: toastId,
+          description: error?.data?.message || "Please try again later.",
+          duration: 4000
+        });
       }
 
       // Refresh rate limit status
       await fetchRateLimitStatus();
     }
-  };
+  }, [email, rateLimitStatus, lockTimeRemaining, resendCooldown, resendVerification, fetchRateLimitStatus]);
 
 
 
@@ -353,68 +406,15 @@ const OTPVerificationPage = () => {
               </div>
             )}
 
-            {/* OTP Expiration Timer */}
-            {timeLeft > 0 ? (
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm text-amber-800">
-                  Code expires in{" "}
-                  <span className="font-bold text-amber-900 text-lg">
-                    {formatTime(timeLeft)}
-                  </span>
-                </p>
-              </div>
-            ) : (
-              <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-700 font-semibold">
-                  ⏰ Verification code has expired
-                </p>
-              </div>
-            )}
-
-            {/* Resend Cooldown Status */}
-            {resendCooldown > 0 && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  ⏱️ You can resend code in <span className="font-bold">{resendCooldown} seconds</span>
-                </p>
-              </div>
-            )}
-
-            <Button
-              variant="ghost"
-              onClick={handleResendOTP}
-              disabled={
-                isResending ||
-                (!canResend && timeLeft > 0) ||
-                rateLimitStatus?.isLocked ||
-                resendCooldown > 0
-              }
-              className={`font-semibold transition-all duration-200 ${
-                rateLimitStatus?.isLocked || resendCooldown > 0
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-              }`}
-            >
-              {isResending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : rateLimitStatus?.isLocked ? (
-                <>
-                  🔒 Account Locked
-                </>
-              ) : resendCooldown > 0 ? (
-                <>
-                  ⏱️ Wait {resendCooldown}s
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Resend Code
-                </>
-              )}
-            </Button>
+            {/* Resend Cooldown Timer */}
+            <CountdownTimer
+              initialSeconds={resendCooldown}
+              onComplete={() => {}}
+              onResend={handleResendOTP}
+              isResending={isResending}
+              disabled={rateLimitStatus?.isLocked || false}
+              className="mb-4"
+            />
           </div>
 
 
