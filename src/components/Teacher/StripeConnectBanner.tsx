@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertCircle, CheckCircle, ExternalLink, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  useConnectStripeAccountMutation,
+  useCreateStripeAccountMutation,
   useCheckStripeAccountStatusQuery,
-  useCreateOnboardingLinkMutation,
-  useSaveStripeAccountDetailsMutation
+  useCreateAccountLinkMutation,
+  useUpdateStripeAccountMutation
 } from "@/redux/features/payment/payment.api";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { useAppSelector } from "@/redux/hooks";
@@ -27,9 +27,9 @@ const StripeConnectBanner = ({ teacherId }: StripeConnectBannerProps) => {
   });
 
   // Mutations for connecting Stripe and creating onboarding links
-  const [connectStripeAccount] = useConnectStripeAccountMutation();
-  const [createOnboardingLink] = useCreateOnboardingLinkMutation();
-  const [saveStripeAccountDetails] = useSaveStripeAccountDetailsMutation();
+  const [createStripeAccount] = useCreateStripeAccountMutation();
+  const [createAccountLink] = useCreateAccountLinkMutation();
+  const [updateStripeAccount] = useUpdateStripeAccountMutation();
 
   // Function to manually update the Stripe verification status
   const updateStripeVerificationStatus = async () => {
@@ -39,7 +39,7 @@ const StripeConnectBanner = ({ teacherId }: StripeConnectBannerProps) => {
     }
 
     try {
-      await saveStripeAccountDetails({
+      await updateStripeAccount({
         teacherId,
         stripeAccountId: user.stripeAccountId,
         stripeEmail: user.stripeEmail || user.email,
@@ -60,7 +60,7 @@ const StripeConnectBanner = ({ teacherId }: StripeConnectBannerProps) => {
     try {
       setIsConnecting(true);
       console.log("Connecting Stripe account for teacher:", teacherId);
-      const response = await connectStripeAccount(teacherId).unwrap();
+      const response = await createStripeAccount(teacherId).unwrap();
       console.log("Stripe connect response:", response);
 
       // Check for data.url in the response structure
@@ -89,22 +89,36 @@ const StripeConnectBanner = ({ teacherId }: StripeConnectBannerProps) => {
   const handleCreateOnboardingLink = async () => {
     try {
       setIsCreatingLink(true);
-      const response = await createOnboardingLink(teacherId).unwrap();
+
+      // Create account link with enhanced success/failure handling
+      const currentUrl = window.location.origin;
+      const response = await createAccountLink({
+        type: 'account_onboarding',
+        refreshUrl: `${currentUrl}/teacher/stripe-connect-status?success=false&reason=refresh`,
+        returnUrl: `${currentUrl}/teacher/stripe-connect-status?success=true`
+      }).unwrap();
 
       // Check for data.url in the response structure
       if (response.data?.url) {
-        window.open(response.data.url, '_blank');
-        toast.success("Stripe onboarding link created. Please complete the process in the new tab.");
+        window.location.href = response.data.url;
+        toast.success("Redirecting to Stripe onboarding...");
       } else if (response.status === 'pending' && response.url) {
-        window.open(response.url, '_blank');
-        toast.success("Stripe onboarding link created. Please complete the process in the new tab.");
+        window.location.href = response.url;
+        toast.success("Redirecting to Stripe onboarding...");
       } else {
         console.error("Unexpected response format:", response);
         toast.error("Failed to create onboarding link. Please try again.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating onboarding link:", error);
-      toast.error("Failed to create onboarding link. Please try again.");
+
+      // Enhanced error handling
+      let errorMessage = 'Failed to create onboarding link. Please try again.';
+      if (error?.data?.message) {
+        errorMessage = error.data.message;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsCreatingLink(false);
     }

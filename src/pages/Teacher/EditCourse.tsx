@@ -1,25 +1,36 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Check,
   ArrowLeft,
   ArrowRight,
-  CloudUpload,
   X,
-  Loader,
-  Save,
+  Loader2,
+  DollarSign,
+  Settings,
+  Eye,
+  Sparkles,
+  Target,
+  Globe,
+  Clock,
+  Star,
+  TrendingUp,
+  ExternalLink,
+  GraduationCap,
+  Award,
+  Trophy,
 } from "lucide-react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import StepIndicator from "@/components/StepIndicator";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -36,108 +47,244 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import {
-  FileUpload,
-  FileUploadDropzone,
-  FileUploadList,
-  FileUploadItem,
-  FileUploadItemPreview,
-  FileUploadItemMetadata,
-  FileUploadItemDelete,
-  FileUploadTrigger,
-} from "@/components/ui/file-upload";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { StableFileUpload } from "@/components/ui/stable-file-upload";
 import { useAppDispatch } from "@/redux/hooks";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import {
   useGetCourseByIdQuery,
   useEditCourseMutation,
 } from "@/redux/features/course/courseApi";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { COURSE_CATEGORIES, COURSE_LEVEL } from "@/types";
+import { COURSE_LEVEL } from "@/types";
 import { setCourse } from "@/redux/features/course/courseSlice";
+import { CategorySelector } from "@/components/ui/category-selector";
+import { AIEnhancementField } from "@/components/ui/ai-enhancement-button";
+import { AIDescriptionField } from "@/components/ui/ai-description-field";
+import { useGeminiAI } from "@/hooks/useGeminiAI";
+import {
+  useEnhanceTitleMutation,
+  useEnhanceSubtitleMutation,
+} from "@/redux/features/ai/aiApi";
+import { useGetAllCategoriesWithSubcategoriesQuery } from "@/redux/features/category/categoryApi";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { useCreateStripeAccountMutation } from "@/redux/features/payment/payment.api";
 import { Skeleton } from "@/components/ui/skeleton";
+
+import { Stepper, Step } from "@/components/ui/stepper";
 
 const courseSchema = z
   .object({
-    // Step 1: Course Info
+    // Step 1: Course Basics
     title: z
       .string()
-      .min(5, { message: "Title must be at least 5 characters" }),
-    subtitle: z.string().optional(),
+      .min(5, { message: "Title must be at least 5 characters" })
+      .max(100, { message: "Title must be less than 100 characters" }),
+    subtitle: z
+      .string()
+      .max(120, { message: "Subtitle must be less than 120 characters" })
+      .optional(),
     description: z
       .string()
-      .min(20, { message: "Description must be at least 20 characters" }),
-    category: z.enum(COURSE_CATEGORIES),
+      .min(50, { message: "Description must be at least 50 characters" })
+      .max(5000, { message: "Description must be less than 5000 characters" }),
+    categoryId: z.string().min(1, { message: "Category is required" }),
+    subcategoryId: z.string().min(1, { message: "Subcategory is required" }),
     courseLevel: z.enum(COURSE_LEVEL),
 
-    // Step 2: Materials (will be converted to 'file' when submitting)
+    // Step 2: Course Content
     courseThumbnail: z.instanceof(File).optional(),
+    learningObjectives: z
+      .array(z.string().min(1))
+      .min(3, { message: "At least 3 learning objectives are required" })
+      .max(8, { message: "Maximum 8 learning objectives allowed" })
+      .optional(),
+    prerequisites: z.string().optional(),
+    targetAudience: z.string().optional(),
 
-    // Step 3: Settings
-    status: z.enum(["draft", "published", "upcoming", "ongoing", "finished"]),
+    // Step 3: Pricing & Settings
+    status: z.enum(["draft", "published"]),
     coursePrice: z.string().optional(),
     isFree: z.enum(["free", "paid"]),
+    estimatedDuration: z.string().optional(),
+    language: z.string().default("English"),
+    hasSubtitles: z.boolean().default(false),
+    hasCertificate: z.boolean().default(true),
   })
   .superRefine((data, ctx) => {
-    if (data.isFree === "paid" && !data.coursePrice) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Price is required for paid courses",
-        path: ["coursePrice"],
-      });
+    if (data.isFree === "paid") {
+      if (!data.coursePrice || parseFloat(data.coursePrice) <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Valid price is required for paid courses",
+          path: ["coursePrice"],
+        });
+      }
     }
   });
 
-const steps = [
+
+
+const steps: Step[] = [
   {
-    id: "info",
-    title: "Course Info",
-    description: "Enter basic information about your course including title, description, category, and level."
+    id: 1,
+    title: "Course Basics",
+    description: "Essential course information",
   },
   {
-    id: "materials",
-    title: "Upload Materials",
-    description: "Upload your course thumbnail and other teaching materials."
+    id: 2,
+    title: "Course Content",
+    description: "Media and learning objectives",
   },
   {
-    id: "settings",
-    title: "Settings",
-    description: "Configure course settings including status and pricing options."
+    id: 3,
+    title: "Pricing & Settings",
+    description: "Price, language, and features",
   },
   {
-    id: "review",
-    title: "Review & Save",
-    description: "Review all your course information before saving changes."
+    id: 4,
+    title: "Review & Update",
+    description: "Final review and save changes",
   },
 ];
 
 const EditCourse = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
-  const { data: userData } = useGetMeQuery(undefined);
+  const { data } = useGetMeQuery(undefined);
+  const [editCourse, { isLoading }] = useEditCourseMutation();
+
   const { data: courseData, isLoading: isLoadingCourse } =
     useGetCourseByIdQuery(courseId as string, {
       skip: !courseId,
     });
 
-  console.log("Course ID:", courseId);
-  const [editCourse, { isLoading }] = useEditCourseMutation();
-  const [currentStep, setCurrentStep] = useState(0);
+  // State management
+  const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [formInitialized, setFormInitialized] = useState(false);
+  const [showStripeModal, setShowStripeModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [learningObjectives, setLearningObjectives] = useState<string[]>([""]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
-  const navigate = useNavigate();
-  const teacherId = userData?.data?._id;
+  // API hooks
+  const [createStripeAccount, { isLoading: isConnectingStripe }] =
+    useCreateStripeAccountMutation();
+  const [enhanceTitle, { isLoading: isEnhancingTitle }] =
+    useEnhanceTitleMutation();
+  const [enhanceSubtitle, { isLoading: isEnhancingSubtitle }] =
+    useEnhanceSubtitleMutation();
 
+  // Gemini AI hook for learning objectives and other fields
+  const {
+    generateLearningObjectives,
+    generatePrerequisites,
+    generateTargetAudience,
+    isGeneratingObjectives,
+    isGeneratingPrerequisites,
+    isGeneratingTargetAudience
+  } = useGeminiAI();
+
+  const { data: categoriesData } = useGetAllCategoriesWithSubcategoriesQuery();
+  const categories = useMemo(
+    () => categoriesData?.data || [],
+    [categoriesData?.data]
+  );
+  const teacherId = data?.data?._id;
+
+  // Form setup
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
+      title: "",
+      subtitle: "",
+      description: "",
+      categoryId: "",
+      subcategoryId: "",
+      courseLevel: "Beginner",
       status: "draft",
       isFree: "free",
       coursePrice: "",
+      language: "English",
+      hasSubtitles: false,
+      hasCertificate: true,
     },
   });
+
+  // Store form reference for stable access
+  const formRef = React.useRef(form);
+  formRef.current = form;
+
+  // Watch individual form values to prevent infinite loops
+  const categoryId = useWatch({ control: form.control, name: "categoryId" });
+  const subcategoryId = useWatch({
+    control: form.control,
+    name: "subcategoryId",
+  });
+  const title = useWatch({ control: form.control, name: "title" });
+  const subtitle = useWatch({ control: form.control, name: "subtitle" });
+  const description = useWatch({ control: form.control, name: "description" });
+  const status = useWatch({ control: form.control, name: "status" });
+  const isFree = useWatch({ control: form.control, name: "isFree" });
+  const coursePrice = useWatch({ control: form.control, name: "coursePrice" });
+
+  // Memoized category names to prevent recalculation
+  const selectedCategoryName = useMemo(() => {
+    const category = categories.find((cat) => cat._id === categoryId);
+    return category?.name || "Not selected";
+  }, [categories, categoryId]);
+
+  const selectedSubcategoryName = useMemo(() => {
+    const category = categories.find((cat) => cat._id === categoryId);
+    const subcategory = category?.subcategories?.find(
+      (sub) => sub._id === subcategoryId
+    );
+    return subcategory?.name || "Not selected";
+  }, [categories, categoryId, subcategoryId]);
+
+  // Check if the screen is mobile
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkIsMobile);
+    };
+  }, []);
+
+  // Check multiple fields to determine if Stripe is connected
+  const hasStripeConnected = useMemo(() => {
+    return (
+      data?.data?.stripeVerified ||
+      data?.data?.stripeOnboardingComplete ||
+      (data?.data?.stripeAccountId && data?.data?.stripeAccountId.length > 0)
+    );
+  }, [
+    data?.data?.stripeVerified,
+    data?.data?.stripeOnboardingComplete,
+    data?.data?.stripeAccountId,
+  ]);
 
   // Load course data when available
   useEffect(() => {
@@ -152,15 +299,27 @@ const EditCourse = () => {
       );
       const course = courseData.data;
 
+      // Handle learning objectives
+      if (course.learningObjectives && Array.isArray(course.learningObjectives)) {
+        setLearningObjectives(course.learningObjectives.length > 0 ? course.learningObjectives : [""]);
+      }
+
       form.reset({
         title: course.title || "",
         subtitle: course.subtitle || "",
         description: course.description || "",
-        category: course.category as any,
-        courseLevel: course.courseLevel as any,
-        status: (course.status as any) || "draft",
-        isFree: (course.isFree as any) || "free",
+        categoryId: course.categoryId || "",
+        subcategoryId: course.subcategoryId || "",
+        courseLevel: (course.courseLevel as typeof COURSE_LEVEL[number]) || "Beginner",
+        status: (course.status === "published" ? "published" : "draft") as "draft" | "published",
+        isFree: (course.isFree === "paid" ? "paid" : "free") as "free" | "paid",
         coursePrice: course.coursePrice ? course.coursePrice.toString() : "",
+        prerequisites: course.prerequisites || "",
+        targetAudience: course.targetAudience || "",
+        estimatedDuration: course.estimatedDuration || "",
+        language: course.language || "English",
+        hasSubtitles: course.hasSubtitles || false,
+        hasCertificate: course.hasCertificate !== false, // Default to true if not specified
       });
 
       if (course.courseThumbnail) {
@@ -177,14 +336,108 @@ const EditCourse = () => {
     }
   }, [courseData, isLoadingCourse, courseId, form, navigate]);
 
+  // Manual save function for when user navigates between steps
+  const saveFormData = useCallback(() => {
+    if (!formInitialized) return;
+
+    const values = formRef.current.getValues();
+    const serializableValues = {
+      ...values,
+      learningObjectives: learningObjectives.filter((obj) => obj.trim() !== ""),
+    };
+
+    if (values.courseThumbnail) {
+      delete serializableValues.courseThumbnail;
+    }
+
+    localStorage.setItem(`editCourseForm_${courseId}`, JSON.stringify(serializableValues));
+  }, [formInitialized, learningObjectives, courseId]);
+
+  // Navigation functions
   const goToNextStep = useCallback(() => {
-    setCompletedSteps((prev) => [...prev, currentStep]);
-    setCurrentStep((prev) => prev + 1);
-  }, [currentStep]);
+    saveFormData(); // Save before navigating
+    setCompletedSteps((prev) => {
+      if (!prev.includes(currentStep)) {
+        return [...prev, currentStep];
+      }
+      return prev;
+    });
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+  }, [currentStep, saveFormData]);
 
   const goToPrevStep = useCallback(() => {
-    setCurrentStep((prev) => prev - 1);
-  }, []);
+    saveFormData(); // Save before navigating
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+  }, [saveFormData]);
+
+  const goToStep = useCallback(
+    (stepId: number) => {
+      if (stepId <= currentStep || completedSteps.includes(stepId)) {
+        saveFormData(); // Save before navigating
+        setCurrentStep(stepId);
+      }
+    },
+    [currentStep, completedSteps, saveFormData]
+  );
+
+  // Helper function to handle next step action based on current step
+  const handleNextStepAction = useCallback(() => {
+    switch (currentStep) {
+      case 1:
+        // Validate step 1 fields
+        form
+          .trigger([
+            "title",
+            "description",
+            "categoryId",
+            "subcategoryId",
+            "courseLevel",
+          ])
+          .then((isValid) => {
+            if (isValid) goToNextStep();
+          });
+        break;
+      case 2:
+        // Step 2 doesn't require validation, just go to next step
+        goToNextStep();
+        break;
+      case 3:
+        // Validate step 3 fields
+        form
+          .trigger(["status", "isFree", "coursePrice"])
+          .then((isValid) => {
+            if (isValid) goToNextStep();
+          });
+        break;
+      default:
+        break;
+    }
+  }, [currentStep, form, goToNextStep]);
+
+  // Learning objectives handlers
+  const addLearningObjective = useCallback(() => {
+    if (learningObjectives.length < 8) {
+      setLearningObjectives((prev) => [...prev, ""]);
+    }
+  }, [learningObjectives.length]);
+
+  const removeLearningObjective = useCallback(
+    (index: number) => {
+      if (learningObjectives.length > 1) {
+        setLearningObjectives((prev) => prev.filter((_, i) => i !== index));
+      }
+    },
+    [learningObjectives.length]
+  );
+
+  const updateLearningObjective = useCallback(
+    (index: number, value: string) => {
+      setLearningObjectives((prev) =>
+        prev.map((obj, i) => (i === index ? value : obj))
+      );
+    },
+    []
+  );
 
   const updateCourse = useCallback(async () => {
     if (!courseId) {
@@ -195,43 +448,68 @@ const EditCourse = () => {
 
     try {
       console.log("Updating course with ID:", courseId);
-      const values = form.getValues();
+      const values = formRef.current.getValues();
       const formData = new FormData();
 
-      // Handle coursePrice separately
+      // Handle coursePrice
       if (values.coursePrice) {
         const price = Number(values.coursePrice);
-        if (!isNaN(price)) {
+        if (!isNaN(price) && price > 0) {
           formData.append("coursePrice", price.toString());
         }
       }
 
-      // Handle file separately
+      // Handle file upload
       if (values.courseThumbnail instanceof File) {
         formData.append("file", values.courseThumbnail);
       }
 
-      // Set isPublished as boolean
+      // Set publication status
       formData.append(
         "isPublished",
         JSON.stringify(values.status === "published")
       );
-
-      // Set status
       formData.append("status", values.status || "draft");
 
-      // Handle other fields
-      const { coursePrice, courseThumbnail, status, ...otherValues } = values;
+      // Add all form fields
+      const fieldsToAdd = [
+        "title",
+        "subtitle",
+        "description",
+        "categoryId",
+        "subcategoryId",
+        "courseLevel",
+        "isFree",
+        "prerequisites",
+        "targetAudience",
+        "estimatedDuration",
+        "language",
+      ];
 
-      // Add required fields with proper type handling
-      if (values.title) formData.append("title", values.title);
-      if (values.category) formData.append("category", values.category);
-      if (values.courseLevel)
-        formData.append("courseLevel", values.courseLevel);
-      if (values.isFree) formData.append("isFree", values.isFree);
-      if (values.description)
-        formData.append("description", values.description);
-      if (values.subtitle) formData.append("subtitle", values.subtitle);
+      fieldsToAdd.forEach((field) => {
+        const value = values[field as keyof typeof values];
+        if (value) {
+          formData.append(field, value.toString());
+        }
+      });
+
+      // Add learning objectives
+      const validObjectives = learningObjectives.filter(
+        (obj) => obj.trim() !== ""
+      );
+      if (validObjectives.length > 0) {
+        formData.append("learningObjectives", JSON.stringify(validObjectives));
+      }
+
+      // Add boolean fields
+      formData.append(
+        "hasSubtitles",
+        JSON.stringify(values.hasSubtitles || false)
+      );
+      formData.append(
+        "hasCertificate",
+        JSON.stringify(values.hasCertificate || true)
+      );
 
       console.log("Calling editCourse mutation with ID:", courseId);
       const res = await editCourse({
@@ -241,14 +519,274 @@ const EditCourse = () => {
       }).unwrap();
 
       dispatch(setCourse(res.data));
-      toast.success("Course updated successfully");
-      navigate("/teacher/courses");
+      localStorage.removeItem(`editCourseForm_${courseId}`);
+
+      if (values.status === "published" && values.isFree === "paid") {
+        if (!hasStripeConnected) {
+          setShowStripeModal(true);
+        } else {
+          toast.success("Course updated successfully!");
+          navigate("/teacher/courses");
+        }
+      } else {
+        toast.success(
+          values.status === "published"
+            ? "Course updated and published successfully!"
+            : "Course updated successfully!"
+        );
+        navigate("/teacher/courses");
+      }
     } catch (error: unknown) {
       console.error("Failed to update course:", error);
       const err = error as { data?: { message?: string } };
       toast.error(err?.data?.message || "Failed to update course");
     }
-  }, [form, editCourse, courseId, dispatch, navigate]);
+  }, [formRef, learningObjectives, editCourse, courseId, dispatch, navigate, hasStripeConnected]);
+
+  // AI Enhancement handler for learning objectives
+  const handleGenerateLearningObjectives = useCallback(async () => {
+    if (!title?.trim()) {
+      toast.error("Please enter a course title first");
+      return;
+    }
+
+    try {
+      const objectives = await generateLearningObjectives(title, subtitle, description);
+      if (objectives && objectives.length > 0) {
+        setLearningObjectives(objectives);
+        toast.success("Learning objectives generated successfully!");
+      } else {
+        toast.error("No objectives were generated");
+      }
+    } catch (error) {
+      console.error("Learning objectives generation error:", error);
+      toast.error("Failed to generate learning objectives");
+    }
+  }, [title, subtitle, description, generateLearningObjectives]);
+
+  // AI Enhancement handler for prerequisites
+  const handleGeneratePrerequisites = useCallback(async () => {
+    if (!title?.trim()) {
+      toast.error("Please enter a course title first");
+      return;
+    }
+
+    try {
+      const prerequisites = await generatePrerequisites(title, subtitle, form.watch("courseLevel"));
+      if (prerequisites) {
+        form.setValue("prerequisites", prerequisites);
+        toast.success("Prerequisites generated successfully!");
+      } else {
+        toast.error("No prerequisites were generated");
+      }
+    } catch (error) {
+      console.error("Prerequisites generation error:", error);
+      toast.error("Failed to generate prerequisites");
+    }
+  }, [title, subtitle, form, generatePrerequisites]);
+
+  // AI Enhancement handler for target audience
+  const handleGenerateTargetAudience = useCallback(async () => {
+    if (!title?.trim()) {
+      toast.error("Please enter a course title first");
+      return;
+    }
+
+    try {
+      const targetAudience = await generateTargetAudience(title, subtitle, form.watch("courseLevel"));
+      if (targetAudience) {
+        form.setValue("targetAudience", targetAudience);
+        toast.success("Target audience generated successfully!");
+      } else {
+        toast.error("No target audience was generated");
+      }
+    } catch (error) {
+      console.error("Target audience generation error:", error);
+      toast.error("Failed to generate target audience");
+    }
+  }, [title, subtitle, form, generateTargetAudience]);
+
+  // AI Enhancement handlers
+  const handleEnhanceTitle = useCallback(async () => {
+    if (!title?.trim()) {
+      toast.error("Please enter a title first");
+      return;
+    }
+
+    try {
+      const result = await enhanceTitle({ title }).unwrap();
+      if (result?.data?.enhancedTitle) {
+        formRef.current.setValue("title", result.data.enhancedTitle);
+        toast.success("Title enhanced successfully!");
+      } else {
+        toast.error("No enhancement received");
+      }
+    } catch (error) {
+      console.error("Title enhancement error:", error);
+      toast.error("Failed to enhance title");
+    }
+  }, [title, enhanceTitle]);
+
+  const handleEnhanceSubtitle = useCallback(async () => {
+    if (!title?.trim()) {
+      toast.error("Please enter a title first");
+      return;
+    }
+
+    try {
+      const result = await enhanceSubtitle({
+        title,
+        subtitle: subtitle || "",
+      }).unwrap();
+      if (result?.data?.enhancedSubtitle) {
+        formRef.current.setValue("subtitle", result.data.enhancedSubtitle);
+        toast.success("Subtitle enhanced successfully!");
+      } else {
+        toast.error("No enhancement received");
+      }
+    } catch (error) {
+      console.error("Subtitle enhancement error:", error);
+      toast.error("Failed to enhance subtitle");
+    }
+  }, [title, subtitle, enhanceSubtitle]);
+
+  // Stripe connection handler
+  const handleConnectStripe = useCallback(async () => {
+    try {
+      if (!teacherId) {
+        toast.error(
+          "Teacher ID is missing. Please try again or contact support."
+        );
+        return;
+      }
+
+      if (hasStripeConnected) {
+        toast.success("Your Stripe account is already connected!");
+        setShowStripeModal(false);
+        navigate("/teacher/courses");
+        return;
+      }
+
+      const result = await createStripeAccount(teacherId).unwrap();
+
+      if (result?.data?.url || result?.url) {
+        const url = result?.data?.url || result?.url;
+        window.open(url, "_blank");
+        toast.info(
+          "Completing your Stripe setup in a new tab. Please complete all steps."
+        );
+        setShowStripeModal(false);
+      } else if (result?.status === "complete") {
+        toast.success("Your Stripe account is already set up and verified!");
+        setShowStripeModal(false);
+      } else {
+        toast.warning("Received an unexpected response. Please try again.");
+      }
+    } catch (error: unknown) {
+      const err = error as {
+        status?: number;
+        data?: { message?: string };
+        error?: string;
+      };
+
+      if (err.data?.message?.includes("Stripe")) {
+        toast.error(err.data.message);
+      } else if (err.status === 404) {
+        toast.error("Teacher account not found. Please contact support.");
+      } else if (err.status === 401) {
+        toast.error("Authentication error. Please log in again.");
+      } else if (err.status === 403) {
+        toast.error("You don't have permission to connect a Stripe account.");
+      } else if (err.status === 500) {
+        toast.error("Server error. Please try again later or contact support.");
+      } else {
+        toast.error(err.data?.message || "Failed to connect Stripe account");
+      }
+    }
+  }, [teacherId, hasStripeConnected, createStripeAccount, navigate]);
+
+  // Keyboard navigation - Handle Enter key to advance to next step
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle Enter key and avoid triggering when user is typing in inputs
+      if (event.key === "Enter" && !event.shiftKey) {
+        const target = event.target as HTMLElement;
+
+        // Don't trigger if user is in a textarea or rich text editor
+        if (
+          target.tagName === "TEXTAREA" ||
+          target.contentEditable === "true" ||
+          target.closest('[contenteditable="true"]') ||
+          target.closest('.ql-editor') // Quill editor
+        ) {
+          return;
+        }
+
+        // Prevent default form submission
+        event.preventDefault();
+
+        // Handle different steps
+        if (currentStep < 4) {
+          handleNextStepAction();
+        } else if (currentStep === 4) {
+          // On final step, submit the form
+          updateCourse();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [currentStep, handleNextStepAction, updateCourse]);
+
+  // Load saved form data and initialize
+  useEffect(() => {
+    const initializeForm = () => {
+      try {
+        const savedData = localStorage.getItem(`editCourseForm_${courseId}`);
+        if (savedData && formInitialized) {
+          const parsedData = JSON.parse(savedData);
+
+          // Remove non-serializable data
+          if (parsedData.courseThumbnail) {
+            delete parsedData.courseThumbnail;
+          }
+
+          // Handle learning objectives separately
+          if (
+            parsedData.learningObjectives &&
+            Array.isArray(parsedData.learningObjectives)
+          ) {
+            setLearningObjectives(parsedData.learningObjectives);
+            delete parsedData.learningObjectives;
+          }
+
+          // Only restore data if it contains meaningful content
+          const hasContent =
+            parsedData.title?.trim() ||
+            parsedData.subtitle?.trim() ||
+            parsedData.description?.trim() ||
+            parsedData.categoryId ||
+            parsedData.subcategoryId;
+
+          if (hasContent) {
+            // Reset form with cleaned data
+            formRef.current.reset(parsedData);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse saved form data", e);
+        // Clear corrupted data
+        localStorage.removeItem(`editCourseForm_${courseId}`);
+      }
+    };
+
+    // Use setTimeout to ensure form is ready
+    if (formInitialized && courseId) {
+      const timeoutId = setTimeout(initializeForm, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formInitialized, courseId]);
 
   // Add a timeout to prevent infinite loading
   useEffect(() => {
@@ -272,640 +810,1098 @@ const EditCourse = () => {
     formInitialized
   );
 
+  // Modern Stepper Component
+  const ModernStepIndicator = () => (
+    <div className="w-full mb-12">
+      {/* Modern Horizontal Stepper */}
+      <Stepper
+        steps={steps}
+        currentStep={currentStep}
+        onStepClick={goToStep}
+        className="mb-8"
+      />
+    </div>
+  );
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100/50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <Skeleton className="h-12 w-96 mb-4 mx-auto" />
+            <Skeleton className="h-6 w-80 mx-auto" />
+          </div>
+          <div className="space-y-8">
+            <Skeleton className="h-4 w-full" />
+            <div className="flex justify-center space-x-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex flex-col items-center">
+                  <Skeleton className="w-14 h-14 rounded-full mb-3" />
+                  <Skeleton className="h-4 w-20 mb-1" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              ))}
+            </div>
+            <Card className="shadow-2xl border-0 rounded-2xl">
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                  <div className="grid grid-cols-2 gap-6">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   if (isLoadingCourse || !formInitialized) {
-    return <EditCourseSkeleton />;
+    return <LoadingSkeleton />;
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight mb-4">
-          Edit Course
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100/50">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8 sm:mb-10 lg:mb-12">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-3 sm:mb-4 px-2">
+              Edit Your Course
+            </h1>
+            <p className="text-gray-600 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed px-4">
+              Update your course content and settings to keep it current and engaging
+            </p>
+          </div>
 
-        {/* Step indicators */}
-        <div className="mb-6 sm:mb-10">
-          <StepIndicator
-            steps={steps}
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-            onStepClick={(index) => {
-              // Only allow clicking on completed steps or the current step + 1
-              if (completedSteps.includes(index) || index === currentStep || index === currentStep + 1) {
-                setCurrentStep(index);
-              }
-            }}
-          />
+          {/* Step Indicator */}
+          <ModernStepIndicator />
+
+          {/* Main Content */}
+          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden mx-2 sm:mx-0">
+            <CardHeader className="pb-4 sm:pb-6 bg-gradient-to-r from-green-500/10 to-green-600/10 border-b border-green-100 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+              <CardTitle className="flex items-center gap-3 text-xl sm:text-2xl">
+                <span className="bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                  {steps[currentStep - 1].title}
+                </span>
+              </CardTitle>
+              <p className="text-gray-600 text-base sm:text-lg">
+                {steps[currentStep - 1].description}
+              </p>
+            </CardHeader>
+            <CardContent className="pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8">
+              <Form {...form}>{renderStepContent()}</Form>
+            </CardContent>
+          </Card>
+
+          {/* Stripe Modal */}
+          {renderStripeModal()}
         </div>
       </div>
+    </div>
+  );
 
-      {/* Step content */}
-      <Card className="form-card mb-6 w-full">
-        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
-          <Form {...form}>
-            {/* Step 1: Course Info */}
-            {currentStep === 0 && (
-              <div className="space-y-4 sm:space-y-6">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm sm:text-base">Course Title*</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., Complete JavaScript Course 2023"
-                          className="text-sm sm:text-base"
-                          {...field}
+  // Step content renderer
+  function renderStepContent() {
+    switch (currentStep) {
+      case 1:
+        return renderBasicsStep();
+      case 2:
+        return renderContentStep();
+      case 3:
+        return renderSettingsStep();
+      case 4:
+        return renderReviewStep();
+      default:
+        return null;
+    }
+  }
+
+  // Step 1: Course Basics
+  function renderBasicsStep() {
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        {/* Course Title */}
+        <AIEnhancementField
+          label="Course Title*"
+          value={title || ""}
+          onChange={(value) => form.setValue("title", value)}
+          onEnhance={handleEnhanceTitle}
+          isEnhancing={isEnhancingTitle}
+          placeholder="e.g., Complete JavaScript Course 2024"
+          error={form.formState.errors.title?.message}
+        />
+
+        {/* Course Subtitle */}
+        <AIEnhancementField
+          label="Course Subtitle"
+          value={subtitle || ""}
+          onChange={(value) => form.setValue("subtitle", value)}
+          onEnhance={handleEnhanceSubtitle}
+          isEnhancing={isEnhancingSubtitle}
+          placeholder="e.g., Master JavaScript with hands-on projects"
+          error={form.formState.errors.subtitle?.message}
+        />
+
+        {/* Course Description */}
+        <AIDescriptionField
+          label="Course Description*"
+          value={description || ""}
+          onChange={(value) => form.setValue("description", value)}
+          title={title || ""}
+          subtitle={subtitle || ""}
+          placeholder="Describe what students will learn in this course..."
+          minHeight={isMobile ? "160px" : "200px"}
+          error={form.formState.errors.description?.message}
+        />
+
+        {/* Category Selection */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <CategorySelector
+            selectedCategoryId={categoryId}
+            selectedSubcategoryId={subcategoryId}
+            onCategoryChange={(categoryId) =>
+              form.setValue("categoryId", categoryId)
+            }
+            onSubcategoryChange={(subcategoryId) =>
+              form.setValue("subcategoryId", subcategoryId)
+            }
+            error={
+              form.formState.errors.categoryId?.message ||
+              form.formState.errors.subcategoryId?.message
+            }
+          />
+
+          {/* Course Level */}
+          <FormField
+            control={form.control}
+            name="courseLevel"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm sm:text-base font-semibold">
+                  Course Level*
+                </FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="h-10 sm:h-12 text-sm sm:text-base">
+                      <SelectValue placeholder="Select course level" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {COURSE_LEVEL.map((level) => (
+                      <SelectItem key={level} value={level}>
+                        <div className="flex items-center gap-2">
+                          {getCourseLevelIcon(level)}
+                          <span className="text-sm sm:text-base">{level}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Navigation */}
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate("/teacher/courses")}
+            className="px-6 sm:px-8 h-10 sm:h-11 text-sm sm:text-base order-2 sm:order-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              form
+                .trigger([
+                  "title",
+                  "description",
+                  "categoryId",
+                  "subcategoryId",
+                  "courseLevel",
+                ])
+                .then((isValid) => {
+                  if (isValid) goToNextStep();
+                });
+            }}
+            className="px-6 sm:px-8 h-10 sm:h-11 text-sm sm:text-base bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transition-all duration-300 order-1 sm:order-2"
+          >
+            Next Step
+            <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 2: Course Content
+  function renderContentStep() {
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        {/* Course Thumbnail */}
+        <FormField
+          control={form.control}
+          name="courseThumbnail"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm sm:text-base font-semibold">
+                Course Thumbnail
+              </FormLabel>
+              <FormControl>
+                <div className="space-y-3 sm:space-y-4">
+                  {thumbnailPreview && !field.value && (
+                    <div className="mb-3 sm:mb-4">
+                      <p className="text-xs sm:text-sm mb-2">Current Thumbnail:</p>
+                      <div className="relative w-full max-w-[200px] sm:max-w-[300px] mx-auto sm:mx-0 rounded-md overflow-hidden">
+                        <img
+                          src={thumbnailPreview}
+                          alt="Current thumbnail"
+                          className="w-full h-auto object-cover"
                         />
-                      </FormControl>
-                      <FormMessage className="text-xs sm:text-sm" />
-                    </FormItem>
+                      </div>
+                    </div>
                   )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="subtitle"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm sm:text-base">Course Subtitle</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., Master JavaScript with projects"
-                          className="text-sm sm:text-base"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs sm:text-sm" />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm sm:text-base">Course Description*</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe what students will learn in this course..."
-                          className="min-h-[100px] sm:min-h-[150px] text-sm sm:text-base"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs sm:text-sm" />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm sm:text-base">Category*</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="text-sm sm:text-base">
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {COURSE_CATEGORIES.map((category) => (
-                              <SelectItem key={category} value={category} className="text-sm sm:text-base">
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-xs sm:text-sm" />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="courseLevel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm sm:text-base">Course Level*</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="text-sm sm:text-base">
-                              <SelectValue placeholder="Select course level" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {COURSE_LEVEL.map((level) => (
-                              <SelectItem key={level} value={level} className="text-sm sm:text-base">
-                                {level}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-xs sm:text-sm" />
-                      </FormItem>
-                    )}
+                  <StableFileUpload
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    accept="image/*"
+                    maxSize={5 * 1024 * 1024}
+                    placeholder="Upload Course Thumbnail"
+                    description="Drag and drop or"
                   />
                 </div>
+              </FormControl>
+              <FormDescription className="text-xs sm:text-sm">
+                {field.value
+                  ? "New thumbnail will replace the current one."
+                  : "Upload a new thumbnail image up to 5MB or keep the current one."}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-                <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
+        {/* Learning Objectives */}
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
+            <Label className="text-sm sm:text-base font-semibold">
+              Learning Objectives* (3-8 objectives)
+            </Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateLearningObjectives}
+              disabled={!title?.trim() || isGeneratingObjectives}
+              className="h-8 px-3 text-xs bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 hover:from-blue-100 hover:to-blue-200 text-blue-700 self-start sm:self-auto"
+            >
+              {isGeneratingObjectives ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI Generate
+                </>
+              )}
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {learningObjectives.map((objective, index) => (
+              <div key={index} className="flex gap-2 sm:gap-3">
+                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center mt-1">
+                  <span className="text-xs sm:text-sm font-medium text-blue-600">
+                    {index + 1}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <Input
+                    value={objective}
+                    onChange={(e) =>
+                      updateLearningObjective(index, e.target.value)
+                    }
+                    placeholder={`Learning objective ${index + 1}`}
+                    className="h-10 sm:h-12 text-sm sm:text-base"
+                  />
+                </div>
+                {learningObjectives.length > 1 && (
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => navigate("/teacher/courses")}
-                    className="w-full sm:w-auto order-2 sm:order-1"
+                    size="icon"
+                    onClick={() => removeLearningObjective(index)}
+                    className="flex-shrink-0 mt-1 h-8 w-8 sm:h-9 sm:w-9"
                   >
-                    Cancel
+                    <X className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      form
-                        .trigger([
-                          "title",
-                          "description",
-                          "category",
-                          "courseLevel",
-                        ])
-                        .then((isValid) => {
-                          if (isValid) goToNextStep();
-                        });
-                    }}
-                    className="w-full sm:w-auto order-1 sm:order-2"
-                  >
-                    Next <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
+                )}
               </div>
-            )}
+            ))}
+          </div>
+          {learningObjectives.length < 8 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addLearningObjective}
+              className="mt-3 h-9 sm:h-10 text-sm sm:text-base"
+            >
+              <span className="mr-2">+</span>
+              Add Learning Objective
+            </Button>
+          )}
+        </div>
 
-            {/* Step 2: Course Materials */}
-            {currentStep === 1 && (
-              <div className="space-y-4 sm:space-y-6">
-                <FormField
-                  control={form.control}
-                  name="courseThumbnail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm sm:text-base">Course Thumbnail</FormLabel>
-                      <FormControl>
-                        <div className="space-y-3 sm:space-y-4">
-                          {thumbnailPreview && !field.value && (
-                            <div className="mb-3 sm:mb-4">
-                              <p className="text-xs sm:text-sm mb-2">Current Thumbnail:</p>
-                              <div className="relative w-full max-w-[200px] sm:max-w-[300px] mx-auto sm:mx-0 rounded-md overflow-hidden">
-                                <img
-                                  src={thumbnailPreview}
-                                  alt="Current thumbnail"
-                                  className="w-full h-auto object-cover"
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          <FileUpload
-                            value={field.value ? [field.value] : []}
-                            onValueChange={(files) => {
-                              field.onChange(files[0]);
-                              // Clear the preview when a new file is selected
-                              if (files[0]) {
-                                setThumbnailPreview(null);
-                              }
-                            }}
-                            accept="image/*"
-                            maxFiles={1}
-                            maxSize={5 * 1024 * 1024}
-                            onFileReject={(_, message) => {
-                              form.setError("courseThumbnail", { message });
-                            }}
-                            multiple={false}
-                          >
-                            <FileUploadDropzone className="flex-row border-dotted text-xs sm:text-sm p-3 sm:p-4">
-                              <CloudUpload className="size-3 sm:size-4" />
-                              <span className="hidden sm:inline">Drag and drop or</span>
-                              <span className="sm:hidden">Upload</span>
-                              <FileUploadTrigger asChild>
-                                <Button
-                                  variant="link"
-                                  size="sm"
-                                  className="p-0 text-xs sm:text-sm"
-                                >
-                                  choose a file
-                                </Button>
-                              </FileUploadTrigger>
-                              <span className="hidden sm:inline">to upload</span>
-                            </FileUploadDropzone>
-                            <FileUploadList>
-                              {field.value && (
-                                <FileUploadItem value={field.value}>
-                                  <FileUploadItemPreview />
-                                  <FileUploadItemMetadata className="text-xs sm:text-sm" />
-                                  <FileUploadItemDelete asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="size-6 sm:size-7"
-                                      onClick={() => field.onChange(undefined)}
-                                    >
-                                      <X className="size-3 sm:size-4" />
-                                      <span className="sr-only">Delete</span>
-                                    </Button>
-                                  </FileUploadItemDelete>
-                                </FileUploadItem>
-                              )}
-                            </FileUploadList>
-                          </FileUpload>
-                        </div>
-                      </FormControl>
-                      <FormDescription className="text-xs sm:text-sm">
-                        {field.value
-                          ? "New thumbnail will replace the current one."
-                          : "Upload a new thumbnail image up to 5MB or keep the current one."}
-                      </FormDescription>
-                      <FormMessage className="text-xs sm:text-sm" />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={goToPrevStep}
-                    className="w-full sm:w-auto order-2 sm:order-1"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      form.trigger(["courseThumbnail"]).then((isValid) => {
-                        if (isValid) goToNextStep();
-                      });
-                    }}
-                    className="w-full sm:w-auto order-1 sm:order-2"
-                  >
-                    Next <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Course Settings */}
-            {currentStep === 2 && (
-              <div className="space-y-4 sm:space-y-6">
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm sm:text-base">Course Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="text-sm sm:text-base">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="draft" className="text-sm sm:text-base">Draft</SelectItem>
-                          <SelectItem value="published" className="text-sm sm:text-base">Published</SelectItem>
-                          <SelectItem value="upcoming" className="text-sm sm:text-base">Upcoming</SelectItem>
-                          <SelectItem value="ongoing" className="text-sm sm:text-base">Ongoing</SelectItem>
-                          <SelectItem value="finished" className="text-sm sm:text-base">Finished</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-xs sm:text-sm" />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                  <Label className="mb-2 block text-sm sm:text-base">Pricing</Label>
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-                      <FormField
-                        control={form.control}
-                        name="isFree"
-                        render={({ field }) => (
-                          <FormItem className="space-y-2 sm:space-y-3">
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                value={field.value}
-                                className="flex flex-col space-y-2"
-                              >
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="free" id="free" />
-                                  <Label
-                                    htmlFor="free"
-                                    className="text-xs sm:text-sm font-medium"
-                                  >
-                                    Free Course
-                                  </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="paid" id="paid" />
-                                  <Label
-                                    htmlFor="paid"
-                                    className="text-xs sm:text-sm font-medium"
-                                  >
-                                    Paid Course
-                                  </Label>
-                                </div>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage className="text-xs sm:text-sm" />
-                          </FormItem>
-                        )}
-                      />
-
-                      {form.watch("isFree") === "paid" && (
-                        <div className="sm:ml-4">
-                          <FormField
-                            control={form.control}
-                            name="coursePrice"
-                            render={({ field }) => (
-                              <FormItem>
-                                <div className="relative">
-                                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <span className="text-gray-500 text-sm sm:text-base">$</span>
-                                  </div>
-                                  <Input
-                                    type="number"
-                                    placeholder="29.99"
-                                    className="pl-6 text-sm sm:text-base"
-                                    {...field}
-                                  />
-                                </div>
-                                <FormMessage className="text-xs sm:text-sm" />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
+        {/* Additional Fields */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <FormField
+            control={form.control}
+            name="prerequisites"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-2">
+                  <FormLabel className="text-sm sm:text-base font-semibold">
+                    Prerequisites
+                  </FormLabel>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={goToPrevStep}
-                    className="w-full sm:w-auto order-2 sm:order-1"
+                    size="sm"
+                    onClick={handleGeneratePrerequisites}
+                    disabled={!title?.trim() || isGeneratingPrerequisites}
+                    className="h-8 px-3 text-xs bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200 hover:from-purple-100 hover:to-purple-200 text-purple-700 self-start sm:self-auto"
                   >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      form
-                        .trigger(["status", "isFree", "coursePrice"])
-                        .then((isValid) => {
-                          if (isValid) goToNextStep();
-                        });
-                    }}
-                    className="w-full sm:w-auto order-1 sm:order-2"
-                  >
-                    Next <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Review & Save */}
-            {currentStep === 3 && (
-              <div className="space-y-6 sm:space-y-8">
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-4 sm:mb-6">
-                    Review Course Details
-                  </h3>
-
-                  <div className="space-y-4 sm:space-y-6">
-                    <div className="border-b pb-4">
-                      <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">
-                        Course Information
-                      </h4>
-                      <p className="text-lg sm:text-xl font-semibold line-clamp-2">
-                        {form.watch("title")}
-                      </p>
-                      {form.watch("subtitle") && (
-                        <p className="text-gray-600 text-sm sm:text-base line-clamp-2">
-                          {form.watch("subtitle")}
-                        </p>
-                      )}
-                      <div className="mt-2">
-                        <span className="inline-flex bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                          {form.watch("category")}
-                        </span>
-                      </div>
-                      <div className="mt-3 sm:mt-4 text-xs sm:text-sm max-h-24 sm:max-h-32 overflow-y-auto pr-2">
-                        {form.watch("description")}
-                      </div>
-                    </div>
-
-                    <div className="border-b pb-4">
-                      <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">
-                        Materials
-                      </h4>
-                      <div className="flex items-center gap-3">
-                        {(form.watch("courseThumbnail") || thumbnailPreview) && (
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
-                            {form.watch("courseThumbnail") ? (
-                              <img
-                                src={URL.createObjectURL(form.watch("courseThumbnail"))}
-                                alt="New thumbnail"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : thumbnailPreview ? (
-                              <img
-                                src={thumbnailPreview}
-                                alt="Current thumbnail"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : null}
-                          </div>
-                        )}
-                        <p className="text-xs sm:text-sm text-gray-600">
-                          {form.watch("courseThumbnail")
-                            ? "New thumbnail will be uploaded"
-                            : thumbnailPreview
-                            ? "Using existing thumbnail"
-                            : "No thumbnail"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">
-                        Settings
-                      </h4>
-                      <div className="flex flex-wrap gap-4 sm:gap-6">
-                        <div>
-                          <span className="text-xs text-gray-500 block">
-                            Status
-                          </span>
-                          <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              form.watch("status") === "published"
-                                ? "bg-green-100 text-green-800"
-                                : form.watch("status") === "draft"
-                                ? "bg-amber-100 text-amber-800"
-                                : form.watch("status") === "upcoming"
-                                ? "bg-blue-100 text-blue-800"
-                                : form.watch("status") === "ongoing"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {form.watch("status").charAt(0).toUpperCase() +
-                              form.watch("status").slice(1)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-500 block">
-                            Price
-                          </span>
-                          <span className="text-sm sm:text-base font-medium">
-                            {form.watch("isFree") === "free"
-                              ? "Free"
-                              : `$${form.watch("coursePrice")}`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={goToPrevStep}
-                    disabled={isLoading}
-                    className="w-full sm:w-auto order-2 sm:order-1"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                  </Button>
-                  <Button
-                    onClick={updateCourse}
-                    className="bg-blue-700 w-full sm:w-auto order-1 sm:order-2"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader className="animate-spin w-4 h-4" />
-                        <span className="text-sm sm:text-base">Saving Changes...</span>
-                      </div>
+                    {isGeneratingPrerequisites ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        Generating...
+                      </>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <Save className="w-4 h-4" />
-                        <span className="text-sm sm:text-base">Save Changes</span>
-                      </div>
+                      <>
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        AI Generate
+                      </>
                     )}
                   </Button>
                 </div>
-              </div>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="What should students know before taking this course?"
+                    className="min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+          />
 
-const EditCourseSkeleton = () => {
-  return (
-    <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
-      <div className="mb-6 sm:mb-8">
-        <Skeleton className="h-8 sm:h-10 w-36 sm:w-48 mb-4" />
-
-        {/* Step indicators skeleton */}
-        <div className="relative mb-6 sm:mb-10">
-          {/* Mobile step indicators skeleton */}
-          <div className="flex md:hidden justify-between items-center px-2 py-2">
-            {[1, 2, 3, 4].map((_, index) => (
-              <div key={index} className="flex flex-col items-center">
-                <Skeleton className="w-10 h-10 rounded-full" />
-                <Skeleton className="w-12 h-3 mt-2" />
-              </div>
-            ))}
-          </div>
-
-          {/* Tablet/Desktop step indicators skeleton */}
-          <div className="hidden md:flex justify-between items-center">
-            {[1, 2, 3, 4].map((_, index) => (
-              <React.Fragment key={index}>
-                <div className="flex flex-col items-center">
-                  <Skeleton className="w-12 h-12 lg:w-16 lg:h-16 rounded-full" />
-                  <Skeleton className="w-16 h-4 mt-2" />
+          <FormField
+            control={form.control}
+            name="targetAudience"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-2">
+                  <FormLabel className="text-sm sm:text-base font-semibold">
+                    Target Audience
+                  </FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateTargetAudience}
+                    disabled={!title?.trim() || isGeneratingTargetAudience}
+                    className="h-8 px-3 text-xs bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 hover:from-orange-100 hover:to-orange-200 text-orange-700 self-start sm:self-auto"
+                  >
+                    {isGeneratingTargetAudience ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        AI Generate
+                      </>
+                    )}
+                  </Button>
                 </div>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Who is this course designed for?"
+                    className="min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-                {index < 3 && (
-                  <div className="flex-1 mx-2">
-                    <Skeleton className="h-1 w-full" />
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
+        {/* Navigation */}
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={goToPrevStep}
+            className="px-6 sm:px-8 h-10 sm:h-11 text-sm sm:text-base order-2 sm:order-1"
+          >
+            <ArrowLeft className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            Previous
+          </Button>
+          <Button
+            type="button"
+            onClick={goToNextStep}
+            className="px-6 sm:px-8 h-10 sm:h-11 text-sm sm:text-base bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transition-all duration-300 order-1 sm:order-2"
+          >
+            Next Step
+            <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+          </Button>
         </div>
       </div>
+    );
+  }
 
-      <Card className="form-card mb-6 w-full">
-        <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
-          <div className="space-y-4 sm:space-y-6">
-            {/* Form fields skeleton */}
-            <div>
-              <Skeleton className="h-4 w-24 mb-2" />
-              <Skeleton className="h-9 sm:h-10 w-full" />
+  // Step 3: Pricing & Settings
+  function renderSettingsStep() {
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        {/* Pricing Section */}
+        <Card className="border-2 border-green-100 bg-green-50/30 transition-all duration-300 hover:shadow-md">
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              Course Pricing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 sm:space-y-6">
+            <FormField
+              control={form.control}
+              name="isFree"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4"
+                    >
+                      <div className="flex items-center space-x-3 p-3 sm:p-4 border-2 border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50/50 transition-all duration-200 cursor-pointer">
+                        <RadioGroupItem value="free" id="free" />
+                        <div className="flex-1">
+                          <Label
+                            htmlFor="free"
+                            className="text-sm sm:text-base font-medium cursor-pointer"
+                          >
+                            Free Course
+                          </Label>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            Make your course available to everyone
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 sm:p-4 border-2 border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50/50 transition-all duration-200 cursor-pointer">
+                        <RadioGroupItem value="paid" id="paid" />
+                        <div className="flex-1">
+                          <Label
+                            htmlFor="paid"
+                            className="text-sm sm:text-base font-medium cursor-pointer"
+                          >
+                            Paid Course
+                          </Label>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            Set a price for your course
+                          </p>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {isFree === "paid" && (
+              <FormField
+                control={form.control}
+                name="coursePrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base font-semibold">
+                      Course Price (USD)*
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                        <Input
+                          type="number"
+                          placeholder="29.99"
+                          className="pl-8 sm:pl-10 h-10 sm:h-12 text-base sm:text-lg focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
+                          min="1"
+                          step="0.01"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormDescription className="text-xs sm:text-sm">
+                      Set a competitive price for your course content
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Course Settings */}
+        <Card className="border-2 border-green-100 bg-green-50/30 transition-all duration-300 hover:shadow-md">
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              Course Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <FormField
+                control={form.control}
+                name="estimatedDuration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base font-semibold">
+                      Estimated Duration
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                        <Input
+                          {...field}
+                          placeholder="e.g., 10 hours"
+                          className="pl-8 sm:pl-10 h-10 sm:h-12 text-sm sm:text-base focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base font-semibold">
+                      Course Language
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-10 sm:h-12 text-sm sm:text-base focus:ring-green-500 focus:border-green-500">
+                          <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mr-2" />
+                          <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="English">English</SelectItem>
+                        <SelectItem value="Spanish">Spanish</SelectItem>
+                        <SelectItem value="French">French</SelectItem>
+                        <SelectItem value="German">German</SelectItem>
+                        <SelectItem value="Chinese">Chinese</SelectItem>
+                        <SelectItem value="Japanese">Japanese</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div>
-              <Skeleton className="h-4 w-28 mb-2" />
-              <Skeleton className="h-9 sm:h-10 w-full" />
+            {/* Feature Toggles */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="hasSubtitles"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 hover:border-green-300 p-3 sm:p-4 transition-colors duration-200">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-sm sm:text-base font-medium">
+                        Subtitles Available
+                      </FormLabel>
+                      <FormDescription className="text-xs sm:text-sm">
+                        Course includes subtitles for better accessibility
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-green-600"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="hasCertificate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 hover:border-green-300 p-3 sm:p-4 transition-colors duration-200">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-sm sm:text-base font-medium">
+                        Certificate of Completion
+                      </FormLabel>
+                      <FormDescription className="text-xs sm:text-sm">
+                        Students receive a certificate upon course completion
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-green-600"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div>
-              <Skeleton className="h-4 w-32 mb-2" />
-              <Skeleton className="h-24 sm:h-32 w-full" />
-            </div>
+            {/* Publication Status */}
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm sm:text-base font-semibold">
+                    Publication Status
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-10 sm:h-12 text-sm sm:text-base focus:ring-green-500 focus:border-green-500">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="draft">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                          <span className="text-sm sm:text-base">
+                            Draft - Save for later
+                          </span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="published">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-sm sm:text-base">
+                            Published - Make live immediately
+                          </span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
 
-            {/* Grid layout for category and level */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <Skeleton className="h-4 w-20 mb-2" />
-                <Skeleton className="h-9 sm:h-10 w-full" />
+        {/* Navigation */}
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={goToPrevStep}
+            className="px-6 sm:px-8 h-10 sm:h-11 text-sm sm:text-base order-2 sm:order-1 transition-all duration-200 hover:bg-gray-50"
+          >
+            <ArrowLeft className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            Previous
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              form
+                .trigger(["status", "isFree", "coursePrice"])
+                .then((isValid) => {
+                  if (isValid) goToNextStep();
+                });
+            }}
+            className="px-6 sm:px-8 h-10 sm:h-11 text-sm sm:text-base bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transition-all duration-300 order-1 sm:order-2"
+          >
+            Review Course
+            <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 4: Review & Update
+  function renderReviewStep() {
+    const validObjectives = learningObjectives.filter(
+      (obj) => obj.trim() !== ""
+    );
+
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        {/* Course Overview */}
+        <Card className="border-2 border-green-100 bg-green-50/30 transition-all duration-300 hover:shadow-md">
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              Course Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 sm:space-y-6">
+            <div>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                {title}
+              </h3>
+              {subtitle && (
+                <p className="text-base sm:text-lg text-gray-600 mb-3 sm:mb-4">
+                  {subtitle}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-800 text-xs sm:text-sm"
+                >
+                  {selectedCategoryName}
+                </Badge>
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-800 text-xs sm:text-sm"
+                >
+                  {selectedSubcategoryName}
+                </Badge>
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-800 text-xs sm:text-sm"
+                >
+                  {form.watch("courseLevel")}
+                </Badge>
               </div>
-              <div>
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-9 sm:h-10 w-full" />
-              </div>
+              <div
+                className="text-sm sm:text-base text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: description }}
+              />
             </div>
 
-            {/* Buttons skeleton */}
-            <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
-              <Skeleton className="h-9 sm:h-10 w-full sm:w-24 order-2 sm:order-1" />
-              <Skeleton className="h-9 sm:h-10 w-full sm:w-24 order-1 sm:order-2" />
+            {/* Course Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4 bg-white rounded-lg border border-gray-200 hover:border-green-300 transition-colors duration-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                  <span className="text-sm sm:text-base font-medium">
+                    Price
+                  </span>
+                </div>
+                <p className="text-base sm:text-lg font-bold text-green-700">
+                  {isFree === "free" ? "Free" : `$${coursePrice}`}
+                </p>
+              </div>
+
+              <div className="p-3 sm:p-4 bg-white rounded-lg border border-gray-200 hover:border-green-300 transition-colors duration-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                  <span className="text-sm sm:text-base font-medium">
+                    Duration
+                  </span>
+                </div>
+                <p className="text-base sm:text-lg font-bold text-green-700">
+                  {form.watch("estimatedDuration") || "Not specified"}
+                </p>
+              </div>
+
+              <div className="p-3 sm:p-4 bg-white rounded-lg border border-gray-200 hover:border-green-300 transition-colors duration-200 sm:col-span-2 lg:col-span-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                  <span className="text-sm sm:text-base font-medium">
+                    Language
+                  </span>
+                </div>
+                <p className="text-base sm:text-lg font-bold text-green-700">
+                  {form.watch("language")}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Learning Objectives */}
+        {validObjectives.length > 0 && (
+          <Card className="transition-all duration-300 hover:shadow-md">
+            <CardHeader className="pb-4 sm:pb-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Target className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                What You'll Learn
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {validObjectives.map((objective, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                      <Check className="w-2 h-2 sm:w-3 sm:h-3 text-green-600" />
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-700">
+                      {objective}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Course Features */}
+        <Card className="transition-all duration-300 hover:shadow-md">
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Star className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              Course Features
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-green-50 transition-colors duration-200">
+                <div
+                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-colors duration-200 ${
+                    form.watch("hasSubtitles") ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                ></div>
+                <span
+                  className={`text-sm sm:text-base transition-colors duration-200 ${
+                    form.watch("hasSubtitles")
+                      ? "text-gray-900 font-medium"
+                      : "text-gray-500"
+                  }`}
+                >
+                  Subtitles Available
+                </span>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-green-50 transition-colors duration-200">
+                <div
+                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-colors duration-200 ${
+                    form.watch("hasCertificate")
+                      ? "bg-green-500"
+                      : "bg-gray-300"
+                  }`}
+                ></div>
+                <span
+                  className={`text-sm sm:text-base transition-colors duration-200 ${
+                    form.watch("hasCertificate")
+                      ? "text-gray-900 font-medium"
+                      : "text-gray-500"
+                  }`}
+                >
+                  Certificate of Completion
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Publication Status */}
+        <Card
+          className={`border-2 ${
+            status === "published"
+              ? "border-green-200 bg-green-50/30"
+              : "border-amber-200 bg-amber-50/30"
+          }`}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  status === "published" ? "bg-green-500" : "bg-amber-500"
+                }`}
+              ></div>
+              <span className="text-lg font-medium">
+                {status === "published" ? "Ready to Update & Publish" : "Save as Draft"}
+              </span>
+            </div>
+            <p className="text-gray-600 mt-2">
+              {status === "published"
+                ? "Your course changes will be updated and remain published for students."
+                : "Your course changes will be saved as a draft and can be published later."}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Navigation */}
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={goToPrevStep}
+            className="px-6 sm:px-8 h-10 sm:h-11 text-sm sm:text-base order-2 sm:order-1 transition-all duration-200 hover:bg-gray-50"
+          >
+            <ArrowLeft className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            Previous
+          </Button>
+          <Button
+            onClick={updateCourse}
+            disabled={isLoading}
+            className={`px-6 sm:px-8 h-10 sm:h-11 text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300 order-1 sm:order-2 ${
+              status === "published"
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                <span className="text-sm sm:text-base">
+                  {status === "published" ? "Updating..." : "Saving..."}
+                </span>
+              </div>
+            ) : (
+              <>
+                {status === "published" ? (
+                  <>
+                    <TrendingUp className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-sm sm:text-base">Update Course</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-sm sm:text-base">Save Changes</span>
+                  </>
+                )}
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Stripe Modal Renderer
+  function renderStripeModal() {
+    const ModalComponent = isMobile ? Drawer : Dialog;
+    const ContentComponent = isMobile ? DrawerContent : DialogContent;
+    const HeaderComponent = isMobile ? DrawerHeader : DialogHeader;
+    const TitleComponent = isMobile ? DrawerTitle : DialogTitle;
+    const DescriptionComponent = isMobile
+      ? DrawerDescription
+      : DialogDescription;
+    const FooterComponent = isMobile ? DrawerFooter : DialogFooter;
+
+    return (
+      <ModalComponent open={showStripeModal} onOpenChange={setShowStripeModal}>
+        <ContentComponent className={isMobile ? "" : "sm:max-w-md"}>
+          <HeaderComponent className="text-center">
+            <TitleComponent className="text-xl font-bold">
+              Connect Stripe to Receive Payments
+            </TitleComponent>
+            <DescriptionComponent className="text-gray-600">
+              To receive payments for your courses, you need to connect your
+              Stripe account. This is a one-time setup process.
+            </DescriptionComponent>
+          </HeaderComponent>
+
+          <div className="px-4 py-6">
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900">
+                Benefits of connecting Stripe:
+              </h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Receive payments directly to your bank account
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Track earnings in real-time
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Manage payouts and transactions
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Secure and trusted payment processing
+                </li>
+              </ul>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+
+          <FooterComponent className="flex flex-col-reverse sm:flex-row gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowStripeModal(false);
+                navigate("/teacher/courses");
+              }}
+              className="w-full sm:w-auto"
+            >
+              Skip for now
+            </Button>
+            <Button
+              onClick={handleConnectStripe}
+              disabled={isConnectingStripe}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+            >
+              {isConnectingStripe ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Connecting...
+                </div>
+              ) : (
+                <>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Connect with Stripe
+                </>
+              )}
+            </Button>
+          </FooterComponent>
+        </ContentComponent>
+      </ModalComponent>
+    );
+  }
+
+  // Helper function for course level icons
+  function getCourseLevelIcon(level: string) {
+    switch (level) {
+      case "Beginner":
+        return <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />;
+      case "Intermediate":
+        return <Award className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />;
+      case "Advanced":
+        return <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />;
+      default:
+        return <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />;
+    }
+  }
 };
 
 export default EditCourse;

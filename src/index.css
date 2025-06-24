@@ -22,8 +22,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Green Uni Mind Brand Colors */
+    --primary: 142 71% 45%; /* #22C55E - green-500 */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -31,33 +32,38 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 142 76% 73%; /* #DCFCE7 - green-100 */
+    --accent-foreground: 142 71% 45%; /* #22C55E */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 142 71% 45%; /* #22C55E */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Dashboard with Brand Colors */
+    --dashboard-bg: 220 14% 96%; /* gray-50 */
+    --dashboard-card: 0 0% 100%;
+    --dashboard-border: 220 13% 91%; /* gray-200 */
+    --dashboard-text-primary: 220 9% 46%; /* gray-800 */
+    --dashboard-text-secondary: 220 9% 46%; /* gray-600 */
+    --dashboard-success: 142 71% 45%; /* #22C55E */
+    --dashboard-warning: 45 93% 47%; /* #F59E0B */
+    --dashboard-error: 0 84% 60%; /* #EF4444 */
+    --dashboard-info: 217 91% 60%; /* #3B82F6 */
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar with Brand Colors */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 9% 46%; /* gray-800 */
+    --sidebar-primary: 142 71% 45%; /* #22C55E */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 76% 96%; /* green-50 */
+    --sidebar-accent-foreground: 142 71% 45%; /* #22C55E */
+    --sidebar-border: 220 13% 91%; /* gray-200 */
+    --sidebar-ring: 142 71% 45%; /* #22C55E */
   }
 
   .dark {
@@ -70,8 +76,9 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Dark mode with Brand Colors */
+    --primary: 142 71% 45%; /* #22C55E */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -87,15 +94,28 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --ring: 142 71% 45%; /* #22C55E */
+
+    /* Dark mode dashboard with Brand Colors */
+    --dashboard-bg: 17 24 39; /* gray-900 */
+    --dashboard-card: 31 41 55; /* gray-800 */
+    --dashboard-border: 55 65 81; /* gray-700 */
+    --dashboard-text-primary: 249 250 251; /* gray-50 */
+    --dashboard-text-secondary: 156 163 175; /* gray-400 */
+    --dashboard-success: 142 71% 45%; /* #22C55E */
+    --dashboard-warning: 45 93% 47%; /* #F59E0B */
+    --dashboard-error: 0 84% 60%; /* #EF4444 */
+    --dashboard-info: 217 91% 60%; /* #3B82F6 */
+
+    /* Dark mode sidebar with Brand Colors */
+    --sidebar-background: 17 24 39; /* gray-900 */
+    --sidebar-foreground: 249 250 251; /* gray-50 */
+    --sidebar-primary: 142 71% 45%; /* #22C55E */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 31 41 55; /* gray-800 */
+    --sidebar-accent-foreground: 142 71% 45%; /* #22C55E */
+    --sidebar-border: 55 65 81; /* gray-700 */
+    --sidebar-ring: 142 71% 45%; /* #22C55E */
   }
 }
 
@@ -161,28 +181,111 @@
 }
 
 @layer components {
-  .stats-card {
-    @apply bg-white rounded-xl shadow-md p-6 transition-all hover:shadow-lg;
+  /* Modern Dashboard Components */
+  .dashboard-card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6 transition-all duration-300 hover:shadow-md hover:border-gray-300;
   }
 
+  .dashboard-card-header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  .dashboard-stat-card {
+    @apply dashboard-card relative overflow-hidden;
+  }
+
+  .dashboard-stat-card::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-primary to-brand-primary-light;
+  }
+
+  .dashboard-stat-value {
+    @apply text-2xl font-bold text-brand-text-primary mb-1;
+  }
+
+  .dashboard-stat-label {
+    @apply text-sm font-medium text-brand-text-secondary mb-2;
+  }
+
+  .dashboard-stat-change {
+    @apply text-xs text-brand-text-muted flex items-center gap-1;
+  }
+
+  .dashboard-stat-icon {
+    @apply w-12 h-12 rounded-lg flex items-center justify-center;
+  }
+
+  /* Sidebar Components with Brand Colors */
+  .sidebar-nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200;
+  }
+
+  .sidebar-nav-item.active {
+    @apply bg-brand-primary text-white shadow-sm;
+  }
+
+  .sidebar-nav-item:not(.active) {
+    @apply text-brand-text-primary hover:bg-brand-accent hover:text-brand-primary;
+  }
+
+  .sidebar-nav-icon {
+    @apply w-5 h-5 flex-shrink-0;
+  }
+
+  /* Form Components */
   .form-card {
-    @apply bg-white rounded-xl shadow-md p-6;
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
   }
 
+  /* Step Indicator with Green Theme */
   .step-indicator {
-    @apply flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-semibold;
+    @apply flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-semibold transition-all duration-200;
   }
 
   .step-indicator.active {
-    @apply bg-blue-500 text-white border-blue-500; /* using standard Tailwind blue */
+    @apply bg-brand-primary text-white border-brand-primary shadow-sm;
   }
 
   .step-indicator.completed {
-    @apply bg-emerald-500 text-white border-emerald-500; /* using standard Tailwind emerald */
+    @apply bg-brand-primary text-white border-brand-primary;
   }
 
   .step-indicator.inactive {
     @apply bg-white text-gray-400 border-gray-300;
+  }
+
+  /* Modern Table Styles */
+  .dashboard-table {
+    @apply w-full border-collapse;
+  }
+
+  .dashboard-table th {
+    @apply text-left py-3 px-4 font-semibold text-gray-700 text-sm border-b border-gray-200 bg-gray-50;
+  }
+
+  .dashboard-table td {
+    @apply py-4 px-4 border-b border-gray-100 text-sm;
+  }
+
+  .dashboard-table tr:hover {
+    @apply bg-gray-50;
+  }
+
+  /* Action Buttons with Brand Colors */
+  .action-button {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200;
+  }
+
+  .action-button.primary {
+    @apply bg-brand-primary text-white hover:bg-brand-primary-dark;
+  }
+
+  .action-button.secondary {
+    @apply bg-brand-background-secondary text-brand-text-primary hover:bg-brand-accent;
+  }
+
+  .action-button.danger {
+    @apply bg-red-100 text-red-700 hover:bg-red-200;
   }
 }
 

@@ -18,6 +18,8 @@ import {
   Info,
   MoveVertical
 } from "lucide-react";
+import QuickLectureActions from "@/components/Lecture/QuickLectureActions";
+import Breadcrumb from "@/components/Navigation/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -334,21 +336,24 @@ const CourseLectures: React.FC = () => {
     );
   }
 
+  // Get course data for breadcrumb
+  const courseTitle = data?.data?.[0]?.courseId ? 'Course Lectures' : 'Course Lectures';
+
+  // Breadcrumb items
+  const breadcrumbItems = [
+    { label: 'Courses', href: '/teacher/courses' },
+    { label: courseTitle, current: true },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto p-4">
+    <div className="max-w-5xl mx-auto p-4 space-y-6">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Header section */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/teacher/courses`)}
-              className="mr-2 p-0 md:p-2"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1 md:mr-2" />
-              <span className="hidden md:inline">Back to Courses</span>
-            </Button>
             {isLoading ? (
               <Skeleton className="h-8 w-48 md:h-10 md:w-64 rounded-md" />
             ) : (
@@ -384,15 +389,25 @@ const CourseLectures: React.FC = () => {
           isLoading ? (
             <Skeleton className="h-10 w-32 md:w-40 rounded-md self-start md:self-center" />
           ) : (
-            <Button
-              onClick={() => navigate(`/teacher/courses/${courseId}/lecture/create`)}
-              className="flex items-center gap-2 whitespace-nowrap"
-              disabled={isUpdating}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Add New Lecture</span>
-              <span className="sm:hidden">Add Lecture</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/teacher/courses`)}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Back to Courses</span>
+              </Button>
+              <Button
+                onClick={() => navigate(`/teacher/courses/${courseId}/lecture/create`)}
+                className="flex items-center gap-2 whitespace-nowrap bg-brand-primary hover:bg-brand-primary-dark text-white"
+                disabled={isUpdating}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Add New Lecture</span>
+                <span className="sm:hidden">Add Lecture</span>
+              </Button>
+            </div>
           )
         )}
       </div>

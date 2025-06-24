@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -52,7 +52,8 @@ export type TCreateCourseForm = {
   title: string;
   subTitle?: string;
   description?: string;
-  category: string;
+  categoryId: string;
+  subcategoryId: string;
   courseLevel: string;
   coursePrice: number;
   courseThumbnail: File | undefined;
@@ -100,7 +101,8 @@ const CreateCourse = () => {
       title: "",
       subTitle: "",
       description: "",
-      category: "",
+      categoryId: "",
+      subcategoryId: "",
       courseLevel: "Beginner",
       coursePrice: 0,
       courseThumbnail: undefined,
@@ -231,7 +233,7 @@ const CreateCourse = () => {
           <>
             <FormField
               control={form.control}
-              name="category"
+              name="categoryId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
@@ -240,7 +242,26 @@ const CreateCourse = () => {
                       {...field}
                       className="w-full"
                       type="text"
-                      placeholder="Category"
+                      placeholder="Category ID"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="subcategoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subcategory</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      className="w-full"
+                      type="text"
+                      placeholder="Subcategory ID"
                     />
                   </FormControl>
                   <FormMessage />
@@ -382,7 +403,7 @@ const CreateCourse = () => {
         fieldsToValidate.push('title', 'description');
         break;
       case 1:
-        fieldsToValidate.push('category', 'courseLevel');
+        fieldsToValidate.push('categoryId', 'subcategoryId', 'courseLevel');
         break;
       case 2:
         fieldsToValidate.push('coursePrice');

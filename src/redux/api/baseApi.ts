@@ -311,7 +311,18 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   }
 
   if (result.error?.status === 404) {
-    toast.error((result.error.data as ErrorResponse)?.message || "Not found");
+    // Don't show toast for 404 errors that might be expected empty states
+    const errorMessage = (result.error.data as ErrorResponse)?.message || "Not found";
+
+    // Only show toast for unexpected 404s, not for empty data scenarios
+    if (!errorMessage.includes('No data') &&
+        !errorMessage.includes('empty') &&
+        !errorMessage.includes('not found') &&
+        !args.url.includes('/analytics/') &&
+        !args.url.includes('/reviews/') &&
+        !args.url.includes('/messages/')) {
+      toast.error(errorMessage);
+    }
   }
 
   return result;
@@ -339,6 +350,21 @@ export const baseApi = createApi({
     "category",
     "subcategories",
     "subcategory",
+    "analytics",
+    "dashboard",
+    "activities",
+    "enrollment",
+    "engagement",
+    "revenue",
+    "performance",
+    "reviews",
+    "teacher-reviews",
+    "course-reviews",
+    "review-analytics",
+    "review-stats",
+    "review-dashboard",
+    "review-insights",
+    "review-trends",
   ],
   baseQuery: baseQueryWithRefreshToken,
   endpoints: () => ({}),

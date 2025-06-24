@@ -1,19 +1,28 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Clock, User, Calendar, Tag } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { formatTimeDisplay } from "@/utils/formatTime";
 import { ILecture } from "@/types/course";
+import UnifiedContentViewer from "./UnifiedContentViewer";
 
 interface LectureContentProps {
-  lecture: ILecture; // The lecture data
-  isCompleted?: boolean; // Whether the lecture is completed
-  onMarkComplete?: () => void; // Function to mark the lecture as complete
+  lecture: ILecture;
+  isCompleted?: boolean;
+  onMarkComplete?: () => void;
+  enableDownload?: boolean;
+  showMetadata?: boolean;
+  onDownload?: (url: string, filename: string) => void;
 }
 
 const LectureContent = ({
   lecture,
   isCompleted = false,
   onMarkComplete,
+  enableDownload = true,
+  showMetadata = true,
+  onDownload,
 }: LectureContentProps) => {
   const { toast } = useToast();
 
@@ -40,46 +49,68 @@ const LectureContent = ({
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h1 className="text-2xl font-bold mb-2">{lecture.lectureTitle}</h1>
-          {lecture.isPreviewFree && (
-            <span className="inline-block text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full mb-2">
-              Preview Lecture
-            </span>
-          )}
-        </div>
+    <div className="space-y-6">
+      {/* Lecture Header */}
+      <Card className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold mb-2">{lecture.lectureTitle}</h1>
 
-        <Button
-          variant={isCompleted ? "outline" : "default"}
-          size="sm"
-          onClick={handleMarkComplete}
-          disabled={isCompleted}
-          className={isCompleted ? "border-green-500 text-green-600" : ""}
-        >
-          <CheckCircle
-            className={`h-4 w-4 mr-1 ${isCompleted ? "text-green-500" : ""}`}
-          />
-          {isCompleted ? "Completed" : "Mark as Complete"}
-        </Button>
-      </div>
+            {/* Lecture badges */}
+            <div className="flex items-center gap-2 mb-3">
+              {lecture.isPreviewFree && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                  Preview Lecture
+                </Badge>
+              )}
 
-      <p className="text-gray-600 mb-6">{lecture.instruction || "No description available for this lecture."}</p>
+              {lecture.duration && showMetadata && (
+                <Badge variant="outline" className="gap-1">
+                  <Clock className="h-3 w-3" />
+                  {formatTimeDisplay(lecture.duration)}
+                </Badge>
+              )}
 
-      {lecture.pdfUrl && (
-        <div className="mt-6 pt-6 border-t">
-          <h3 className="text-lg font-medium mb-3">Lecture Materials</h3>
-          <div className="overflow-hidden rounded-md border">
-            <iframe
-              src={lecture.pdfUrl}
-              className="w-full h-80"
-              title="Lecture PDF"
-            />
+              {isCompleted && (
+                <Badge variant="outline" className="border-green-500 text-green-600 gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  Completed
+                </Badge>
+              )}
+            </div>
           </div>
+
+          <Button
+            variant={isCompleted ? "outline" : "default"}
+            size="sm"
+            onClick={handleMarkComplete}
+            disabled={isCompleted}
+            className={isCompleted ? "border-green-500 text-green-600" : ""}
+          >
+            <CheckCircle
+              className={`h-4 w-4 mr-1 ${isCompleted ? "text-green-500" : ""}`}
+            />
+            {isCompleted ? "Completed" : "Mark as Complete"}
+          </Button>
         </div>
-      )}
-    </Card>
+
+        {/* Lecture description */}
+        {lecture.instruction && (
+          <div className="prose prose-sm max-w-none">
+            <p className="text-gray-600 leading-relaxed">
+              {lecture.instruction}
+            </p>
+          </div>
+        )}
+      </Card>
+
+      {/* Unified Content Viewer */}
+      <UnifiedContentViewer
+        lecture={lecture}
+        enableDownload={enableDownload}
+        onDownload={onDownload}
+      />
+    </div>
   );
 };
 

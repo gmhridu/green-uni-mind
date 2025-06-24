@@ -36,10 +36,39 @@ const config: Config = {
           foreground: "hsl(var(--primary-foreground))",
         },
         green: {
-          50: "#F2FCE2",
-          100: "#E3F8C3",
-          500: "#5CBA47",
-          600: "#4A9539",
+          50: "#F0FDF4",
+          100: "#DCFCE7",
+          200: "#BBF7D0",
+          300: "#86EFAC",
+          400: "#4ADE80",
+          500: "#22C55E",
+          600: "#10B981", // Primary green theme
+          700: "#059669",
+          800: "#047857",
+          900: "#064E3B",
+          950: "#022C22",
+        },
+        // Green Uni Mind Brand Colors (from homepage)
+        brand: {
+          primary: "#22C55E", // green-500 - main brand color
+          "primary-dark": "#059669", // green-700 - darker variant
+          "primary-light": "#4ADE80", // green-400 - lighter variant
+          secondary: "#10B981", // green-600 - secondary brand
+          accent: "#DCFCE7", // green-100 - accent background
+          success: "#22C55E",
+          warning: "#F59E0B",
+          error: "#EF4444",
+          info: "#3B82F6",
+          text: {
+            primary: "#1F2937", // gray-800
+            secondary: "#4B5563", // gray-600
+            muted: "#6B7280", // gray-500
+          },
+          background: {
+            primary: "#FFFFFF", // white
+            secondary: "#F9FAFB", // gray-50
+            accent: "#F0FDF4", // green-50
+          }
         },
         purple: {
           400: "#9b87f5",

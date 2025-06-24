@@ -19,6 +19,9 @@ export interface ILecture {
   courseId: string;
   order: number;
   thumbnailUrl?: string;
+  views?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface ICourse {

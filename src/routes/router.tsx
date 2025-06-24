@@ -21,14 +21,28 @@ import Layout from "@/components/layouts/Layout";
 import Dashboard from "@/pages/Teacher/Dashboard";
 import Courses from "@/pages/Teacher/Courses";
 import CourseCreate from "@/pages/Teacher/CourseCreate";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import StripeRequirementGuard from "@/components/Guards/StripeRequirementGuard";
 import Earnings from "@/pages/Teacher/Earnings";
 import EarningsReport from "@/pages/Teacher/EarningsReport";
 import TransactionAnalyticsPage from "@/pages/Teacher/TransactionAnalyticsPage";
 import Settings from "@/pages/Teacher/Settings";
 import Students from "@/pages/Teacher/Students";
+import Messages from "@/pages/Teacher/Messages";
+import Analytics from "@/pages/Teacher/Analytics";
+import Reviews from "@/pages/Teacher/Reviews";
+import Lectures from "@/pages/Teacher/Lectures";
 import LectureCreate from "@/pages/Teacher/LectureCreate";
 import CourseLectures from "@/pages/Teacher/CourseLectures";
+import CourseDetail from "@/pages/Teacher/CourseDetail";
 import EditLecture from "@/components/Dashboard/EditLecture";
+import HelpSupport from "@/pages/Teacher/HelpSupport";
+import TeacherInvoiceManagement from "@/pages/Teacher/InvoiceManagement";
+import TeacherPayoutManagement from "@/pages/Teacher/PayoutManagement";
+import RealTimePaymentDashboard from "@/pages/Teacher/RealTimePaymentDashboard";
+import FinancialAnalytics from "@/pages/Teacher/FinancialAnalytics";
+import StripeConnect from "@/pages/Teacher/StripeConnect";
+import StripeConnectStatus from "@/pages/Teacher/StripeConnectStatus";
 import StudentDashboard from "@/pages/Student/StudentDashboard";
 import StudentLayout from "@/pages/Student/StudentLayout";
 import CoursePage from "@/pages/Student/CoursePage";
@@ -48,6 +62,7 @@ import Blog from "@/pages/Blog";
 import Impact from "@/pages/Impact";
 import Categories from "@/pages/Categories";
 import CategoryBrowse from "@/pages/CategoryBrowse";
+import StepperDemo from "@/components/stepper-demo";
 import {
   createBrowserRouter,
 } from "react-router-dom";
@@ -96,6 +111,10 @@ const router = createBrowserRouter([
       {
         path: "categories/:categorySlug/:subcategorySlug",
         element: <CategoryBrowse />,
+      },
+      {
+        path: "stepper-demo",
+        element: <StepperDemo />,
       },
       {
         path: "user",
@@ -184,7 +203,13 @@ const router = createBrowserRouter([
       },
       {
         path: "courses/create",
-        element: <CourseCreate />,
+        element: (
+          <ErrorBoundary>
+            <StripeRequirementGuard showWarningOnly={true}>
+              <CourseCreate />
+            </StripeRequirementGuard>
+          </ErrorBoundary>
+        ),
       },
       {
         path: "courses/:courseId/lecture/create",
@@ -193,6 +218,10 @@ const router = createBrowserRouter([
       {
         path: "courses/:courseId",
         element: <CourseLectures />,
+      },
+      {
+        path: "courses/:courseId/details",
+        element: <CourseDetail />,
       },
       {
         path: "courses/:courseId/lecture/edit/:lectureId",
@@ -217,6 +246,50 @@ const router = createBrowserRouter([
       {
         path: "settings",
         element: <Settings />,
+      },
+      {
+        path: "messages",
+        element: <Messages />,
+      },
+      {
+        path: "analytics",
+        element: <Analytics />,
+      },
+      {
+        path: "reviews",
+        element: <Reviews />,
+      },
+      {
+        path: "lectures",
+        element: <Lectures />,
+      },
+      {
+        path: "help-support",
+        element: <HelpSupport />,
+      },
+      {
+        path: "invoices",
+        element: <TeacherInvoiceManagement />,
+      },
+      {
+        path: "payouts",
+        element: <TeacherPayoutManagement />,
+      },
+      {
+        path: "real-time-dashboard",
+        element: <RealTimePaymentDashboard />,
+      },
+      {
+        path: "financial-analytics",
+        element: <FinancialAnalytics />,
+      },
+      {
+        path: "stripe-connect",
+        element: <StripeConnect />,
+      },
+      {
+        path: "stripe-connect-status",
+        element: <StripeConnectStatus />,
       },
     ],
   },

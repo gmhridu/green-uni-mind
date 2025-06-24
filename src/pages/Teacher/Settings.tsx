@@ -36,9 +36,9 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import {
-  useConnectStripeAccountMutation,
+  useCreateStripeAccountMutation,
   useCheckStripeAccountStatusQuery,
-  useCreateOnboardingLinkMutation
+  useCreateAccountLinkMutation
 } from "@/redux/features/payment/payment.api";
 import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser } from "@/redux/features/auth/authSlice";
@@ -54,10 +54,10 @@ const Settings = () => {
   const teacherId = userData?.data?._id;
 
   // Stripe Connect
-  const [connectStripe, { isLoading: isConnecting }] = useConnectStripeAccountMutation();
+  const [createStripeAccount, { isLoading: isConnecting }] = useCreateStripeAccountMutation();
   const { data: stripeStatus, isLoading: isStripeStatusLoading } =
     useCheckStripeAccountStatusQuery(teacherId, { skip: !teacherId });
-  const [createOnboardingLink, { isLoading: isCreatingLink }] = useCreateOnboardingLinkMutation();
+  const [createAccountLink, { isLoading: isCreatingLink }] = useCreateAccountLinkMutation();
 
   const isStripeConnected = stripeStatus?.stripeVerified;
   const needsOnboarding = stripeStatus?.stripeAccountId && !stripeStatus?.stripeOnboardingComplete;
@@ -69,13 +69,13 @@ const Settings = () => {
     try {
       if (needsOnboarding) {
         // Complete onboarding if account exists but not fully onboarded
-        const result = await createOnboardingLink(teacherId).unwrap();
+        const result = await createAccountLink(teacherId).unwrap();
         if (result?.url) {
           window.location.href = result.url;
         }
       } else {
         // Create new account
-        const result = await connectStripe(teacherId).unwrap();
+        const result = await createStripeAccount(teacherId).unwrap();
         if (result?.url) {
           window.location.href = result.url;
         }

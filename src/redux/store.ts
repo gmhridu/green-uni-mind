@@ -21,6 +21,9 @@ import playerReducer from "@/redux/features/player/playerSlice";
 import noteReducer from "@/redux/features/note/noteSlice";
 import bookmarkReducer from "@/redux/features/bookmark/bookmarkSlice";
 import questionReducer from "@/redux/features/question/questionSlice";
+import messageReducer from "@/redux/features/message/messageSlice";
+import reviewReducer from "@/redux/features/review/reviewSlice";
+import courseManagementReducer from "@/redux/features/course/courseManagementSlice";
 import { Environment } from "@/utils/environment";
 
 const persistConfig = {
@@ -73,6 +76,21 @@ const persistQuestionConfig = {
   storage,
 };
 
+const persistMessageConfig = {
+  key: "message",
+  storage,
+};
+
+const persistReviewConfig = {
+  key: "review",
+  storage,
+};
+
+const persistCourseManagementConfig = {
+  key: "courseManagement",
+  storage,
+};
+
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 const persistedCourseReducer = persistReducer(
   persistCourseConfig,
@@ -90,6 +108,9 @@ const persistedPlayerReducer = persistReducer(persistPlayerConfig, playerReducer
 const persistedNoteReducer = persistReducer(persistNoteConfig, noteReducer);
 const persistedBookmarkReducer = persistReducer(persistBookmarkConfig, bookmarkReducer);
 const persistedQuestionReducer = persistReducer(persistQuestionConfig, questionReducer);
+const persistedMessageReducer = persistReducer(persistMessageConfig, messageReducer);
+const persistedReviewReducer = persistReducer(persistReviewConfig, reviewReducer);
+const persistedCourseManagementReducer = persistReducer(persistCourseManagementConfig, courseManagementReducer);
 
 export const store = configureStore({
   reducer: {
@@ -104,6 +125,9 @@ export const store = configureStore({
     note: persistedNoteReducer,
     bookmark: persistedBookmarkReducer,
     question: persistedQuestionReducer,
+    message: persistedMessageReducer,
+    review: persistedReviewReducer,
+    courseManagement: persistedCourseManagementReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

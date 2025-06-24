@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, BarChart3, FileDown, LineChart, Loader2 } from "lucide-react";
+import { AlertCircle, BarChart3, LineChart, Activity, FileText, Wallet } from "lucide-react";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
@@ -118,7 +118,7 @@ const Earnings = () => {
       )}
 
       {/* Stripe Connect Banner */}
-      {user && <StripeConnectBanner teacherId={user.id} />}
+      {user && <StripeConnectBanner teacherId={user._id} />}
 
       {isLoading ? (
         <div className="space-y-6 mt-6">
@@ -179,32 +179,180 @@ const Earnings = () => {
         </div>
       ) : (
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-flex">
+          <TabsList className="grid w-full grid-cols-7 md:w-auto md:inline-flex">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="payouts">Payouts</TabsTrigger>
+            <TabsTrigger value="payouts">
+              <Wallet className="w-4 h-4 mr-2" />
+              Payouts
+            </TabsTrigger>
+            <TabsTrigger value="invoices">
+              <FileText className="w-4 h-4 mr-2" />
+              Invoices
+            </TabsTrigger>
+            <TabsTrigger value="real-time">
+              <Activity className="w-4 h-4 mr-2" />
+              Live
+            </TabsTrigger>
+            <TabsTrigger value="analytics">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
             {user && (
               <>
-                <UpcomingPayout teacherId={user.id} />
-                <EarningsSummary teacherId={user.id} />
+                <UpcomingPayout teacherId={user._id} />
+                <EarningsSummary teacherId={user._id} />
               </>
             )}
           </TabsContent>
 
           <TabsContent value="transactions" className="space-y-6 mt-6">
-            {user && <TransactionTable teacherId={user.id} />}
+            {user && <TransactionTable teacherId={user._id} />}
           </TabsContent>
 
           <TabsContent value="payouts" className="space-y-6 mt-6">
-            {user && <PayoutHistory teacherId={user.id} />}
+            {user && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Payout Management</h2>
+                  <Link to="/teacher/payouts">
+                    <Button variant="outline">
+                      <Wallet className="w-4 h-4 mr-2" />
+                      Full Payout Dashboard
+                    </Button>
+                  </Link>
+                </div>
+                <PayoutHistory teacherId={user._id} />
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="invoices" className="space-y-6 mt-6">
+            {user && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Invoice Management</h2>
+                  <Link to="/teacher/invoices">
+                    <Button variant="outline">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Full Invoice Dashboard
+                    </Button>
+                  </Link>
+                </div>
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-gray-600 mb-4">
+                      Manage invoices for your course sales. Invoices are automatically generated when students purchase your courses.
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                        <h3 className="font-medium">Auto-Generated</h3>
+                        <p className="text-sm text-gray-600">Invoices created automatically</p>
+                      </div>
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <FileText className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <h3 className="font-medium">Email Delivery</h3>
+                        <p className="text-sm text-gray-600">Sent to students automatically</p>
+                      </div>
+                      <div className="text-center p-4 bg-purple-50 rounded-lg">
+                        <FileText className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                        <h3 className="font-medium">PDF Download</h3>
+                        <p className="text-sm text-gray-600">Professional PDF invoices</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="real-time" className="space-y-6 mt-6">
+            {user && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Real-time Payment Tracking</h2>
+                  <Link to="/teacher/real-time-dashboard">
+                    <Button variant="outline">
+                      <Activity className="w-4 h-4 mr-2" />
+                      Full Real-time Dashboard
+                    </Button>
+                  </Link>
+                </div>
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-gray-600 mb-4">
+                      Monitor your payments and earnings in real-time. Get instant notifications when students purchase your courses.
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <Activity className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <h3 className="font-medium">Live Updates</h3>
+                        <p className="text-sm text-gray-600">Real-time payment notifications</p>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <Activity className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                        <h3 className="font-medium">Status Tracking</h3>
+                        <p className="text-sm text-gray-600">Track payment progress</p>
+                      </div>
+                      <div className="text-center p-4 bg-purple-50 rounded-lg">
+                        <Activity className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                        <h3 className="font-medium">Instant Alerts</h3>
+                        <p className="text-sm text-gray-600">Get notified immediately</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6 mt-6">
+            {user && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Financial Analytics</h2>
+                  <Link to="/teacher/financial-analytics">
+                    <Button variant="outline">
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Full Analytics Dashboard
+                    </Button>
+                  </Link>
+                </div>
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-gray-600 mb-4">
+                      Comprehensive financial analytics and insights for your teaching business.
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <BarChart3 className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                        <h3 className="font-medium">Revenue Charts</h3>
+                        <p className="text-sm text-gray-600">Visual revenue tracking</p>
+                      </div>
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <BarChart3 className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <h3 className="font-medium">Growth Metrics</h3>
+                        <p className="text-sm text-gray-600">Track your growth</p>
+                      </div>
+                      <div className="text-center p-4 bg-purple-50 rounded-lg">
+                        <BarChart3 className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                        <h3 className="font-medium">Export Data</h3>
+                        <p className="text-sm text-gray-600">Download reports</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="preferences" className="space-y-6 mt-6">
-            {user && <PayoutPreferences teacherId={user.id} />}
+            {user && <PayoutPreferences teacherId={user._id} />}
           </TabsContent>
         </Tabs>
       )}

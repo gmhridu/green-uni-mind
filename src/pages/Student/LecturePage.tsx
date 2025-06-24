@@ -1,8 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import CourseLayout from "@/components/Course/CourseLayout";
+import LectureErrorBoundary from "@/components/Course/LectureErrorBoundary";
+import LazyContentLoader from "@/components/Course/LazyContentLoader";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { useGetCourseByIdQuery } from "@/redux/features/course/course.api";
 import {
@@ -17,6 +21,17 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ICourse, ILecture } from "@/types/course";
 import CourseCompletionModal from "@/components/Course/CourseCompletionModal";
+import { useRetryMechanism } from "@/hooks/useRetryMechanism";
+import { useOfflineSupport } from "@/hooks/useOfflineSupport";
+import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring";
+import { Logger } from "@/utils/logger";
+import { config } from '@/config';
+import {
+  WifiOff,
+  Clock,
+  TrendingUp,
+  Zap
+} from "lucide-react";
 
 const LecturePage = () => {
   const { courseId, lectureId } = useParams<{
@@ -28,35 +43,136 @@ const LecturePage = () => {
   const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
-  // Get user data
+  // Enterprise features
+  const retryMechanism = useRetryMechanism({
+    maxRetries: 3,
+    baseDelay: 1000,
+    onRetry: (attempt, error) => {
+      Logger.info(`Retrying lecture data fetch (attempt ${attempt}):`, error);
+      toast({
+        title: "Retrying...",
+        description: `Attempting to reload lecture data (${attempt}/3)`,
+      });
+    },
+    onMaxRetriesReached: (error) => {
+      Logger.error('Max retries reached for lecture data:', error);
+      toast({
+        title: "Connection Issues",
+        description: "Unable to load lecture data. Please check your connection and refresh the page.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const offlineSupport = useOfflineSupport({
+    enableCaching: true,
+    cachePrefix: 'lecture_',
+    maxCacheSize: 100, // 100MB for video content
+    defaultTTL: 24 * 60 * 60 * 1000, // 24 hours
+    syncOnReconnect: true
+  });
+
+  const performanceMonitoring = usePerformanceMonitoring({
+    enableWebVitals: true,
+    enableResourceMonitoring: true,
+    onThresholdExceeded: (metric, value, threshold) => {
+      Logger.warn(`Performance threshold exceeded: ${metric} = ${value} (threshold: ${threshold})`);
+    }
+  });
+
+  // Start performance monitoring
+  useEffect(() => {
+    const endMeasurement = performanceMonitoring.measureComponentLoad('LecturePage');
+    performanceMonitoring.startMonitoring();
+
+    return () => {
+      endMeasurement();
+      performanceMonitoring.stopMonitoring();
+    };
+  }, [performanceMonitoring]);
+
+  // Enhanced data fetching with offline support and caching
   const { data: userData, isLoading: isUserLoading } = useGetMeQuery(undefined);
   const studentId = userData?.data?._id;
 
-  // Get course data
+  // Memoized cache keys for offline support
+  const cacheKeys = useMemo(() => ({
+    course: `course_${courseId}`,
+    lectures: `lectures_${courseId}`,
+    currentLecture: `lecture_${lectureId}`,
+    progress: `progress_${studentId}_${courseId}`,
+    enrolledCourses: `enrolled_${studentId}`
+  }), [courseId, lectureId, studentId]);
+
+  // Get course data with offline support
   const { data: courseData, isLoading: isCourseLoading } =
-    useGetCourseByIdQuery(courseId || "", { skip: !courseId });
+    useGetCourseByIdQuery(courseId || "", {
+      skip: !courseId,
+      refetchOnMountOrArgChange: true,
+      refetchOnReconnect: true
+    });
 
-  // Get all lectures for the course
+  // Cache course data for offline access
+  useEffect(() => {
+    if (courseData?.data && offlineSupport.isOnline) {
+      offlineSupport.setCache(cacheKeys.course, courseData.data);
+    }
+  }, [courseData, offlineSupport, cacheKeys.course]);
+
+  // Get all lectures for the course with offline support
   const { data: lecturesData, isLoading: isLecturesLoading } =
-    useGetLectureByCourseIdQuery({ id: courseId || "" }, { skip: !courseId });
+    useGetLectureByCourseIdQuery({ id: courseId || "" }, {
+      skip: !courseId,
+      refetchOnMountOrArgChange: true,
+      refetchOnReconnect: true
+    });
 
-  // Get current lecture data
+  // Cache lectures data
+  useEffect(() => {
+    if (lecturesData?.data && offlineSupport.isOnline) {
+      offlineSupport.setCache(cacheKeys.lectures, lecturesData.data);
+    }
+  }, [lecturesData, offlineSupport, cacheKeys.lectures]);
+
+  // Get current lecture data with retry mechanism
   const {
     data: currentLectureData,
     isLoading: isCurrentLectureLoading,
     error: currentLectureError,
     refetch: refetchCurrentLecture,
-  } = useGetLectureByIdQuery({ id: lectureId || "" }, { skip: !lectureId });
+  } = useGetLectureByIdQuery({ id: lectureId || "" }, {
+    skip: !lectureId,
+    refetchOnMountOrArgChange: true,
+    refetchOnReconnect: true
+  });
 
-  // Get course progress
+  // Cache current lecture data
+  useEffect(() => {
+    if (currentLectureData?.data && offlineSupport.isOnline) {
+      offlineSupport.setCache(cacheKeys.currentLecture, currentLectureData.data);
+    }
+  }, [currentLectureData, offlineSupport, cacheKeys.currentLecture]);
+
+  // Get course progress with offline support
   const {
     data: progressData,
     isLoading: isProgressLoading,
     refetch: refetchProgress,
   } = useGetCourseProgressQuery(
     { studentId: studentId || "", courseId: courseId || "" },
-    { skip: !studentId || !courseId }
+    {
+      skip: !studentId || !courseId,
+      refetchOnMountOrArgChange: true,
+      refetchOnReconnect: true
+    }
   );
+
+  // Cache progress data
+  useEffect(() => {
+    if (progressData?.data && offlineSupport.isOnline) {
+      offlineSupport.setCache(cacheKeys.progress, progressData.data);
+    }
+  }, [progressData, offlineSupport, cacheKeys.progress]);
 
   const {
     data: enrolledCoursesData,
@@ -64,11 +180,88 @@ const LecturePage = () => {
     error: enrolledCoursesError,
   } = useGetEnrolledCoursesQuery(
     { studentId: studentId || "" },
-    { skip: !studentId }
+    {
+      skip: !studentId,
+      refetchOnMountOrArgChange: true,
+      refetchOnReconnect: true
+    }
   );
+
+  // Cache enrolled courses data
+  useEffect(() => {
+    if (enrolledCoursesData?.data && offlineSupport.isOnline) {
+      offlineSupport.setCache(cacheKeys.enrolledCourses, enrolledCoursesData.data);
+    }
+  }, [enrolledCoursesData, offlineSupport, cacheKeys.enrolledCourses]);
 
   const [markLectureComplete, { isLoading: isMarkingComplete }] =
     useMarkLectureCompleteMutation();
+
+  // Enhanced status indicator component
+  const StatusIndicator = () => {
+    const performanceScore = performanceMonitoring.getPerformanceScore();
+    const cacheSize = offlineSupport.getCacheSize();
+
+    if (!offlineSupport.isOnline) {
+      return (
+        <Card className="mb-4 border-amber-200 bg-amber-50">
+          <CardContent className="flex items-center gap-3 p-4">
+            <WifiOff className="h-5 w-5 text-amber-600" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-800">You're offline</p>
+              <p className="text-xs text-amber-600">
+                Using cached content • {cacheSize.toFixed(1)}MB cached
+              </p>
+            </div>
+            <Badge variant="outline" className="border-amber-300 text-amber-700">
+              Offline Mode
+            </Badge>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (retryMechanism.isRetrying) {
+      return (
+        <Card className="mb-4 border-blue-200 bg-blue-50">
+          <CardContent className="flex items-center gap-3 p-4">
+            <Clock className="h-5 w-5 text-blue-600 animate-spin" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-800">Retrying connection...</p>
+              <p className="text-xs text-blue-600">
+                Attempt {retryMechanism.retryCount + 1} of {retryMechanism.getRemainingRetries() + retryMechanism.retryCount + 1}
+              </p>
+            </div>
+            <Badge variant="outline" className="border-blue-300 text-blue-700">
+              Reconnecting
+            </Badge>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (performanceScore < 60) {
+      return (
+        <Card className="mb-4 border-orange-200 bg-orange-50">
+          <CardContent className="flex items-center gap-3 p-4">
+            <TrendingUp className="h-5 w-5 text-orange-600" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-orange-800">Performance Notice</p>
+              <p className="text-xs text-orange-600">
+                Page performance: {performanceScore}/100 • Consider refreshing
+              </p>
+            </div>
+            <Badge variant="outline" className="border-orange-300 text-orange-700">
+              <Zap className="h-3 w-3 mr-1" />
+              Optimizing
+            </Badge>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return null;
+  };
 
   // Reset state when lectureId changes
   useEffect(() => {
@@ -686,27 +879,73 @@ const LecturePage = () => {
   }
 
   return (
-    <>
-      <CourseLayout
-        onMarkComplete={handleMarkComplete}
-        isMarkingComplete={isMarkingComplete}
-        isCompleted={
-          progressData?.data?.lectureProgress?.some(
-            (lp: { lectureId: string; isCompleted: boolean }) =>
-              lp.lectureId === lectureId && lp.isCompleted
-          ) || false
-        }
-      />
+    <LectureErrorBoundary
+      lectureId={lectureId}
+      courseId={courseId}
+      onRetry={() => {
+        retryMechanism.reset();
+        window.location.reload();
+      }}
+      onNavigateBack={() => navigate(`/student/course/${courseId}`)}
+    >
+      <LazyContentLoader
+        enableIntersectionObserver={false}
+        priority="high"
+        loadingText="Loading lecture content..."
+        onLoad={() => {
+          Logger.info('Lecture page content loaded successfully');
+          performanceMonitoring.measureComponentLoad('LectureContent')();
+        }}
+        onError={(error) => {
+          Logger.error('Failed to load lecture content:', error);
+          performanceMonitoring.recordError(error);
+        }}
+      >
+        <div className="min-h-screen bg-gray-50">
+          {/* Status indicators */}
+          <div className="container mx-auto px-4 py-2">
+            <StatusIndicator />
+          </div>
 
-      {/* Course Completion Modal */}
-      <CourseCompletionModal
-        open={showCompletionModal}
-        onOpenChange={setShowCompletionModal}
-        courseId={courseId || ""}
-        courseTitle={courseData?.data?.title || "this course"}
-        percentage={progressData?.data?.percentage || 0}
-      />
-    </>
+          {/* Main course layout */}
+          <CourseLayout
+            onMarkComplete={handleMarkComplete}
+            isMarkingComplete={isMarkingComplete}
+            isCompleted={
+              progressData?.data?.lectureProgress?.some(
+                (lp: { lectureId: string; isCompleted: boolean }) =>
+                  lp.lectureId === lectureId && lp.isCompleted
+              ) || false
+            }
+          />
+
+          {/* Course Completion Modal */}
+          <CourseCompletionModal
+            open={showCompletionModal}
+            onOpenChange={setShowCompletionModal}
+            courseId={courseId || ""}
+            courseTitle={courseData?.data?.title || "this course"}
+            percentage={progressData?.data?.percentage || 0}
+          />
+
+          {/* Performance monitoring overlay for development */}
+          {config.node_env === 'development' && (
+            <div className="fixed bottom-4 right-4 z-50">
+              <Card className="p-3 bg-black/80 text-white text-xs">
+                <div className="space-y-1">
+                  <div>Performance: {performanceMonitoring.getPerformanceScore()}/100</div>
+                  <div>Cache: {offlineSupport.getCacheSize().toFixed(1)}MB</div>
+                  <div>Status: {offlineSupport.isOnline ? 'Online' : 'Offline'}</div>
+                  {retryMechanism.isRetrying && (
+                    <div>Retrying: {retryMechanism.retryCount}/{retryMechanism.getRemainingRetries() + retryMechanism.retryCount}</div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
+        </div>
+      </LazyContentLoader>
+    </LectureErrorBoundary>
   );
 };
 

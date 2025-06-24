@@ -14,6 +14,7 @@ interface IConfig {
     };
   };
   apiBaseUrl: string;
+  wsBaseUrl: string;
   node_env: string;
 }
 
@@ -33,6 +34,7 @@ export const config: IConfig = {
     },
   },
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL!,
+  wsBaseUrl: import.meta.env.VITE_WS_BASE_URL || import.meta.env.VITE_API_BASE_URL?.replace('http', 'ws') || 'ws://localhost:5000',
   node_env: import.meta.env.VITE_NODE_ENV!,
 };
 

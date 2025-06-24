@@ -99,6 +99,7 @@ export const SecurityConfig = {
       'connect-src': [
         "'self'",
         'https://api.stripe.com',
+        'https://generativelanguage.googleapis.com',
         'wss:',
         'ws:',
         ...getBackendUrls()

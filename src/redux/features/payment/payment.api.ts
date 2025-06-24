@@ -38,55 +38,7 @@ const paymentApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // Mutation for requesting a payout
-    createPayoutRequest: builder.mutation({
-      query: ({ teacherId, amount }) => ({
-        url: `/payments/payouts/${teacherId}`,
-        method: "POST",
-        body: { amount },
-      }),
-      invalidatesTags: ["Payouts", "PayoutPreferences"],
-    }),
-    // Stripe Connect for teachers
-    connectStripeAccount: builder.mutation({
-      query: (teacherId) => ({
-        url: `/payments/connect-stripe/${teacherId}`,
-        method: "POST",
-      }),
-    }),
 
-    createOnboardingLink: builder.mutation({
-      query: (teacherId) => ({
-        url: `/payments/create-onboarding-link/${teacherId}`,
-        method: "POST",
-      }),
-    }),
-
-    checkStripeAccountStatus: builder.query({
-      query: (teacherId) => ({
-        url: `/payments/stripe-account-status/${teacherId}`,
-        method: "GET",
-      }),
-    }),
-
-    saveStripeAccountDetails: builder.mutation({
-      query: ({
-        teacherId,
-        stripeAccountId,
-        stripeEmail,
-        stripeVerified,
-        stripeOnboardingComplete,
-      }) => ({
-        url: `/payments/save-stripe-details/${teacherId}`,
-        method: "POST",
-        body: {
-          stripeAccountId,
-          stripeEmail,
-          stripeVerified,
-          stripeOnboardingComplete,
-        },
-      }),
-    }),
 
     // Earnings and transactions
     getTeacherEarnings: builder.query({
@@ -112,13 +64,7 @@ const paymentApi = baseApi.injectEndpoints({
       }),
     }),
 
-    getUpcomingPayout: builder.query({
-      query: (teacherId) => ({
-        url: `/payments/upcoming-payout/${teacherId}`,
-        method: "GET",
-      }),
-      providesTags: ["UpcomingPayout"],
-    }),
+
 
     getTransactionById: builder.query({
       query: (transactionId) => ({
@@ -146,6 +92,215 @@ const paymentApi = baseApi.injectEndpoints({
         url: `/payments/analytics/${teacherId}?startDate=${startDate}&endDate=${endDate}&groupBy=${groupBy}`,
         method: "GET",
       }),
+    }),
+
+    // Enhanced financial analytics endpoints
+    getTeacherPayouts: builder.query({
+      query: (teacherId) => ({
+        url: `/payments/teacher-payouts/${teacherId}`,
+        method: "GET",
+      }),
+      providesTags: ["Payouts"],
+    }),
+
+    getFinancialSummary: builder.query({
+      query: ({ teacherId, period = "30d" }) => ({
+        url: `/payments/financial-summary/${teacherId}?period=${period}`,
+        method: "GET",
+      }),
+      providesTags: ["analytics"],
+    }),
+
+    getEarningsGrowth: builder.query({
+      query: ({ teacherId, period = "12m" }) => ({
+        url: `/payments/earnings-growth/${teacherId}?period=${period}`,
+        method: "GET",
+      }),
+      providesTags: ["analytics"],
+    }),
+
+    getTopPerformingCourses: builder.query({
+      query: ({ teacherId, limit = 10 }) => ({
+        url: `/payments/top-courses/${teacherId}?limit=${limit}`,
+        method: "GET",
+      }),
+      providesTags: ["performance"],
+    }),
+
+    exportFinancialData: builder.mutation({
+      query: ({ teacherId, type, format = "csv", period }) => ({
+        url: `/payments/export/${teacherId}`,
+        method: "POST",
+        body: { type, format, period },
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+
+    getRevenueChart: builder.query({
+      query: ({ teacherId, period = "30d", groupBy = "day" }) => ({
+        url: `/payments/revenue-chart/${teacherId}?period=${period}&groupBy=${groupBy}`,
+        method: "GET",
+      }),
+      providesTags: ["revenue"],
+    }),
+
+    // Invoice management endpoints
+    generateInvoice: builder.mutation({
+      query: ({ transactionId, ...data }) => ({
+        url: `/invoices/generate/${transactionId}`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["analytics"],
+    }),
+
+    getInvoiceByTransaction: builder.query({
+      query: (transactionId) => ({
+        url: `/invoices/transaction/${transactionId}`,
+        method: "GET",
+      }),
+    }),
+
+    getStudentInvoices: builder.query({
+      query: (studentId) => ({
+        url: `/invoices/student/${studentId}`,
+        method: "GET",
+      }),
+      providesTags: ["analytics"],
+    }),
+
+    resendInvoiceEmail: builder.mutation({
+      query: (transactionId) => ({
+        url: `/invoices/resend/${transactionId}`,
+        method: "POST",
+      }),
+    }),
+
+    getTeacherInvoiceStats: builder.query({
+      query: ({ teacherId, period = "30d" }) => ({
+        url: `/invoices/stats/teacher/${teacherId}?period=${period}`,
+        method: "GET",
+      }),
+      providesTags: ["analytics"],
+    }),
+
+    bulkGenerateInvoices: builder.mutation({
+      query: (transactions) => ({
+        url: `/invoices/bulk-generate`,
+        method: "POST",
+        body: { transactions },
+      }),
+      invalidatesTags: ["analytics"],
+    }),
+
+    // Stripe Connect endpoints
+    createStripeAccount: builder.mutation({
+      query: (data) => ({
+        url: `/stripe-connect/create-account`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["analytics"],
+    }),
+
+    createAccountLink: builder.mutation({
+      query: (data) => ({
+        url: `/stripe-connect/create-account-link`,
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    checkStripeAccountStatus: builder.query({
+      query: () => ({
+        url: `/stripe-connect/account-status`,
+        method: "GET",
+      }),
+      providesTags: ["analytics"],
+      transformErrorResponse: (response: any) => {
+        // Handle 404 errors gracefully for new teachers
+        if (response.status === 404) {
+          return {
+            success: true,
+            message: 'No Stripe account connected',
+            data: {
+              isConnected: false,
+              isVerified: false,
+              onboardingComplete: false,
+              requirements: [],
+              accountId: null
+            }
+          };
+        }
+        return response;
+      },
+    }),
+
+    updateStripeAccount: builder.mutation({
+      query: (data) => ({
+        url: `/stripe-connect/update-account`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["analytics"],
+    }),
+
+    disconnectStripeAccount: builder.mutation({
+      query: () => ({
+        url: `/stripe-connect/disconnect-account`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["analytics"],
+    }),
+
+    // Enhanced Stripe Connect endpoints
+    retryConnection: builder.mutation({
+      query: () => ({
+        url: `/stripe-connect/retry-connection`,
+        method: "POST",
+      }),
+      invalidatesTags: ["analytics"],
+    }),
+
+    getAuditLog: builder.query({
+      query: (params = {}) => {
+        const { limit = 50, offset = 0, action } = params;
+        return {
+          url: `/stripe-connect/audit-log?limit=${limit}&offset=${offset}${action ? `&action=${action}` : ''}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["analytics"],
+    }),
+
+    disconnectAccountEnhanced: builder.mutation({
+      query: (data = {}) => {
+        const { reason } = data;
+        return {
+          url: `/stripe-connect/disconnect-enhanced`,
+          method: "DELETE",
+          body: { reason },
+        };
+      },
+      invalidatesTags: ["analytics"],
+    }),
+
+    // Payout endpoints
+    createPayoutRequest: builder.mutation({
+      query: ({ teacherId, amount }) => ({
+        url: `/payments/payout-request/${teacherId}`,
+        method: "POST",
+        body: { amount },
+      }),
+      invalidatesTags: ["analytics"],
+    }),
+
+    getUpcomingPayout: builder.query({
+      query: (teacherId) => ({
+        url: `/payments/upcoming-payout/${teacherId}`,
+        method: "GET",
+      }),
+      providesTags: ["analytics"],
     }),
 
     // Legacy endpoints
@@ -184,28 +339,44 @@ const paymentApi = baseApi.injectEndpoints({
 });
 
 export const {
-  // Payout endpoints
-  useGetPayoutPreferencesQuery,
-  useUpdatePayoutPreferencesMutation,
-  useGetPayoutHistoryQuery,
-  useGetPayoutByIdQuery,
-  useCreatePayoutRequestMutation, // Mutation for requesting payouts
-
-  // Stripe Connect for teachers
-  useConnectStripeAccountMutation,
-  useCreateOnboardingLinkMutation,
-  useCheckStripeAccountStatusQuery,
-  useSaveStripeAccountDetailsMutation,
-
   // Earnings and transactions
   useGetTeacherEarningsQuery,
   useGetTeacherTransactionsQuery,
   useGetPayoutInfoQuery,
-  useGetUpcomingPayoutQuery,
   useGetTransactionByIdQuery,
   useGetTransactionBySessionIdQuery,
   useGetStudentTransactionsQuery,
   useGetTransactionAnalyticsQuery,
+
+  // Enhanced financial analytics
+  useGetTeacherPayoutsQuery,
+  useGetFinancialSummaryQuery,
+  useGetEarningsGrowthQuery,
+  useGetTopPerformingCoursesQuery,
+  useExportFinancialDataMutation,
+  useGetRevenueChartQuery,
+
+  // Invoice management
+  useGenerateInvoiceMutation,
+  useGetInvoiceByTransactionQuery,
+  useGetStudentInvoicesQuery,
+  useResendInvoiceEmailMutation,
+  useGetTeacherInvoiceStatsQuery,
+  useBulkGenerateInvoicesMutation,
+
+  // Stripe Connect
+  useCreateStripeAccountMutation,
+  useCreateAccountLinkMutation,
+  useCheckStripeAccountStatusQuery,
+  useUpdateStripeAccountMutation,
+  useDisconnectStripeAccountMutation,
+  useRetryConnectionMutation,
+  useGetAuditLogQuery,
+  useDisconnectAccountEnhancedMutation,
+
+  // Payout management
+  useCreatePayoutRequestMutation,
+  useGetUpcomingPayoutQuery,
 
   // Legacy endpoints
   useGetStripeConnectUrlQuery,

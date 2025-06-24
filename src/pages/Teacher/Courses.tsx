@@ -1,306 +1,395 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, Plus, ArrowUpDown, Ellipsis, Edit, Trash } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  BookOpen,
+  Plus,
+  RefreshCw,
+  Download,
+  BarChart3,
+  Grid3X3,
+  List,
+  Table as TableIcon,
+  TrendingUp
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+// Redux
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useGetMeQuery } from "@/redux/features/auth/authApi";
 import { useGetCreatorCourseQuery } from "@/redux/features/course/courseApi";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  setFilters,
+  setViewMode,
+  setActiveTab,
+  setSearch,
+  clearSelectedCourses,
+  setSelectedCourses,
+  updateTableColumn
+} from "@/redux/features/course/courseManagementSlice";
+
+// Components
+import CourseStatsOverview from "@/components/Courses/CourseStatsOverview";
+import CourseDataTable from "@/components/Courses/CourseDataTable";
+import CourseFilters from "@/components/Courses/CourseFilters";
+import CourseSearch from "@/components/Courses/CourseSearch";
+
+// Types
 import { ICourse } from "@/types/course";
-import DeleteCourseModal from "./DeleteCourseModal";
+import {
+  CourseFilters as ICourseFilters,
+  EnhancedCourse,
+  CourseStats,
+  CourseSortField,
+  CourseViewMode
+} from "@/types/course-management";
 
-const Courses = () => {
-  const { data: meData, isLoading: isUserLoading } = useGetMeQuery(undefined);
-  const teacherId = meData?.data?._id;
+const Courses: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { data: userData } = useGetMeQuery(undefined);
+  const teacherId = userData?.data?._id;
 
+  // Local state
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Redux state
+  const courseState = useAppSelector((state) => state.courseManagement);
+  const { filters, viewMode, ui, selectedCourses, tableColumns } = courseState;
+
+  // API queries
   const {
     data: courseData,
-    isLoading,
-    isError,
-  } = useGetCreatorCourseQuery({ id: teacherId }, { skip: !teacherId });
+    isLoading: coursesLoading,
+    error: coursesError,
+    refetch: refetchCourses
+  } = useGetCreatorCourseQuery(
+    { id: teacherId },
+    { skip: !teacherId }
+  );
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Memoized data
+  const courses = useMemo(() => {
+    const apiCourses = courseData?.data || [];
+    return apiCourses.map((course: ICourse): EnhancedCourse => ({
+      ...course,
+      totalRevenue: course.isFree === 'paid' && course.coursePrice && course.enrolledStudents?.length
+        ? course.coursePrice * course.enrolledStudents.length
+        : 0,
+      averageRating: 4.5, // TODO: Get from actual reviews
+      completionRate: 75, // TODO: Get from actual analytics
+      enrollmentTrend: 'up' as const, // TODO: Calculate from data
+      analytics: {
+        enrollmentCount: course.enrolledStudents?.length || 0,
+        completionRate: 75,
+        averageRating: 4.5,
+        totalRevenue: course.isFree === 'paid' && course.coursePrice && course.enrolledStudents?.length
+          ? course.coursePrice * course.enrolledStudents.length
+          : 0,
+        monthlyEnrollments: 10,
+        weeklyEnrollments: 3,
+        enrollmentGrowth: 15,
+        ratingTrend: 5,
+        revenueTrend: 20,
+        engagementScore: 85,
+        dropoffRate: 15,
+        averageWatchTime: 45,
+        certificatesIssued: 50,
+        studentSatisfaction: 90
+      }
+    }));
+  }, [courseData]);
 
-  const apiCourses = courseData?.data || [];
+  const stats = useMemo((): CourseStats => {
+    const totalCourses = courses.length;
+    const publishedCourses = courses.filter((c: EnhancedCourse) => c.status === 'published').length;
+    const draftCourses = courses.filter((c: EnhancedCourse) => c.status === 'draft').length;
+    const archivedCourses = courses.filter((c: EnhancedCourse) => c.status === 'archived').length;
+    const totalEnrollments = courses.reduce((sum: number, c: EnhancedCourse) => sum + (c.enrolledStudents?.length || 0), 0);
+    const totalRevenue = courses.reduce((sum: number, c: EnhancedCourse) => sum + (c.totalRevenue || 0), 0);
+    const averageRating = courses.length > 0
+      ? courses.reduce((sum: number, c: EnhancedCourse) => sum + (c.averageRating || 0), 0) / courses.length
+      : 0;
+    const averageCompletionRate = courses.length > 0
+      ? courses.reduce((sum: number, c: EnhancedCourse) => sum + (c.completionRate || 0), 0) / courses.length
+      : 0;
 
-  const filteredCourses = apiCourses
-    .map((course: ICourse) => ({
-      id: course._id,
-      title: course.title || "Untitled",
-      subtitle: course.subtitle || "",
-      status: course.status || "draft",
-      students: course.enrolledStudents?.length || 0,
-      revenue:
-        course.isFree === "paid" &&
-        course.coursePrice &&
-        course.enrolledStudents?.length > 0
-          ? `$${course.coursePrice * course.enrolledStudents.length}`
-          : "$0",
-      lastUpdated: new Date(course.updatedAt).toLocaleDateString(),
-      isFree: course.isFree,
-      coursePrice: course.coursePrice,
-    }))
-    .filter((course) => {
-      const matchesSearch = course.title
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const matchesStatus =
-        statusFilter === "all" || course.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
+    return {
+      totalCourses,
+      publishedCourses,
+      draftCourses,
+      archivedCourses,
+      totalEnrollments,
+      totalRevenue,
+      averageRating,
+      averageCompletionRate,
+      monthlyGrowth: 15,
+      weeklyGrowth: 8,
+      topPerformingCourse: courses.length > 0 ? courses[0].title : '',
+      recentActivity: 5
+    };
+  }, [courses]);
 
-  const isLoadingAll = isLoading || isUserLoading;
+  // Handlers
+  const handleFiltersChange = (newFilters: Partial<ICourseFilters>) => {
+    dispatch(setFilters(newFilters));
+  };
+
+  const handleSearchChange = (search: string) => {
+    dispatch(setSearch(search));
+  };
+
+  const handleSortChange = (
+    sortBy: CourseSortField,
+    sortOrder: 'asc' | 'desc'
+  ) => {
+    dispatch(setFilters({ sortBy, sortOrder }));
+  };
+
+  const handleViewModeChange = (mode: CourseViewMode) => {
+    dispatch(setViewMode(mode));
+  };
+
+  const handleTabChange = (tab: 'overview' | 'courses' | 'analytics' | 'insights') => {
+    dispatch(setActiveTab(tab));
+  };
+
+  const handleSelectionChange = (courseIds: string[]) => {
+    dispatch(setSelectedCourses(courseIds));
+  };
+
+  const handleColumnResize = (columnKey: string, width: number) => {
+    dispatch(updateTableColumn({ key: columnKey, updates: { width } }));
+  };
+
+  const handleColumnToggle = (columnKey: string, visible: boolean) => {
+    dispatch(updateTableColumn({ key: columnKey, updates: { visible } }));
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetchCourses();
+      toast.success("Courses refreshed successfully");
+    } catch (error) {
+      toast.error("Failed to refresh courses");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      // TODO: Implement export functionality
+      toast.info("Export functionality coming soon");
+    } catch (error) {
+      toast.error("Failed to export courses");
+    }
+  };
+
+  const handleRowClick = (course: EnhancedCourse) => {
+    navigate(`/teacher/courses/${course._id}/details`);
+  };
+
+  const handleBulkAction = (action: string) => {
+    // TODO: Implement bulk actions
+    toast.info(`Bulk action "${action}" coming soon`);
+  };
+
+  // Loading state
+  const isLoading = coursesLoading;
+
+  // Error handling
+  useEffect(() => {
+    if (coursesError) {
+      toast.error("Failed to load courses");
+    }
+  }, [coursesError]);
+
+  // Clear selections on unmount
+  useEffect(() => {
+    return () => {
+      dispatch(clearSelectedCourses());
+    };
+  }, [dispatch]);
+
+  if (!teacherId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Skeleton className="w-16 h-16 rounded-full mx-auto mb-4" />
+          <Skeleton className="h-4 w-32 mx-auto" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Courses
-        </h1>
-        <Button asChild className="bg-orange-600 w-full sm:w-auto">
-          <Link to="/teacher/courses/create">
-            <Plus className="mr-2 h-4 w-4" /> Create New Course
-          </Link>
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="search"
-            placeholder="Search courses..."
-            className="pl-8 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="space-y-6" role="main" aria-label="Courses dashboard">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
+          <p className="text-gray-600 mt-1">
+            Manage and analyze your course portfolio
+          </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
-              Status:{" "}
-              {statusFilter === "all"
-                ? "All"
-                : statusFilter === "published"
-                ? "Published"
-                : "Draft"}
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-full sm:w-auto">
-            <DropdownMenuItem onClick={() => setStatusFilter("all")}>
-              All
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter("published")}>
-              Published
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter("draft")}>
-              Draft
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn("w-4 h-4 mr-2", refreshing && "animate-spin")} />
+            Refresh
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+
+          <Button asChild>
+            <Link to="/teacher/courses/create">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Course
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Courses Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Courses ({filteredCourses.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="inline-block min-w-full align-middle">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[200px]">Course</TableHead>
-                    <TableHead className="min-w-[100px]">Status</TableHead>
-                    <TableHead className="text-right min-w-[80px]">
-                      Students
-                    </TableHead>
-                    <TableHead className="text-right min-w-[80px]">
-                      Price
-                    </TableHead>
-                    <TableHead className="text-right min-w-[80px]">
-                      Revenue
-                    </TableHead>
-                    <TableHead className="text-right min-w-[100px]">
-                      Last Updated
-                    </TableHead>
-                    <TableHead className="text-right min-w-[120px]">
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoadingAll
-                    ? [...Array(4)].map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell>
-                            <Skeleton className="h-4 w-48 mb-1" />
-                            <Skeleton className="h-3 w-32" />
-                          </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-4 w-20" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Skeleton className="h-4 w-10 ml-auto" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Skeleton className="h-4 w-12 ml-auto" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Skeleton className="h-4 w-12 ml-auto" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Skeleton className="h-4 w-24 ml-auto" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Skeleton className="h-8 w-16 rounded-md" />
-                              <Skeleton className="h-8 w-20 rounded-md" />
-                              <Skeleton className="h-8 w-8 rounded-full" />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    : filteredCourses.map((course) => (
-                        <TableRow key={course.id}>
-                          <TableCell>
-                            <div className="font-medium">{course.title}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {course.subtitle}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              className={`inline-flex rounded-full px-2 text-xs font-semibold ${
-                                course.status === "published"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-amber-100 text-amber-800"
-                              }`}
-                            >
-                              {course.status}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {course.students}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {course.isFree === "free"
-                              ? "Free"
-                              : course.coursePrice
-                              ? `$${course.coursePrice}`
-                              : "Not set"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {course.revenue}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {course.lastUpdated}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                asChild
-                                className="hidden sm:inline-flex"
-                              >
-                                <Link to={`/teacher/courses/${course.id}`}>
-                                  Manage
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                asChild
-                                className="hidden sm:inline-flex"
-                              >
-                                <Link
-                                  to={`/teacher/courses/${course.id}/lecture/create`}
-                                >
-                                  Add Lecture
-                                </Link>
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="z-10"
-                                  >
-                                    <Ellipsis />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="w-[200px]"
-                                >
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuGroup>
-                                    <DropdownMenuItem asChild>
-                                      <Link
-                                        to={`/teacher/courses/edit-course/${course.id}`}
-                                      >
-                                        <Edit className="mr-2 size-4" />
-                                        Edit Course
-                                      </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onSelect={(e) => e.preventDefault()}
-                                    >
-                                      <DeleteCourseModal
-                                        courseId={course.id as string}
-                                        courseName={course.title}
-                                        trigger={
-                                          <div className="flex items-center text-red-600 w-full">
-                                            <Trash className="mr-2 size-4" />
-                                            <span>Delete Course</span>
-                                          </div>
-                                        }
-                                      />
-                                    </DropdownMenuItem>
-                                  </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+      {/* Tabs */}
+      <Tabs value={ui.activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="courses" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Courses
+            {stats.totalCourses > 0 && (
+              <Badge variant="secondary" className="ml-1">
+                {stats.totalCourses}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="insights" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Insights
+          </TabsTrigger>
+        </TabsList>
 
-          {!isLoadingAll && filteredCourses.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No courses found. Try adjusting your filters or create a new
-              course.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <CourseStatsOverview
+            stats={stats}
+            isLoading={isLoading}
+            timeRange="month"
+          />
+        </TabsContent>
+
+        {/* Courses Tab */}
+        <TabsContent value="courses" className="space-y-6">
+          {/* Filters and Search */}
+          <Card className="dashboard-card">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-1">
+                  <CourseSearch
+                    value={filters.search || ''}
+                    onChange={handleSearchChange}
+                    className="w-full sm:w-80"
+                  />
+
+                  <CourseFilters
+                    filters={filters}
+                    onFiltersChange={handleFiltersChange}
+                    categories={[]} // TODO: Get from API
+                    isLoading={isLoading}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleViewModeChange('table')}
+                  >
+                    <TableIcon className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleViewModeChange('grid')}
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleViewModeChange('list')}
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Courses Table */}
+          <CourseDataTable
+            courses={courses}
+            columns={tableColumns}
+            isLoading={isLoading}
+            selectedCourses={selectedCourses}
+            onSelectionChange={handleSelectionChange}
+            onSort={handleSortChange}
+            onColumnResize={handleColumnResize}
+            onColumnToggle={handleColumnToggle}
+            onRowClick={handleRowClick}
+            onBulkAction={handleBulkAction}
+          />
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="text-center py-12 text-gray-500">
+            <TrendingUp className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Advanced Analytics
+            </h3>
+            <p>Detailed analytics features coming soon</p>
+          </div>
+        </TabsContent>
+
+        {/* Insights Tab */}
+        <TabsContent value="insights" className="space-y-6">
+          <div className="text-center py-12 text-gray-500">
+            <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              AI-Powered Insights
+            </h3>
+            <p>Smart insights and recommendations coming soon</p>
+          </div>
+        </TabsContent>
+      </Tabs>
+
     </div>
   );
 };

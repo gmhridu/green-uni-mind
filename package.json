@@ -16,6 +16,7 @@
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.1.1",
     "@mux/mux-player": "^3.4.0",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -93,6 +94,7 @@
     "recharts": "^2.15.3",
     "redux-persist": "^6.0.0",
     "screenfull": "^6.0.2",
+    "socket.io-client": "^4.8.1",
     "sonner": "^1.5.0",
     "sort-by": "^1.2.0",
     "stripe": "^18.1.0",
@@ -112,6 +114,7 @@
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.3.1",
     "@types/redux-persist": "^4.3.1",
+    "@types/socket.io-client": "^3.0.0",
     "@types/video.js": "^7.3.58",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",

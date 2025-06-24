@@ -13,10 +13,13 @@ export const createCourseSchema = z.object({
     .min(10, { message: "Description must be at least 10 characters long." })
     .max(1000, { message: "Description must not exceed 1000 characters." }),
 
-  category: z
+  categoryId: z
     .string()
-    .min(3, { message: "Category must be at least 3 characters long." })
-    .max(50, { message: "Category must not exceed 50 characters." }),
+    .min(1, { message: "Category is required." }),
+
+  subcategoryId: z
+    .string()
+    .min(1, { message: "Subcategory is required." }),
 
   courseLevel: z.enum(["Beginner", "Intermediate", "Advanced"], {
     message: "Invalid course level.",
