@@ -5,6 +5,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import { config } from "@/config";
 
 interface SocialLoginButtonsProps {
   isSignUp?: boolean;
@@ -25,7 +26,7 @@ const SocialLoginButtons = ({
   const isSignUpPage = location.pathname.includes("sign-up");
 
   // Base URL for OAuth endpoints
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
+  const baseUrl = config.apiBaseUrl;
 
   // Function to handle OAuth login
   const handleOAuthLogin = (provider: string) => {

@@ -54,7 +54,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({ threadId, onBack }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: userData } = useGetMeQuery(undefined);
-  const userId = userData?.data?._id;
+  // For messaging, we need the User._id (not Teacher._id)
+  // The Teacher document has a 'user' field that references the User._id
+  const userId = userData?.data?.user?._id || userData?.data?._id;
 
   const {
     data: messagesData,

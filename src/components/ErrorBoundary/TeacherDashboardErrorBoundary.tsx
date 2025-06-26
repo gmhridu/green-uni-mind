@@ -8,6 +8,7 @@ import {
   Lightbulb,
   Shield
 } from 'lucide-react';
+import { Environment } from '@/utils/environment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +68,7 @@ class TeacherDashboardErrorBoundary extends Component<Props, State> {
     }
 
     // In production, you might want to send this to an error reporting service
-    if (process.env.NODE_ENV === 'production') {
+    if (Environment.isProduction()) {
       // Example: Send to error reporting service
       // errorReportingService.captureException(error, { extra: errorInfo });
     }
@@ -180,7 +181,7 @@ class TeacherDashboardErrorBoundary extends Component<Props, State> {
               </Alert>
 
               {/* Error Details (only in development) */}
-              {process.env.NODE_ENV === 'development' && (
+              {Environment.isDevelopment() && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
                     <Bug className="w-4 h-4" />

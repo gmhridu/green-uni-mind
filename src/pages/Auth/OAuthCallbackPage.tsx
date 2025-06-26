@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { isValidObjectId } from "@/utils/getUserId";
 import AuthSuccessPage from "@/components/auth/AuthSuccessPage";
+import { config } from "@/config";
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate();
@@ -73,9 +74,8 @@ const OAuthCallbackPage = () => {
               return;
             }
 
-            // Use the correct API base URL from environment variables
-            const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
-            const verifyResponse = await fetch(`${apiBaseUrl}/users/${storedUserId}`, {
+            // Use the correct API base URL from centralized config
+            const verifyResponse = await fetch(`${config.apiBaseUrl}/users/${storedUserId}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',

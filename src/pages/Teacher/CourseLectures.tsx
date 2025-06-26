@@ -3,6 +3,7 @@ import {
   Link,
   useNavigate,
   useParams,
+  useLocation,
 } from "react-router-dom";
 import {
   ArrowLeft,
@@ -85,15 +86,24 @@ const isTouchDevice = () => {
 
 const CourseLectures: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { courseId } = useParams<{ courseId: string }>();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTouch = useRef(isTouchDevice()).current;
+
+  // Check if this is a newly created course
+  const { showLecturePrompt, justCreated } = location.state || {};
+  const [showWelcomePrompt, setShowWelcomePrompt] = useState(false);
 
   const { data, isLoading, isError, error, refetch } = useGetLectureByCourseIdQuery(
     { id: courseId! },
     {
       skip: !courseId,
-      refetchOnMountOrArgChange: true
+      refetchOnMountOrArgChange: true,
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+      // Enable polling for real-time updates
+      pollingInterval: 30000, // Poll every 30 seconds
     }
   );
   const [updateOrder, { isLoading: isUpdating }] = useUpdateLectureOrderMutation();
@@ -115,8 +125,20 @@ const CourseLectures: React.FC = () => {
       // Sort by order just in case
       const sorted = [...data.data].sort((a, b) => a.order - b.order);
       setOrderedLectures(sorted);
+
+      // Show welcome prompt for newly created courses with no lectures
+      if (justCreated && sorted.length === 0) {
+        setShowWelcomePrompt(true);
+      }
     }
-  }, [data]);
+  }, [data, justCreated]);
+
+  // Show welcome prompt effect
+  useEffect(() => {
+    if (showLecturePrompt && orderedLectures.length === 0) {
+      setShowWelcomePrompt(true);
+    }
+  }, [showLecturePrompt, orderedLectures.length]);
 
   // Redirect if not a teacher
   useEffect(() => {
@@ -399,6 +421,23 @@ const CourseLectures: React.FC = () => {
                 <span className="hidden sm:inline">Back to Courses</span>
               </Button>
               <Button
+                variant="outline"
+                onClick={async () => {
+                  toast.loading('Refreshing lectures...');
+                  try {
+                    await refetch();
+                    toast.success('Lectures refreshed successfully!');
+                  } catch (error) {
+                    toast.error('Failed to refresh lectures');
+                  }
+                }}
+                className="flex items-center gap-2"
+                disabled={isUpdating}
+              >
+                <RefreshCcw className="h-4 w-4" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+              <Button
                 onClick={() => navigate(`/teacher/courses/${courseId}/lecture/create`)}
                 className="flex items-center gap-2 whitespace-nowrap bg-brand-primary hover:bg-brand-primary-dark text-white"
                 disabled={isUpdating}
@@ -541,6 +580,46 @@ const CourseLectures: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Welcome prompt for newly created courses */}
+      <AlertDialog open={showWelcomePrompt} onOpenChange={setShowWelcomePrompt}>
+        <AlertDialogContent className="max-w-[90%] w-[500px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              🎉 Course Created Successfully!
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                Great! Your course has been created. Now it's time to add some engaging lectures
+                to help your students learn effectively.
+              </p>
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800 font-medium">
+                  💡 Pro Tip: Start with an introduction lecture to welcome your students!
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel
+              onClick={() => setShowWelcomePrompt(false)}
+              className="mt-0"
+            >
+              I'll add lectures later
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowWelcomePrompt(false);
+                navigate(`/teacher/courses/${courseId}/lecture/create`);
+              }}
+              className="sm:mt-0 bg-brand-primary hover:bg-brand-primary-dark"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add First Lecture
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Confirmation dialog for mobile reordering */}
       <AlertDialog open={showOrderConfirm} onOpenChange={setShowOrderConfirm}>

@@ -16,7 +16,8 @@
 /checkout/*   /index.html   200
 
 # API proxy to prevent CORS issues and improve performance
-/api/*  https://green-uni-mind-backend-oxpo.onrender.com/api/:splat  200
+# This rule is for production deployment only - disabled for local development
+# /api/*  https://green-uni-mind-backend-oxpo.onrender.com/api/:splat  200
 
 # Catch-all rule for any other routes (must be last)
 /*    /index.html   200

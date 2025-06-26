@@ -15,15 +15,52 @@ export const lectureApi = baseApi.injectEndpoints({
       }),
       onQueryStarted: async (args, { dispatch, queryFulfilled }) => {
         dispatch(setLoading(true));
+
+        // Optimistic update - add temporary lecture to cache
+        const optimisticLecture = {
+          _id: `temp-${Date.now()}`,
+          lectureTitle: args.data.lectureTitle,
+          instruction: args.data.instruction || "",
+          videoUrl: args.data.videoUrl || "",
+          pdfUrl: args.data.pdfUrl || "",
+          isPreviewFree: args.data.isPreviewFree || false,
+          courseId: args.id,
+          order: 999, // Will be updated with real order from server
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Update lectures cache optimistically
+        const patchResult = dispatch(
+          lectureApi.util.updateQueryData('getLectureByCourseId', { id: args.id }, (draft) => {
+            draft.data = draft.data || [];
+            draft.data.push(optimisticLecture);
+          })
+        );
+
         try {
-          await queryFulfilled;
+          const result = await queryFulfilled;
+          // Update with real data from server
+          dispatch(
+            lectureApi.util.updateQueryData('getLectureByCourseId', { id: args.id }, (draft) => {
+              const tempIndex = draft.data.findIndex(l => l._id === optimisticLecture._id);
+              if (tempIndex !== -1) {
+                draft.data[tempIndex] = result.data.data;
+              }
+            })
+          );
         } catch (error) {
+          // Revert optimistic update on error
+          patchResult.undo();
           dispatch(setError("Error creating Lecture"));
         } finally {
           dispatch(setLoading(false));
         }
       },
-      invalidatesTags: ["lectures", "courses", "course"],
+      invalidatesTags: (result, error, args) => [
+        { type: "lectures", id: args.id },
+        { type: "course", id: args.id }
+      ],
     }),
 
     getLectureByCourseId: builder.query({
@@ -128,6 +165,7 @@ export const lectureApi = baseApi.injectEndpoints({
           videoUrl: string;
           pdfUrl: string;
           isPreviewFree: boolean;
+          duration?: number;
         }>;
       }) => ({
         url: `/lectures/${args.courseId}/update-lecture/${args.lectureId}`,
@@ -139,15 +177,65 @@ export const lectureApi = baseApi.injectEndpoints({
       }),
       onQueryStarted: async (args, { dispatch, queryFulfilled }) => {
         dispatch(setLoading(true));
+
+        // Optimistic update
+        const patchResult = dispatch(
+          lectureApi.util.updateQueryData('getLectureByCourseId', { id: args.courseId }, (draft) => {
+            const lectureIndex = draft.data.findIndex(l => l._id === args.lectureId);
+            if (lectureIndex !== -1) {
+              Object.assign(draft.data[lectureIndex], {
+                ...args.data,
+                updatedAt: new Date().toISOString(),
+              });
+            }
+          })
+        );
+
+        // Also update individual lecture cache if it exists
+        const singleLecturePatch = dispatch(
+          lectureApi.util.updateQueryData('getLectureById', { id: args.lectureId }, (draft) => {
+            Object.assign(draft.data, {
+              ...args.data,
+              updatedAt: new Date().toISOString(),
+            });
+          })
+        );
+
         try {
-          await queryFulfilled;
-        } catch {
+          const result = await queryFulfilled;
+
+          // Update with real data from server
+          dispatch(
+            lectureApi.util.updateQueryData('getLectureByCourseId', { id: args.courseId }, (draft) => {
+              const lectureIndex = draft.data.findIndex(l => l._id === args.lectureId);
+              if (lectureIndex !== -1) {
+                draft.data[lectureIndex] = result.data.data;
+              }
+            })
+          );
+
+          // Force immediate cache invalidation for real-time sync
+          dispatch(baseApi.util.invalidateTags([
+            'lectures',
+            'course',
+            { type: 'lectures', id: args.courseId },
+            { type: 'course', id: args.courseId },
+            { type: 'lecture', id: args.lectureId }
+          ]));
+
+        } catch (error) {
+          // Revert optimistic updates on error
+          patchResult.undo();
+          singleLecturePatch.undo();
           dispatch(setError("Error updating lecture"));
         } finally {
           dispatch(setLoading(false));
         }
       },
-      invalidatesTags: ["lectures", "lecture", "courses", "course"],
+      invalidatesTags: (result, error, args) => [
+        { type: "lecture", id: args.lectureId },
+        { type: "lectures", id: args.courseId }
+      ],
     }),
   }),
 });

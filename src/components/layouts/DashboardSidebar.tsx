@@ -225,9 +225,21 @@ const DashboardSidebar = () => {
               <NavLink
                 key={item.path}
                 to={item.path}
-                onClick={() => isMobile && setOpen(false)}
+                onClick={(e) => {
+                  // Provide immediate visual feedback
+                  const target = e.currentTarget;
+                  target.style.transform = 'scale(0.98)';
+                  setTimeout(() => {
+                    target.style.transform = '';
+                  }, 100);
+
+                  // Close mobile menu
+                  if (isMobile) {
+                    setOpen(false);
+                  }
+                }}
                 className={cn(
-                  "sidebar-nav-item group relative",
+                  "sidebar-nav-item group relative transition-all duration-200",
                   isActive && "active",
                   collapsed && "justify-center px-2"
                 )}

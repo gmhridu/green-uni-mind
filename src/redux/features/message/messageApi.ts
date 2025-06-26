@@ -77,7 +77,7 @@ export const messageApi = baseApi.injectEndpoints({
         if (filters?.dateRange?.endDate) params.append('endDate', filters.dateRange.endDate);
 
         return {
-          url: `/messages/users/${userId}/threads?${params.toString()}`,
+          url: `/messaging/users/${userId}/threads?${params.toString()}`,
           method: "GET",
         };
       },
@@ -110,7 +110,7 @@ export const messageApi = baseApi.injectEndpoints({
         params.append('limit', limit.toString());
 
         return {
-          url: `/messages/threads/${threadId}/messages?${params.toString()}`,
+          url: `/messaging/conversations/${threadId}/messages?${params.toString()}`,
           method: "GET",
         };
       },
@@ -251,7 +251,7 @@ export const messageApi = baseApi.injectEndpoints({
         if (filters?.dateRange?.endDate) params.append('endDate', filters.dateRange.endDate);
 
         return {
-          url: `/messages/users/${userId}/search?${params.toString()}`,
+          url: `/messaging/users/${userId}/search?${params.toString()}`,
           method: "GET",
         };
       },

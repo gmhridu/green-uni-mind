@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser, selectCurrentToken } from "@/redux/features/auth/authSlice";
 import { useUnlinkOAuthAccountMutation, useGetMeQuery } from "@/redux/features/auth/authApi";
+import { config } from "@/config";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
 import {
@@ -36,8 +37,7 @@ const AccountConnections = () => {
 
   // Base URL for OAuth endpoints
   // Extract the base URL without the /api/v1 suffix for OAuth endpoints
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
-  const baseUrl = apiBaseUrl.replace(/\/api\/v1$/, "");
+  const baseUrl = config.apiBaseUrl.replace(/\/api\/v1$/, "");
 
   // State for debug panel
   const [showDebug, setShowDebug] = useState(false);
@@ -379,7 +379,7 @@ const AccountConnections = () => {
             <div className="mt-2 p-4 bg-gray-100 rounded text-xs font-mono overflow-auto max-h-60">
               <h3 className="font-bold mb-2">Debug Information</h3>
               <p className="mb-1"><strong>Base URL:</strong> {baseUrl}</p>
-              <p className="mb-1"><strong>API Base URL:</strong> {apiBaseUrl}</p>
+              <p className="mb-1"><strong>API Base URL:</strong> {baseUrl}</p>
               <p className="mb-1"><strong>OAuth URL Example:</strong> {`${baseUrl}/api/v1/oauth/google?role=${effectiveUser?.role || 'student'}&linking=true`}</p>
               <p className="mb-3"><strong>User ID:</strong> {getUserId(effectiveUser) || 'Not found'}</p>
 

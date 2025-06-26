@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLinkOAuthAccountMutation, useUnlinkOAuthAccountMutation, useGetMeQuery } from "@/redux/features/auth/authApi";
+import { useLinkOAuthAccountMutation, useUnlinkOAuthAccountMutation, useGetMeQuery, authApi } from "@/redux/features/auth/authApi";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { selectCurrentUser, selectCurrentToken } from "@/redux/features/auth/authSlice";
 import { useState, useEffect } from "react";
@@ -38,21 +38,13 @@ const OAuthLinking = () => {
   const fetchActualUserId = async () => {
     setIsLoadingUserId(true);
     try {
-      // Make a direct API call to get the user ID
-      // Since we don't have a direct endpoint, we'll use the getMe endpoint and extract the user ID
-      const response = await fetch(`${config.apiBaseUrl}/users/me`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // Use RTK Query to get user data instead of direct fetch
+      // This ensures we use the correct API base URL configuration
+      const userData = await dispatch(
+        authApi.endpoints.getMe.initiate(undefined, { forceRefresh: true })
+      ).unwrap();
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const data = await response.json();
+      const data = userData;
       console.log('Fetched user data:', data);
 
       // Extract the user ID from the response

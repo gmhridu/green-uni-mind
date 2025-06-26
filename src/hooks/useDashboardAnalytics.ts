@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import {
@@ -9,32 +9,15 @@ import {
   useGetPerformanceMetricsQuery
 } from '@/redux/features/analytics/analyticsApi';
 import { DashboardStats } from '@/types/analytics';
-import { useRealTimeAnalytics } from './useRealTimeAnalytics';
+
 
 export const useDashboardAnalytics = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const teacherId = user?._id as string;
 
-  // Real-time updates handler
-  const handleRealTimeUpdate = useCallback((update: any) => {
-    // Trigger refetch when real-time updates are received
-    if (update.type === 'enrollment' || update.type === 'revenue' || update.type === 'activity') {
-      refetchDashboard();
-    }
-  }, []);
 
-  // Set up real-time analytics (temporarily disable WebSocket)
-  const {
-    isConnected: isRealTimeConnected,
-    connectionError: realTimeError,
-    lastUpdate: lastRealTimeUpdate
-  } = useRealTimeAnalytics({
-    enableWebSocket: false, // Temporarily disabled until WebSocket endpoint is implemented
-    pollingInterval: 60000, // Fallback polling every minute
-    onUpdate: handleRealTimeUpdate
-  });
 
-  // Fetch all analytics data
+  // Fetch all analytics data first
   const {
     data: dashboardSummary,
     isLoading: isDashboardLoading,
@@ -42,9 +25,16 @@ export const useDashboardAnalytics = () => {
     refetch: refetchDashboard
   } = useGetDashboardSummaryQuery(teacherId, {
     skip: !teacherId,
-    // Use polling for now since WebSocket is disabled
-    pollingInterval: 300000, // Poll every 5 minutes
+    // Reduce polling frequency to avoid conflicts with real-time updates
+    pollingInterval: 600000, // Poll every 10 minutes (increased from 5)
   });
+
+
+
+  // Standard analytics - no real-time updates
+  const isRealTimeConnected = false;
+  const realTimeError = null;
+  const lastRealTimeUpdate = null;
 
   const {
     data: enrollmentData,
@@ -167,6 +157,8 @@ export const useDashboardAnalytics = () => {
     revenue: revenueData?.data,
     performance: performanceData?.data,
   }), [enrollmentData, engagementData, revenueData, performanceData]);
+
+
 
   return {
     // Main dashboard data

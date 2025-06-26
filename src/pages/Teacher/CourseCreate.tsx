@@ -443,21 +443,34 @@ const CourseCreate = () => {
       dispatch(setCourse(res.data));
       localStorage.removeItem("courseForm");
 
+      const courseId = res.data._id;
+      const successMessage = values.status === "published"
+        ? "Course published successfully!"
+        : "Course saved as draft!";
+
       if (values.status === "published" && values.isFree === "paid") {
         if (!hasStripeConnected) {
           setShowStripeModal(true);
-        } else {
-          toast.success("Course published successfully!");
-          navigate("/teacher/courses");
+          return;
         }
-      } else {
-        toast.success(
-          values.status === "published"
-            ? "Course published successfully!"
-            : "Course saved as draft!"
-        );
-        navigate("/teacher/courses");
       }
+
+      // Show success message with action options
+      toast.success(successMessage, {
+        duration: 5000,
+        action: {
+          label: "Add Lectures",
+          onClick: () => navigate(`/teacher/courses/${courseId}/lecture/create`)
+        }
+      });
+
+      // Navigate to unified course management with lecture focus
+      navigate(`/teacher/courses/${courseId}/manage?tab=lectures`, {
+        state: {
+          showLecturePrompt: true,
+          justCreated: true
+        }
+      });
     }).catch((error) => {
       console.error("Course creation error:", error);
       toast.error("Failed to create course. Please try again.");
@@ -821,18 +834,33 @@ const CourseCreate = () => {
       dispatch(setCourse(res.data));
       localStorage.removeItem("courseForm");
 
-      toast.success(
-        values.status === "published"
-          ? "Course published successfully!"
-          : "Course saved as draft!"
-      );
+      const courseId = res.data._id;
+      const successMessage = values.status === "published"
+        ? "Course published successfully!"
+        : "Course saved as draft!";
 
       // Handle Stripe connection for paid courses
       if (values.isFree === "paid" && !hasStripeConnected) {
         setShowStripeModal(true);
-      } else {
-        navigate("/teacher/courses");
+        return;
       }
+
+      // Show success message with action options
+      toast.success(successMessage, {
+        duration: 5000,
+        action: {
+          label: "Add Lectures",
+          onClick: () => navigate(`/teacher/courses/${courseId}/lecture/create`)
+        }
+      });
+
+      // Navigate to unified course management with lecture focus
+      navigate(`/teacher/courses/${courseId}/manage?tab=lectures`, {
+        state: {
+          showLecturePrompt: true,
+          justCreated: true
+        }
+      });
     } catch (error: unknown) {
       console.error("Failed to create course:", error);
       const err = error as { data?: { message?: string } };

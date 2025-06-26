@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw, Home, BookOpen, MessageSquare, BarChart3, Sta
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Environment } from '@/utils/environment';
 
 interface Props {
   children: ReactNode;
@@ -127,7 +128,7 @@ class DashboardErrorBoundary extends Component<Props, State> {
             </div>
 
             {/* Development error details */}
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {Environment.isDevelopment() && this.state.error && (
               <details className="mt-4 p-3 bg-gray-100 rounded text-xs">
                 <summary className="cursor-pointer font-medium text-gray-700">
                   Error Details (Development Only)

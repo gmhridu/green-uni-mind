@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { setUser } from "@/redux/features/auth/authSlice";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useGetMeQuery } from "@/redux/features/auth/authApi";
+import { useGetMeQuery, authApi } from "@/redux/features/auth/authApi";
+import { config } from "@/config";
+import { useAppDispatch } from "@/redux/hooks";
 
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { data, isLoading: isUserDataLoading } = useGetMeQuery(undefined);
 
   // Make sure we have a valid userId
@@ -376,24 +377,16 @@ const OAuthCallback = () => {
 
         // Handle regular OAuth login flow
         if (token && provider) {
-          // Fetch user data using the token
+          // Store token first so RTK Query can use it
+          localStorage.setItem("accessToken", token);
+
+          // Use RTK Query to fetch user data instead of direct fetch
           try {
-            const response = await fetch(
-              `${import.meta.env.VITE_API_BASE_URL}/users/me`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
+            const userData = await dispatch(
+              authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true })
+            ).unwrap();
 
-            if (!response.ok) {
-              throw new Error("Failed to fetch user data");
-            }
-
-            const userData = await response.json();
-
-            if (userData.success && userData.data) {
+            if (userData.data) {
               // Create a complete user object with all necessary fields
               const user = {
                 ...userData.data,

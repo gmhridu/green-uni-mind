@@ -94,11 +94,26 @@ export const usePerformanceMonitoring = (
 
   // Update metrics and trigger callbacks
   const updateMetrics = useCallback((updates: Partial<PerformanceMetrics>) => {
+    const hasChanges = Object.entries(updates).some(([key, value]) =>
+      metricsRef.current[key as keyof PerformanceMetrics] !== value
+    );
+
+    if (!hasChanges) return; // Prevent unnecessary updates
+
     metricsRef.current = { ...metricsRef.current, ...updates };
-    setMetrics({ ...metricsRef.current });
-    
+
+    // Use functional update to prevent stale closures
+    setMetrics(prev => {
+      const newMetrics = { ...metricsRef.current };
+      // Only update if there are actual changes
+      if (JSON.stringify(prev) === JSON.stringify(newMetrics)) {
+        return prev;
+      }
+      return newMetrics;
+    });
+
     finalConfig.onMetricsUpdate?.(metricsRef.current);
-    
+
     // Check thresholds
     Object.entries(updates).forEach(([key, value]) => {
       if (value !== null && key in finalThresholds) {
@@ -108,7 +123,7 @@ export const usePerformanceMonitoring = (
         }
       }
     });
-  }, [finalConfig, finalThresholds]);
+  }, [finalConfig.onMetricsUpdate, finalConfig.onThresholdExceeded, finalThresholds]);
 
   // Initialize Web Vitals monitoring
   useEffect(() => {
@@ -171,7 +186,7 @@ export const usePerformanceMonitoring = (
         observer?.disconnect();
       });
     };
-  }, [finalConfig.enableWebVitals, updateMetrics]);
+  }, [finalConfig.enableWebVitals]); // Removed updateMetrics to prevent infinite re-renders
 
   // Initialize resource monitoring
   useEffect(() => {

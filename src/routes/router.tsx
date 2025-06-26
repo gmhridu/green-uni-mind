@@ -22,6 +22,7 @@ import Dashboard from "@/pages/Teacher/Dashboard";
 import Courses from "@/pages/Teacher/Courses";
 import CourseCreate from "@/pages/Teacher/CourseCreate";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import EnterpriseErrorBoundary from "@/components/ErrorBoundary/EnterpriseErrorBoundary";
 import StripeRequirementGuard from "@/components/Guards/StripeRequirementGuard";
 import Earnings from "@/pages/Teacher/Earnings";
 import EarningsReport from "@/pages/Teacher/EarningsReport";
@@ -35,11 +36,12 @@ import Lectures from "@/pages/Teacher/Lectures";
 import LectureCreate from "@/pages/Teacher/LectureCreate";
 import CourseLectures from "@/pages/Teacher/CourseLectures";
 import CourseDetail from "@/pages/Teacher/CourseDetail";
+import CourseManagement from "@/pages/Teacher/CourseManagement";
 import EditLecture from "@/components/Dashboard/EditLecture";
 import HelpSupport from "@/pages/Teacher/HelpSupport";
 import TeacherInvoiceManagement from "@/pages/Teacher/InvoiceManagement";
 import TeacherPayoutManagement from "@/pages/Teacher/PayoutManagement";
-import RealTimePaymentDashboard from "@/pages/Teacher/RealTimePaymentDashboard";
+
 import FinancialAnalytics from "@/pages/Teacher/FinancialAnalytics";
 import StripeConnect from "@/pages/Teacher/StripeConnect";
 import StripeConnectStatus from "@/pages/Teacher/StripeConnectStatus";
@@ -63,6 +65,7 @@ import Impact from "@/pages/Impact";
 import Categories from "@/pages/Categories";
 import CategoryBrowse from "@/pages/CategoryBrowse";
 import StepperDemo from "@/components/stepper-demo";
+import ConfigDebug from "@/pages/Debug/ConfigDebug";
 import {
   createBrowserRouter,
 } from "react-router-dom";
@@ -115,6 +118,10 @@ const router = createBrowserRouter([
       {
         path: "stepper-demo",
         element: <StepperDemo />,
+      },
+      {
+        path: "debug/config",
+        element: <ConfigDebug />,
       },
       {
         path: "user",
@@ -180,9 +187,11 @@ const router = createBrowserRouter([
   {
     path: "teacher",
     element: (
-      <ProtectedRoute role={USER_ROLE.TEACHER}>
-        <Layout />
-      </ProtectedRoute>
+      <EnterpriseErrorBoundary context="Teacher Dashboard" enableRetry={true} maxRetries={3}>
+        <ProtectedRoute role={USER_ROLE.TEACHER}>
+          <Layout />
+        </ProtectedRoute>
+      </EnterpriseErrorBoundary>
     ),
     children: [
       {
@@ -222,6 +231,10 @@ const router = createBrowserRouter([
       {
         path: "courses/:courseId/details",
         element: <CourseDetail />,
+      },
+      {
+        path: "courses/:courseId/manage",
+        element: <CourseManagement />,
       },
       {
         path: "courses/:courseId/lecture/edit/:lectureId",
@@ -275,10 +288,7 @@ const router = createBrowserRouter([
         path: "payouts",
         element: <TeacherPayoutManagement />,
       },
-      {
-        path: "real-time-dashboard",
-        element: <RealTimePaymentDashboard />,
-      },
+
       {
         path: "financial-analytics",
         element: <FinancialAnalytics />,

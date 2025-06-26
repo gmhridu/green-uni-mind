@@ -21,6 +21,16 @@ export interface ILectureState {
     video: number;
     pdf: number;
   };
+  optimisticUpdates: {
+    [lectureId: string]: Partial<ILecture>;
+  };
+  lastUpdated: string | null;
+  cache: {
+    [courseId: string]: {
+      lectures: ILecture[];
+      lastFetched: string;
+    };
+  };
 }
 const initialState: ILectureState = {
   lectures: [],
@@ -30,6 +40,9 @@ const initialState: ILectureState = {
     video: 0,
     pdf: 0,
   },
+  optimisticUpdates: {},
+  lastUpdated: null,
+  cache: {},
 };
 
 const lectureSlice = createSlice({
@@ -75,6 +88,49 @@ const lectureSlice = createSlice({
 
     // Reset entire state
     resetLectureState: () => initialState,
+
+    // Enhanced actions for performance optimization
+    addOptimisticUpdate: (state, action: PayloadAction<{ lectureId: string; updates: Partial<ILecture> }>) => {
+      state.optimisticUpdates[action.payload.lectureId] = action.payload.updates;
+    },
+
+    removeOptimisticUpdate: (state, action: PayloadAction<string>) => {
+      delete state.optimisticUpdates[action.payload];
+    },
+
+    clearOptimisticUpdates: (state) => {
+      state.optimisticUpdates = {};
+    },
+
+    updateLectureInCache: (state, action: PayloadAction<{ courseId: string; lecture: ILecture }>) => {
+      const { courseId, lecture } = action.payload;
+      if (state.cache[courseId]) {
+        const lectureIndex = state.cache[courseId].lectures.findIndex(l => l._id === lecture._id);
+        if (lectureIndex !== -1) {
+          state.cache[courseId].lectures[lectureIndex] = lecture;
+        } else {
+          state.cache[courseId].lectures.push(lecture);
+        }
+      }
+      state.lastUpdated = new Date().toISOString();
+    },
+
+    setCacheForCourse: (state, action: PayloadAction<{ courseId: string; lectures: ILecture[] }>) => {
+      const { courseId, lectures } = action.payload;
+      state.cache[courseId] = {
+        lectures,
+        lastFetched: new Date().toISOString(),
+      };
+      state.lastUpdated = new Date().toISOString();
+    },
+
+    clearCacheForCourse: (state, action: PayloadAction<string>) => {
+      delete state.cache[action.payload];
+    },
+
+    clearAllCache: (state) => {
+      state.cache = {};
+    },
   },
 });
 
@@ -87,6 +143,13 @@ export const {
   setPdfUploadProgress,
   resetUploadProgress,
   resetLectureState,
+  addOptimisticUpdate,
+  removeOptimisticUpdate,
+  clearOptimisticUpdates,
+  updateLectureInCache,
+  setCacheForCourse,
+  clearCacheForCourse,
+  clearAllCache,
 } = lectureSlice.actions;
 
 export default lectureSlice.reducer;
